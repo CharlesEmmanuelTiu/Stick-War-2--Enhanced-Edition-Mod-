@@ -80,21 +80,22 @@ package com.brockw.stickwar.singleplayer
          var unit:Entity = null;
          var u:Unit = null;
          this.enemyTeamAi.update(game);
-         if(this.userInterface.keyBoardState.isPressed(82))
-         {
-            for each(unit in game.units)
-            {
-               if(unit is Unit && !(unit is Statue))
-               {
-                  u = Unit(unit);
-                  u.damage(0,u.maxHealth * 2,null);
-               }
-            }
-         }
-         if(this.userInterface.keyBoardState.isPressed(90))
-         {
-            team.enemyTeam.attack();
-         }
+          if(this.userInterface.keyBoardState.isPressed(82))
+          {
+             for each(unit in game.units)
+             {
+                if(unit is Unit && !(unit is Statue))
+                {
+                   u = Unit(unit);
+                   u.damage(0,u.maxHealth * 2,null);
+                }
+             }
+          }
+          if(this.userInterface.keyBoardState.isPressed(90))
+          {
+             team.enemyTeam.attack();
+          }
+
          super.update(evt,timeDiff);
       }
       

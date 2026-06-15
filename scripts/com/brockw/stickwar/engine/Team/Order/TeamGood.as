@@ -16,11 +16,12 @@ package com.brockw.stickwar.engine.Team.Order
    import flash.text.TextFormat;
    import flash.utils.Dictionary;
    
-   public class TeamGood extends Team
-   {
-      
-      public function TeamGood(game:StickWar, statueHealth:int, techAllowed:Dictionary = null, handicap:* = 1, healthModifier:Number = 1)
-      {
+    public class TeamGood extends Team
+    {
+       private var _originalUnitCosts:Dictionary;
+       
+       public function TeamGood(game:StickWar, statueHealth:int, techAllowed:Dictionary = null, handicap:* = 1, healthModifier:Number = 1)
+       {
          var bulding:Building = null;
          var unit:String = null;
          var un:Unit = null;
@@ -66,8 +67,14 @@ package com.brockw.stickwar.engine.Team.Order
          unitInfo[Unit.U_FLYING_CROSSBOWMAN] = [game.xml.xml.Order.Units.flyingCrossbowman.gold * handicap,game.xml.xml.Order.Units.flyingCrossbowman.mana * handicap];
          unitInfo[Unit.U_MONK] = [game.xml.xml.Order.Units.monk.gold * handicap,game.xml.xml.Order.Units.monk.mana * handicap];
          unitInfo[Unit.U_MAGIKILL] = [game.xml.xml.Order.Units.magikill.gold * handicap,game.xml.xml.Order.Units.magikill.mana * handicap];
-         unitInfo[Unit.U_ENSLAVED_GIANT] = [game.xml.xml.Order.Units.giant.gold * handicap,game.xml.xml.Order.Units.giant.mana * handicap];
-         if(Boolean(game.unitFactory))
+          unitInfo[Unit.U_ENSLAVED_GIANT] = [game.xml.xml.Order.Units.giant.gold * handicap,game.xml.xml.Order.Units.giant.mana * handicap];
+          this._originalUnitCosts = new Dictionary();
+          this._originalUnitCosts[Unit.U_SPEARTON] = [game.xml.xml.Order.Units.spearton.gold * handicap,game.xml.xml.Order.Units.spearton.mana * handicap];
+          this._originalUnitCosts[Unit.U_ARCHER] = [game.xml.xml.Order.Units.archer.gold * handicap,game.xml.xml.Order.Units.archer.mana * handicap];
+          this._originalUnitCosts[Unit.U_NINJA] = [game.xml.xml.Order.Units.ninja.gold * handicap,game.xml.xml.Order.Units.ninja.mana * handicap];
+          this._originalUnitCosts[Unit.U_MAGIKILL] = [game.xml.xml.Order.Units.magikill.gold * handicap,game.xml.xml.Order.Units.magikill.mana * handicap];
+          this._originalUnitCosts[Unit.U_MONK] = [game.xml.xml.Order.Units.monk.gold * handicap,game.xml.xml.Order.Units.monk.mana * handicap];
+          if(Boolean(game.unitFactory))
          {
             for(unit in unitInfo)
             {
@@ -154,29 +161,56 @@ package com.brockw.stickwar.engine.Team.Order
          buttonInfoMap[Unit.U_MAGIKILL] = [gameScreen.userInterface.hud.hud.magikillButton,gameScreen.userInterface.hud.hud.magikillOverlay,gameScreen.game.xml.xml.Order.Units.magikill,0,new cancelButton(),game.xml.xml.Order.Units.magikill.gold * handicap,new MovieClip(),gameScreen.userInterface.hud.hud.magikillHighlight,null];
          buttonInfoMap[Unit.U_ENSLAVED_GIANT] = [gameScreen.userInterface.hud.hud.giantButton,gameScreen.userInterface.hud.hud.giantOverlay,gameScreen.game.xml.xml.Order.Units.giant,0,new cancelButton(),game.xml.xml.Order.Units.giant.gold * handicap,new MovieClip(),gameScreen.userInterface.hud.hud.giantHighlight,null];
          buildingHighlights = [gameScreen.userInterface.hud.hud.bankHighlight,gameScreen.userInterface.hud.hud.barracksHighlight,gameScreen.userInterface.hud.hud.archerHighlight,gameScreen.userInterface.hud.hud.templeHighlight,gameScreen.userInterface.hud.hud.giantHighlight,gameScreen.userInterface.hud.hud.magikillHighlight,gameScreen.userInterface.hud.hud.barracksUnderlay,gameScreen.userInterface.hud.hud.archerUnderlay];
-         for(key in buttonInfoMap)
-         {
-            overlay = buttonInfoMap[key][1];
-            button = buttonInfoMap[key][0];
-            button.addChild(buttonInfoMap[key][6]);
-            cancelButtonMc = buttonInfoMap[key][4];
-            cancelButtonMc.x = button.x + button.width - cancelButtonMc.width;
-            cancelButtonMc.y = button.y;
-            gameScreen.userInterface.hud.hud.addChild(cancelButtonMc);
-            cancelButtonMc.visible = false;
-            output = new TextField();
-            output.name = "number";
-            myFormat = new TextFormat(null,20,16777215);
-            output.defaultTextFormat = myFormat;
-            output.width = 25;
-            output.height = 25;
-            output.x = 25;
-            output.y = 15;
-            output.selectable = false;
-            output.text = "0";
-            button.addChild(output);
-         }
-      }
-   }
+          for(key in buttonInfoMap)
+          {
+             overlay = buttonInfoMap[key][1];
+             button = buttonInfoMap[key][0];
+             button.addChild(buttonInfoMap[key][6]);
+             cancelButtonMc = buttonInfoMap[key][4];
+             cancelButtonMc.x = button.x + button.width - cancelButtonMc.width;
+             cancelButtonMc.y = button.y;
+             gameScreen.userInterface.hud.hud.addChild(cancelButtonMc);
+             cancelButtonMc.visible = false;
+             output = new TextField();
+             output.name = "number";
+             myFormat = new TextFormat(null,20,16777215);
+             output.defaultTextFormat = myFormat;
+             output.width = 25;
+             output.height = 25;
+             output.x = 25;
+             output.y = 15;
+             output.selectable = false;
+             output.text = "0";
+             button.addChild(output);
+          }
+       }
+       
+         override public function toggleBossMode() : Boolean
+        {
+            this.isBossMode = !this.isBossMode;
+           var bossTypes:Array = [Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_NINJA,Unit.U_MAGIKILL,Unit.U_MONK];
+           var i:int = 0;
+           var t:int = 0;
+            if(this.isBossMode)
+            {
+               for(i = 0; i < bossTypes.length; i++)
+               {
+                  t = bossTypes[i];
+                  this.unitInfo[t][0] = this._originalUnitCosts[t][0] * 2;
+                  this.unitInfo[t][1] = this._originalUnitCosts[t][1] * 2;
+               }
+            }
+            else
+            {
+               for(i = 0; i < bossTypes.length; i++)
+               {
+                  t = bossTypes[i];
+                  this.unitInfo[t][0] = this._originalUnitCosts[t][0];
+                  this.unitInfo[t][1] = this._originalUnitCosts[t][1];
+               }
+            }
+            return this.isBossMode;
+        }
+    }
 }
 

@@ -84,12 +84,19 @@ package com.brockw.stickwar.campaign
                this.showToast("DEBUG SET: CHAOS");
                return;
             }
-            if(this.screen.userInterface.keyBoardState.isPressed(48))
-            {
-               this.screen.killEnemyUnitsAndLockTraining();
-               return;
-            }
-            this.trySpawnBosses();
+             if(this.screen.userInterface.keyBoardState.isPressed(48))
+             {
+                this.screen.killEnemyUnitsAndLockTraining();
+                return;
+             }
+             if(this.screen.userInterface.keyBoardState.isPressed(187))
+             {
+                this.screen.team.gold += 5000;
+                this.screen.team.mana += 5000;
+                this.showToast("+5000 Gold, +5000 Mana");
+                return;
+             }
+             this.trySpawnBosses();
          }
       }
 

@@ -238,14 +238,13 @@
 </oponent>
 </level>
 
-<level title="Ambush: Rebels Last Stand" number="8" map="3" story="The remaining rebels have gathered to send everything they have at you." controller="CampaignAmbush" points="0">
-<hasInsaneWall>true</hasInsaneWall>
+<level title="Ambush: Rebels Last Stand" number="8" map="3" story="The remaining rebels have gathered to send everything they have at you." controller="CampaignAmbush" points="1">
 <normal>1.65</normal>
 <hard>1.35</hard>
 <insane>.85</insane>
 <normalHealthScale>.55</normalHealthScale>
 <normalDamageScale>.8</normalDamageScale>
-<tip>Tip: Defend until their ambush loses momentum.</tip>
+<tip>Tip: Magikill can easily take down grouped units using spells. Use shadowrath to target magikill.</tip>
 
 <player race="Order" statueHealth="1500">
 <unit>Swordwrath</unit>
@@ -262,8 +261,8 @@
 <startingUnit>Miner</startingUnit>
 <startingUnit>Spearton</startingUnit>
 <startingUnit>Spearton</startingUnit>
-<startingUnit>Shadowrath</startingUnit>
-<startingUnit>Monk</startingUnit>
+<startingUnit>Ninja</startingUnit>
+<startingUnit>Magikill</startingUnit>
 </player>
 
 <oponent race="Order" statueHealth="1400">
@@ -457,7 +456,7 @@
 </oponent>
 </level>
 
-<level title="Ambush: Dead Horde" number="13" map="2" story="The Deads do not march like soldiers. They pour across the battlefield in a poisoned horde." controller="CampaignAmbush" points="0">
+<level title="Ambush: Dead Horde" number="13" map="2" story="The Deads do not march like soldiers. They pour across the battlefield in a poisoned horde." controller="CampaignAmbush" points="1">
 <normal>1.6</normal>
 <hard>1.3</hard>
 <insane>.85</insane>
@@ -643,7 +642,7 @@
 </oponent>
 </level>
 
-<level title="Ambush: Giants and Eclipsors" number="17" map="6" story="Near Medusa's capital, the ground shakes beneath Giants while Eclipsors darken the sky. Medusa is trying to crush the army before it reaches the gates." controller="CampaignAmbush" points="0">
+<level title="Ambush: Giants and Eclipsors" number="17" map="6" story="Near Medusa's capital, the ground shakes beneath Giants while Eclipsors darken the sky. Medusa is trying to crush the army before it reaches the gates." controller="CampaignAmbush" points="1">
 <hasInsaneWall>true</hasInsaneWall>
 <normal>1.55</normal>
 <hard>1.25</hard>

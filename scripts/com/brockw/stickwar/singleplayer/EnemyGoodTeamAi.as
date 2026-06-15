@@ -351,10 +351,9 @@ package com.brockw.stickwar.singleplayer
       
       override protected function updateSpellCasters(game:StickWar) : void
       {
-         var manaBefore:Number = team.mana;
-         team.mana = 1000;
+         team.bypassMana = true;
          this.updateMagikill(game);
-         team.mana = manaBefore;
+         team.bypassMana = false;
          this.updateArchers(game);
          this.updateNinjas(game);
       }

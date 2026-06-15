@@ -16,10 +16,12 @@ package com.brockw.stickwar.engine
    import com.smartfoxserver.v2.requests.*;
    import flash.display.*;
    import flash.events.*;
-   import flash.geom.Point;
-   import flash.ui.Keyboard;
-   import flash.utils.Timer;
-   import flash.utils.getTimer;
+    import flash.geom.Point;
+    import flash.text.TextField;
+    import flash.text.TextFormat;
+    import flash.ui.Keyboard;
+    import flash.utils.Timer;
+    import flash.utils.getTimer;
    
    public class UserInterface extends Screen
    {
@@ -195,22 +197,48 @@ package com.brockw.stickwar.engine
          this.hud.hud.lowButton.addEventListener(MouseEvent.CLICK,this.lowButton);
          this.hud.hud.medButton.addEventListener(MouseEvent.CLICK,this.medButton);
          this.hud.hud.highButton.addEventListener(MouseEvent.CLICK,this.highButton);
-         if(Boolean(this.hud.hud.fastForward))
-         {
-            if(!(this.gameScreen is MultiplayerGameScreen))
-            {
-               this.hud.hud.fastForward.visible = true;
-               this.hud.hud.fastForward.addEventListener(MouseEvent.CLICK,this.clickFastForward,true);
-               MovieClip(this.hud.hud.fastForward).buttonMode = true;
-            }
-            else
-            {
-               this.hud.hud.fastForward.visible = false;
-            }
-         }
-      }
-      
-      private function exitButton(evt:Event) : void
+          if(Boolean(this.hud.hud.fastForward))
+          {
+             if(!(this.gameScreen is MultiplayerGameScreen))
+             {
+                this.hud.hud.fastForward.visible = true;
+                this.hud.hud.fastForward.addEventListener(MouseEvent.CLICK,this.clickFastForward,true);
+                MovieClip(this.hud.hud.fastForward).buttonMode = true;
+             }
+             else
+             {
+                this.hud.hud.fastForward.visible = false;
+             }
+          }
+          if(team.type == Team.T_GOOD)
+          {
+             var bossToggle:MovieClip = new MovieClip();
+             bossToggle.name = "bossToggle";
+             bossToggle.buttonMode = true;
+             bossToggle.useHandCursor = true;
+             var toggleGfx:Graphics = bossToggle.graphics;
+             toggleGfx.beginFill(5921370);
+             toggleGfx.drawRoundRect(0,0,18,18,4);
+             toggleGfx.endFill();
+             bossToggle.x = this.hud.hud.map.x - 22;
+             bossToggle.y = this.hud.hud.map.y;
+             var toggleLabel:TextField = new TextField();
+             toggleLabel.text = "N";
+             toggleLabel.width = 18;
+             toggleLabel.height = 18;
+             toggleLabel.selectable = false;
+             var toggleFormat:TextFormat = new TextFormat(null,12,16777215,true);
+             toggleFormat.align = "center";
+             toggleLabel.defaultTextFormat = toggleFormat;
+             toggleLabel.x = 0;
+             toggleLabel.y = 0;
+             bossToggle.addChild(toggleLabel);
+             bossToggle.addEventListener(MouseEvent.CLICK,this.bossToggleClick);
+             this.hud.hud.addChild(bossToggle);
+          }
+       }
+       
+       private function exitButton(evt:Event) : void
       {
          trace("hit the quit");
          trace("QUIT GAME");
@@ -272,6 +300,10 @@ package com.brockw.stickwar.engine
          }
          this.hud.hud.defendButton.removeEventListener(MouseEvent.CLICK,this.defendButton);
          this.hud.hud.menuButton.removeEventListener(MouseEvent.CLICK,this.openMenu);
+         if(Boolean(this.hud.hud.getChildByName("bossToggle")))
+         {
+            this.hud.hud.getChildByName("bossToggle").removeEventListener(MouseEvent.CLICK,this.bossToggleClick);
+         }
          this.hud.hud.lowButton.removeEventListener(MouseEvent.CLICK,this.lowButton);
          this.hud.hud.medButton.removeEventListener(MouseEvent.CLICK,this.medButton);
          this.hud.hud.highButton.removeEventListener(MouseEvent.CLICK,this.highButton);
@@ -455,13 +487,35 @@ package com.brockw.stickwar.engine
          }
       }
       
-      private function clickFastForward(evt:Event) : void
-      {
-         this.gameScreen.isFastForward = !this.gameScreen.isFastForward;
-         this.mouseState.mouseDown = false;
-      }
-      
-      public function update(evt:Event, timeDiff:Number) : void
+       private function clickFastForward(evt:Event) : void
+       {
+          this.gameScreen.isFastForward = !this.gameScreen.isFastForward;
+          this.mouseState.mouseDown = false;
+       }
+       
+       private function bossToggleClick(evt:Event) : void
+       {
+          var newState:Boolean = this.team.toggleBossMode();
+          var btn:MovieClip = MovieClip(MovieClip(evt.currentTarget));
+          var bg:Graphics = btn.graphics;
+          bg.clear();
+          if(newState)
+          {
+             bg.beginFill(13951488);
+             bg.drawRoundRect(0,0,18,18,4);
+             bg.endFill();
+             TextField(btn.getChildAt(0)).text = "B";
+          }
+          else
+          {
+             bg.beginFill(5921370);
+             bg.drawRoundRect(0,0,18,18,4);
+             bg.endFill();
+             TextField(btn.getChildAt(0)).text = "N";
+          }
+       }
+       
+       public function update(evt:Event, timeDiff:Number) : void
       {
          var u:Unit = null;
          var loser:Team = null;

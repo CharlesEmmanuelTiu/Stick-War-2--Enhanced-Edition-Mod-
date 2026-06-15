@@ -80,6 +80,8 @@ package com.brockw.stickwar.engine.units
 
       private var _autoCastMode:int;
       
+      public var allowAiAutoCast:Boolean;
+      
       private var _isOnInitialSpawnMove:Boolean;
       
       private var _isBoss:Boolean;

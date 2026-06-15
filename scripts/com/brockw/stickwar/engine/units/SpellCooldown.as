@@ -26,9 +26,9 @@ package com.brockw.stickwar.engine.units
       
       public function spellActivate(team:Team) : Boolean
       {
-         if(this.counter >= this.cooldownTime && this.mana <= team.mana)
+         if(this.counter >= this.cooldownTime && (team.bypassMana || this.mana <= team.mana))
          {
-            team.mana -= this.mana;
+            if(!team.bypassMana) team.mana -= this.mana;
             this.counter = 0;
             this.activeEffectOverride = -1;
             return true;
@@ -38,9 +38,9 @@ package com.brockw.stickwar.engine.units
 
       public function spellActivateWithEffect(team:Team, effectFrames:int) : Boolean
       {
-         if(this.counter >= this.cooldownTime && this.mana <= team.mana)
+         if(this.counter >= this.cooldownTime && (team.bypassMana || this.mana <= team.mana))
          {
-            team.mana -= this.mana;
+            if(!team.bypassMana) team.mana -= this.mana;
             this.counter = 0;
             this.activeEffectOverride = effectFrames;
             return true;

@@ -23,15 +23,12 @@ package com.brockw.stickwar.campaign.controllers
       
       private var lastConvertedEnemyArmyVersion:int;
       
-      private var pendingAttackRefreshes:Array;
-      
       public function CampaignBomber(gameScreen:GameScreen)
       {
          super(gameScreen);
          this.numToSpawn = MIN_NUM_BOMBERS;
          this.hasAppliedGiantGrowth = false;
          this.lastConvertedEnemyArmyVersion = -1;
-         this.pendingAttackRefreshes = [];
       }
       
       override public function update(gameScreen:GameScreen) : void
@@ -48,7 +45,7 @@ package com.brockw.stickwar.campaign.controllers
          this.updatePendingAttackRefreshes(gameScreen);
          if(this.lastConvertedEnemyArmyVersion != gameScreen.team.enemyTeam.armyChangeVersion)
          {
-            this.convertSpecialAttackersToIndependentAttackers(gameScreen);
+            this.convertNewAttackers(gameScreen);
             this.lastConvertedEnemyArmyVersion = gameScreen.team.enemyTeam.armyChangeVersion;
          }
          if(gameScreen.game.frame % (30 * FREQUENCY_SPAWN) == 0)
@@ -76,7 +73,7 @@ package com.brockw.stickwar.campaign.controllers
          }
       }
 
-      private function convertSpecialAttackersToIndependentAttackers(gameScreen:GameScreen) : void
+      private function convertNewAttackers(gameScreen:GameScreen) : void
       {
          var unit:Unit = null;
          var convertedUnits:Array = [];
@@ -96,7 +93,10 @@ package com.brockw.stickwar.campaign.controllers
                convertedUnits.push(unit);
             }
          }
-         this.scheduleAttackRefresh(gameScreen,convertedUnits);
+         if(convertedUnits.length > 0)
+         {
+            this.scheduleAttackRefresh(gameScreen,convertedUnits);
+         }
       }
 
       private function makeIndependentAttacker(gameScreen:GameScreen, unit:Unit) : void
@@ -119,6 +119,8 @@ package com.brockw.stickwar.campaign.controllers
          }
          this.pendingAttackRefreshes.push([gameScreen.game.frame + 60,units]);
       }
+
+      private var pendingAttackRefreshes:Array = [];
 
       private function updatePendingAttackRefreshes(gameScreen:GameScreen) : void
       {
@@ -163,4 +165,3 @@ package com.brockw.stickwar.campaign.controllers
       }
    }
 }
-

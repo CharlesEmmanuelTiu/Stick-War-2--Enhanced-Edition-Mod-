@@ -995,14 +995,10 @@ package com.brockw.stickwar.engine.units
                }
             }
          }
-         else
-         {
-            this.reaperControlFallbackFrames = 0;
-            if(this.isBossMovementLocked && !this.isBossUnit)
-            {
-               this.isBossMovementLocked = false;
-            }
-         }
+          else
+          {
+             this.reaperControlFallbackFrames = 0;
+          }
          if(this._healTimeRemaining > 0)
          {
             this.health += this._healAmount;
@@ -2339,9 +2335,13 @@ package com.brockw.stickwar.engine.units
             this.garrison();
             return true;
          }
-         this.ai.baseUpdate(game);
-         return true;
-      }
-   }
+          this.ai.baseUpdate(game);
+          return true;
+       }
+       
+       public function makeBoss() : void
+       {
+       }
+    }
 }
 
