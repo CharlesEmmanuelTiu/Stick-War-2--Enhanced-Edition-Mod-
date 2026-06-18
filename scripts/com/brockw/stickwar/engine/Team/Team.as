@@ -684,7 +684,7 @@ package com.brockw.stickwar.engine.Team
          }
          if(this.hasActiveCommanderTrainingAura(unit.type))
          {
-            return unit.createTime * 0.7 * this.createTimeMultiplier;
+             return unit.createTime * 0.8 * this.createTimeMultiplier;
          }
          return unit.createTime * this.createTimeMultiplier;
       }
@@ -901,17 +901,22 @@ package com.brockw.stickwar.engine.Team
                         this.game.soundManager.playSoundFullVolume("UnitMakeFail");
                      }
                      else if(this.mana < this.unitInfo[int(key)][1])
-                     {
-                        this.game.gameScreen.userInterface.helpMessage.showMessage("Not enough mana to construct unit");
-                        this.game.soundManager.playSoundFullVolume("UnitMakeFail");
-                     }
-                     else
-                     {
-                        c = new UnitCreateMove();
-                        c.unitType = int(key);
-                        gameScreen.doMove(c,this.id);
-                        this.game.soundManager.playSoundFullVolume("UnitMake");
-                     }
+                      {
+                         this.game.gameScreen.userInterface.helpMessage.showMessage("Not enough mana to construct unit");
+                         this.game.soundManager.playSoundFullVolume("UnitMakeFail");
+                      }
+                      else if(this._isBossMode && this.isBossUnitType(int(key)) && this.hasAliveBossOfType(int(key)))
+                      {
+                         this.game.gameScreen.userInterface.helpMessage.showMessage(String(tip.child("name")) + " Boss already exists");
+                         this.game.soundManager.playSoundFullVolume("UnitMakeFail");
+                      }
+                      else
+                      {
+                         c = new UnitCreateMove();
+                         c.unitType = int(key);
+                         gameScreen.doMove(c,this.id);
+                         this.game.soundManager.playSoundFullVolume("UnitMake");
+                      }
                   }
                    highlight.visible = true;
                    overlay.visible = false;
@@ -982,6 +987,43 @@ package com.brockw.stickwar.engine.Team
          return type == Unit.U_SPEARTON || type == Unit.U_ARCHER || type == Unit.U_NINJA || type == Unit.U_MAGIKILL || type == Unit.U_MONK;
       }
       
+       public function hasAliveBossOfType(type:int) : Boolean
+       {
+          var unit:Unit = null;
+          var group:Array = this.unitGroups[type];
+          if(group == null)
+          {
+             return false;
+          }
+          for each(unit in group)
+          {
+             if(unit != null && unit.isAlive() && unit.isBoss)
+             {
+                return true;
+             }
+          }
+          return false;
+       }
+
+       public function hasQueuedBossOfType(type:int) : Boolean
+       {
+          var building:* = undefined;
+          var queue:Array = null;
+          var entry:Array = null;
+          for(building in this._unitProductionQueue)
+          {
+             queue = this._unitProductionQueue[building];
+             for each(entry in queue)
+             {
+                if(entry != null && entry.length >= 1 && entry[0] != null && entry[0].type == type && entry[0].queuedAsBoss)
+                {
+                   return true;
+                }
+             }
+          }
+          return false;
+       }
+      
       public function get game() : StickWar
       {
          return this._game;
@@ -1002,11 +1044,15 @@ package com.brockw.stickwar.engine.Team
              {
                 return;
              }
-             if(!(type in this.unitInfo))
-             {
-                return;
-             }
-             popMultiplier = (this._isBossMode && this.isBossUnitType(type)) ? 2 : 1;
+              if(!(type in this.unitInfo))
+              {
+                 return;
+              }
+               if(this._isBossMode && this.isBossUnitType(type) && (this.hasAliveBossOfType(type) || this.hasQueuedBossOfType(type)))
+               {
+                  return;
+               }
+              popMultiplier = (this._isBossMode && this.isBossUnitType(type)) ? 2 : 1;
              unit = null;
              if(this.gold >= this.unitInfo[type][0] && this.mana >= this.unitInfo[type][1])
              {
@@ -1033,20 +1079,26 @@ package com.brockw.stickwar.engine.Team
                    game.gameScreen.userInterface.helpMessage.showMessage("Not enough mana to construct unit");
                 }
              }
-             if(unit != null)
-             {
-                this.queueUnit(unit);
-                this._population += unit.population * popMultiplier;
-             }
-          }
-          else if(this.dequeueUnit(-int(type),true) != null)
-          {
-             popMultiplier = (this._isBossMode && this.isBossUnitType(-int(type))) ? 2 : 1;
-             this.gold += int(this.unitInfo[-type][0]);
-             this.mana += int(this.unitInfo[-type][1]);
-             unit = Unit(game.unitFactory.getUnit(-int(type)));
-             this._population -= unit.population * popMultiplier;
-          }
+              if(unit != null)
+              {
+                 unit.queuedAsBoss = this._isBossMode && this.isBossUnitType(type);
+                 unit.goldPaid = this.unitInfo[type][0];
+                 unit.manaPaid = this.unitInfo[type][1];
+                 this.queueUnit(unit);
+                 this._population += unit.population * popMultiplier;
+              }
+           }
+           else
+           {
+              var dequeuedUnit:Unit = this.dequeueUnit(-int(type),true);
+              if(dequeuedUnit != null)
+              {
+                 popMultiplier = dequeuedUnit.queuedAsBoss ? 2 : 1;
+                 this.gold += dequeuedUnit.goldPaid;
+                 this.mana += dequeuedUnit.manaPaid;
+                 this._population -= dequeuedUnit.population * popMultiplier;
+              }
+           }
        }
       
       public function spawn(unit:Unit, game:StickWar) : void
@@ -1123,10 +1175,10 @@ package com.brockw.stickwar.engine.Team
          m.goalY = game.map.height / 2 + game.random.nextNumber() * 60 - 30;
          unit.ai.setCommand(game,m);
          unit.cure();
-         if(this._isBossMode && this.isBossUnitType(unit.type))
-         {
-            unit.makeBoss();
-         }
+          if(unit.queuedAsBoss)
+          {
+             unit.makeBoss();
+          }
          this.unitGroups[unit.type].push(unit);
          if(game.main.isKongregate)
          {
@@ -1175,7 +1227,11 @@ package com.brockw.stickwar.engine.Team
          {
             this._population -= unit.population;
          }
-         this.unitGroups[unit.type].splice(this.unitGroups[unit.type].indexOf(unit),1);
+         var unitGroupIndex:int = int(this.unitGroups[unit.type].indexOf(unit));
+         if(unitGroupIndex != -1)
+         {
+            this.unitGroups[unit.type].splice(unitGroupIndex,1);
+         }
          if(unit.id in this.garrisonedUnits)
          {
             delete this.garrisonedUnits[unit.id];
@@ -1190,7 +1246,11 @@ package com.brockw.stickwar.engine.Team
       
       public function removeUnitCompletely(unit:Unit, game:StickWar) : void
       {
-         this._units.splice(this._units.indexOf(unit),1);
+         var unitIndex:int = this._units.indexOf(unit);
+         if(unitIndex != -1)
+         {
+            this._units.splice(unitIndex,1);
+         }
          delete game.units[unit.id];
          if(game.battlefield.contains(unit))
          {
@@ -1232,6 +1292,12 @@ package com.brockw.stickwar.engine.Team
          var c:UnitCreateMove = null;
          if(userInterface.keyBoardState.isPressed(key))
          {
+            if(this._isBossMode && !this.isBossUnitType(unitType))
+            {
+               this.game.gameScreen.userInterface.helpMessage.showMessage("Cannot train non-boss units while in boss mode");
+               this.game.soundManager.playSoundFullVolume("UnitMakeFail");
+               return;
+            }
             c = new UnitCreateMove();
             if(userInterface.gameScreen is SingleplayerGameScreen && userInterface.gameScreen.isDebug && userInterface.keyBoardState.isShift)
             {

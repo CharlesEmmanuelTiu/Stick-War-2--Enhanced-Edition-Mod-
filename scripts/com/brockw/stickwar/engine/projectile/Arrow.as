@@ -86,7 +86,7 @@ package com.brockw.stickwar.engine.projectile
             if(this.explosionOnHit && !this.explosionTriggered && wasInFlight)
             {
                this.explosionTriggered = true;
-               game.projectileManager.initNuke(this.px,this.py,this.inflictor,this.explosionDamage);
+               game.projectileManager.initNuke(this.px,this.py,this.inflictor,this.explosionDamage,false);
                game.soundManager.playSoundRandom("mediumExplosion",3,this.px,this.py);
             }
             this.mc.gotoAndStop(3);

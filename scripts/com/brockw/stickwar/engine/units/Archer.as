@@ -33,8 +33,6 @@ package com.brockw.stickwar.engine.units
 
       private static const BOSS_ABILITY_CHECK_INTERVAL:int = 6;
 
-      private static const BOSS_PENDING_SHOT_DELAY_FRAMES:int = 22;
-
       private static const BOSS_ARROW_STORM_RANGE_BONUS:Number = 650;
 
       private static const BOSS_ARROW_STORM_MIN_RANGE_BONUS:Number = 580;
@@ -73,19 +71,31 @@ package com.brockw.stickwar.engine.units
 
       private var _isBoss:Boolean;
 
-      private var bossCommandCooldownFrames:int;
+      private var _lastAnimLabel:String;
 
-      private var bossTripleShotCooldownFrames:int;
+      private var pendingManualAbility:int;
 
-      private var bossExecuteCooldownFrames:int;
+      public var bossAutoAbilityEnabled:Boolean;
 
-      private var bossArrowStormCooldownFrames:int;
+      public var bossCommandCooldownFrames:int;
 
-      private var bossExplosionArrowCooldownFrames:int;
+      public var bossTripleShotCooldownFrames:int;
+
+      public var bossExecuteCooldownFrames:int;
+
+      public var bossArrowStormCooldownFrames:int;
+
+      public var bossExplosionArrowCooldownFrames:int;
 
       private var bossArrowStormQueue:Array;
 
-      private var bossPendingShot:Object;
+      private var bossAbilityPendingType:int;
+
+      private var bossAbilityPendingTarget:Unit;
+
+      private var bossAbilityPendingTargetPoint:Point;
+
+      private var bossAbilityPendingArchers:Array;
 
       private var bossExplosionSetupTarget:Unit;
 
@@ -124,14 +134,26 @@ package com.brockw.stickwar.engine.units
       }
       
       override public function setActionInterface(a:ActionInterface) : void
-      {
-         super.setActionInterface(a);
-         a.setAction(0,1,UnitCommand.HEAL);
-         if(team.tech.isResearched(Tech.ARCHIDON_FIRE))
-         {
-            a.setAction(0,0,UnitCommand.ARCHER_FIRE);
-         }
-      }
+       {
+          super.setActionInterface(a);
+          a.setAction(0,1,UnitCommand.HEAL);
+          if(team.tech.isResearched(Tech.ARCHIDON_FIRE))
+          {
+             a.setAction(0,0,UnitCommand.ARCHER_FIRE);
+          }
+           if(this.isBoss)
+           {
+              a.setAction(2,0,UnitCommand.ARCHER_BOSS_AUTO_TOGGLE);
+              if(team.tech.isResearched(Tech.ARCHER_BOSS_ARROW_STORM))
+              {
+                 a.setAction(1,1,UnitCommand.ARCHER_BOSS_ARROW_STORM);
+              }
+              if(team.tech.isResearched(Tech.ARCHER_BOSS_EXPLOSION_ARROW))
+              {
+                 a.setAction(1,0,UnitCommand.ARCHER_BOSS_EXPLOSION);
+              }
+           }
+       }
       
       public function getFireCoolDown() : Number
       {
@@ -171,18 +193,20 @@ package com.brockw.stickwar.engine.units
          MovieClip(_mc.mc.gotoAndPlay(1));
          MovieClip(_mc.gotoAndStop(1));
          drawShadow();
-         this.isFire = false;
-         this.bowFrame = 1;
-         this._isBoss = false;
-         this.bossCommandCooldownFrames = 0;
+          this.isFire = false;
+          this.bowFrame = 1;
+           this._isBoss = false;
+          this.bossAutoAbilityEnabled = true;
+          this.bossCommandCooldownFrames = 0;
          this.bossTripleShotCooldownFrames = 0;
          this.bossExecuteCooldownFrames = 0;
          this.bossArrowStormCooldownFrames = 0;
          this.bossExplosionArrowCooldownFrames = 0;
-         this.bossArrowStormQueue = [];
-         this.bossPendingShot = null;
-         this.bossExplosionSetupTarget = null;
-         this.bossExplosionSetupUntilFrame = 0;
+          this.bossArrowStormQueue = [];
+           this.bossAbilityPendingType = 0;
+           this.bossExplosionSetupTarget = null;
+          this.bossExplosionSetupUntilFrame = 0;
+          this.pendingManualAbility = 0;
       }
       
       override protected function loadDamage(unitXml:XMLList) : void
@@ -243,10 +267,10 @@ package com.brockw.stickwar.engine.units
          {
             --this.bossExplosionArrowCooldownFrames;
          }
-         this.updateBossPendingShot(game);
-         this.updateBossExplosionSetup(game);
-         this.updateBossArrowStormQueue(game);
-         this.archerFireSpellCooldown.update();
+           this.updateBossExplosionSetup(game);
+          this.updateBossArrowStormQueue(game);
+          this.checkPendingManualAbility(game);
+          this.archerFireSpellCooldown.update();
          updateCommon(game);
          if(!isDieing)
          {
@@ -332,18 +356,22 @@ package com.brockw.stickwar.engine.units
                }
             }
          }
-         if(this.isCastleArcher)
-         {
-            Archer.setItem(mc,"Default","Basic Helmet","Default");
-         }
-         else if(this.isBoss)
-         {
-            Archer.setItem(mc,"Default",BOSS_ARMOR_SKIN,BOSS_MISC_SKIN);
-         }
-         else if(!hasDefaultLoadout)
-         {
-            Archer.setItem(mc,team.loadout.getItem(this.type,MarketItem.T_WEAPON),team.loadout.getItem(this.type,MarketItem.T_ARMOR),team.loadout.getItem(this.type,MarketItem.T_MISC));
-         }
+            if(this._lastAnimLabel != _mc.currentLabel)
+            {
+               this._lastAnimLabel = _mc.currentLabel;
+               if(this.isCastleArcher)
+               {
+                  Archer.setItem(mc,"Default","Basic Helmet","Default");
+               }
+               else if(this.isBoss)
+               {
+                  Archer.setItem(mc,"Default",BOSS_ARMOR_SKIN,BOSS_MISC_SKIN);
+               }
+               else if(!hasDefaultLoadout)
+               {
+                  Archer.setItem(mc,team.loadout.getItem(this.type,MarketItem.T_WEAPON),team.loadout.getItem(this.type,MarketItem.T_ARMOR),team.loadout.getItem(this.type,MarketItem.T_MISC));
+               }
+            }
          if(_mc.mc.bow != null)
          {
             _mc.mc.bow.rotation = bowAngle;
@@ -367,38 +395,90 @@ package com.brockw.stickwar.engine.units
          if(_state != S_ATTACK)
          {
             bow = _mc.mc.bow;
-            if(this.bowFrame != 1)
+             if(this.bowFrame != 1)
+             {
+                return;
+             }
+             if(this.isBoss && this.bossAbilityPendingType != 0)
+             {
+                this.executeBossAbilityOnShoot(game,target);
+                return;
+             }
+             this.bowFrame += 1;
+             bow.nextFrame();
+             p = bow.localToGlobal(new Point(0,0));
+             p = game.battlefield.globalToLocal(p);
+             v = projectileVelocity;
+             damage = this.arrowDamage;
+             poison = 0;
+             fireDamage = 0;
+             if(this.isFire)
+             {
+                fireDamage = Number(game.xml.xml.Order.Units.archer.fire.damage);
+             }
+             game.soundManager.playSoundRandom("launchArrow",5,px,py);
+             if(mc.scaleX < 0)
+             {
+                game.projectileManager.initArrow(p.x,p.y,180 - bowAngle,v,target.y,angleToTargetW(target,v,angleToTarget(target)),this,damage,poison,this.isFire,this.area,this.areaDamage);
+             }
+             else
+             {
+                game.projectileManager.initArrow(p.x,p.y,bowAngle,v,target.y,angleToTargetW(target,v,angleToTarget(target)),this,damage,poison,this.isFire,this.area,this.areaDamage);
+             }
+             this.isFire = false;
+             _maximumRange = this.normalRange;
+             takeBottomTrajectory = true;
+          }
+       }
+
+      private function executeBossAbilityOnShoot(game:StickWar, target:Unit) : void
+      {
+         var abilityType:int = this.bossAbilityPendingType;
+         var abilityTarget:Unit = this.bossAbilityPendingTarget;
+         var abilityTargetPoint:Point = this.bossAbilityPendingTargetPoint;
+         var abilityArchers:Array = this.bossAbilityPendingArchers;
+
+         this.bossAbilityPendingType = 0;
+         this.bossAbilityPendingTarget = null;
+         this.bossAbilityPendingTargetPoint = null;
+         this.bossAbilityPendingArchers = null;
+
+         this.bowFrame += 1;
+         _mc.mc.bow.nextFrame();
+
+         if(abilityType == UnitCommand.ARCHER_BOSS_POISON_EXECUTE)
+         {
+            if(abilityTarget != null && abilityTarget.isAlive() && this.fireBossArrowAtTarget(game,abilityTarget,this.arrowDamage,12,0,1))
             {
-               return;
+               this.notifyBossAbility(game,"ARCHER BOSS: Poison Arrow");
             }
-            this.bowFrame += 1;
-            bow.nextFrame();
-            p = bow.localToGlobal(new Point(0,0));
-            p = game.battlefield.globalToLocal(p);
-            v = projectileVelocity;
-            damage = this.arrowDamage;
-            poison = 0;
-            fireDamage = 0;
-            if(this.isFire)
+         }
+         else if(abilityType == UnitCommand.ARCHER_BOSS_TRIPLE_SHOT)
+         {
+            if(abilityTarget != null && abilityTarget.isAlive() && this.fireBossTripleShot(game,abilityTarget))
             {
-               fireDamage = Number(game.xml.xml.Order.Units.archer.fire.damage);
+               this.notifyBossAbility(game,"ARCHER BOSS: Triple Shot");
             }
-            game.soundManager.playSoundRandom("launchArrow",5,px,py);
-            if(mc.scaleX < 0)
+         }
+         else if(abilityType == UnitCommand.ARCHER_BOSS_ARROW_STORM)
+         {
+            if(abilityTargetPoint != null && abilityArchers != null)
             {
-               game.projectileManager.initArrow(p.x,p.y,180 - bowAngle,v,target.y,angleToTargetW(target,v,angleToTarget(target)),this,damage,poison,this.isFire,this.area,this.areaDamage);
+               game.soundManager.playSoundRandom("launchArrow",5,px,py);
+               this.startBossArrowStormQueue(game,abilityTargetPoint,abilityArchers);
+               this.notifyBossAbility(game,"ARCHER BOSS: Arrow Storm");
             }
-            else
+         }
+         else if(abilityType == UnitCommand.ARCHER_BOSS_EXPLOSION)
+         {
+            if(abilityTarget != null && abilityTarget.isAlive() && this.fireBossExplosionArrow(game,abilityTarget))
             {
-               game.projectileManager.initArrow(p.x,p.y,bowAngle,v,target.y,angleToTargetW(target,v,angleToTarget(target)),this,damage,poison,this.isFire,this.area,this.areaDamage);
+               this.notifyBossAbility(game,"ARCHER BOSS: Explosion Arrow");
             }
-            this.isFire = false;
-            _maximumRange = this.normalRange;
-            takeBottomTrajectory = true;
          }
       }
-      
-      override public function aim(target:Unit) : void
+       
+       override public function aim(target:Unit) : void
       {
          var a:Number = angleToTarget(target);
          if(Math.abs(normalise(angleToBowSpace(a) - bowAngle)) < 10)
@@ -426,11 +506,7 @@ package com.brockw.stickwar.engine.units
          {
             return false;
          }
-         if(this.isBoss && this.bossPendingShot != null)
-         {
-            return false;
-         }
-         if(this.isDualing == true)
+          if(this.isDualing == true)
          {
             return false;
          }
@@ -475,22 +551,42 @@ package com.brockw.stickwar.engine.units
          this._isAutoKiteToggled = value;
       }
 
-      public function makeBoss() : void
-      {
-         this._isBoss = true;
-         this.isBossUnit = true;
-         this.enableCampaignBossEscape();
-         this.hasDefaultLoadout = true;
-         this.bossAbilitySpawnLockFrames = 30 * 2;
-         this.isAutoKiteToggled = true;
-         this.damageToDeal *= 1.2;
-         this._maxVelocity *= 1.08;
-         this.normalRange += 70;
-         this.fireArrowRange += 70;
-         this._maximumRange = this.normalRange;
-      }
+       override public function makeBoss(enableDeathBurst:Boolean = false) : void
+       {
+          this._isBoss = true;
+          this.isBossUnit = true;
+          this.enableCampaignBossEscape();
+          this.hasDefaultLoadout = true;
+          this.bossAbilitySpawnLockFrames = 30 * 2;
+          this.isAutoKiteToggled = true;
+          this.damageToDeal *= 1.2;
+          this._maxVelocity *= 1.08;
+          this.normalRange += 70;
+          this.fireArrowRange += 70;
+          this._maximumRange = this.normalRange;
+              if(Boolean(this._mc))
+             {
+                Archer.setItem(this._mc,"Default",BOSS_ARMOR_SKIN,BOSS_MISC_SKIN);
+             }
+        }
 
-      override public function damage(type:int, amount:int, inflictor:Entity, modifier:Number = 1) : void
+       public function getBossAbilityCooldownFraction(type:int) : Number
+       {
+           switch(type)
+           {
+               case UnitCommand.ARCHER_BOSS_TRIPLE_SHOT:
+                   return this.bossTripleShotCooldownFrames / BOSS_TRIPLE_SHOT_COOLDOWN_FRAMES;
+               case UnitCommand.ARCHER_BOSS_POISON_EXECUTE:
+                   return this.bossExecuteCooldownFrames / BOSS_EXECUTE_COOLDOWN_FRAMES;
+               case UnitCommand.ARCHER_BOSS_ARROW_STORM:
+                   return this.bossArrowStormCooldownFrames / BOSS_ARROW_STORM_COOLDOWN_FRAMES;
+               case UnitCommand.ARCHER_BOSS_EXPLOSION:
+                   return this.bossExplosionArrowCooldownFrames / BOSS_EXPLOSION_ARROW_COOLDOWN_FRAMES;
+           }
+           return 0;
+       }
+
+       override public function damage(type:int, amount:int, inflictor:Entity, modifier:Number = 1) : void
       {
          if(this.isBoss)
          {
@@ -504,9 +600,19 @@ package com.brockw.stickwar.engine.units
          return this._isBoss;
       }
 
-      public function tryBossAbilities(game:StickWar) : Boolean
+       public function get isAutoAbilityEnabled() : Boolean
+       {
+          return this.bossAutoAbilityEnabled;
+       }
+
+       public function hasBossSpecialArrowLoaded() : Boolean
+       {
+          return this.isFire || this.pendingManualAbility != 0;
+       }
+
+       public function tryBossAbilities(game:StickWar) : Boolean
       {
-         if(!this.isBoss || this.hasBossAbilitySpawnLock() || this.bossPendingShot != null || this.bossExplosionSetupTarget != null || this.bossArrowStormQueue.length > 0 || game.frame % BOSS_ABILITY_CHECK_INTERVAL != 0)
+                   if(!this.isBoss || !this.bossAutoAbilityEnabled || this.hasBossAbilitySpawnLock() || this.bossAbilityPendingType != 0 || this.bossExplosionSetupTarget != null || this.bossArrowStormQueue.length > 0 || game.frame % BOSS_ABILITY_CHECK_INTERVAL != 0)
          {
             return false;
          }
@@ -514,7 +620,7 @@ package com.brockw.stickwar.engine.units
          {
             return false;
          }
-         if(this.tryBossExplosionArrow(game))
+         if(this.tryBossTripleShot(game))
          {
             return true;
          }
@@ -522,7 +628,7 @@ package com.brockw.stickwar.engine.units
          {
             return true;
          }
-         if(this.tryBossTripleShot(game))
+         if(this.tryBossExplosionArrow(game))
          {
             return true;
          }
@@ -530,10 +636,52 @@ package com.brockw.stickwar.engine.units
          {
             return true;
          }
-         return this.tryBossCommandFireArrows(game);
+          return false;
+       }
+
+      private function checkPendingManualAbility(game:StickWar) : void
+      {
+          var target:Unit = null;
+          var archers:Array = null;
+          var targetPoint:Point = null;
+          if(this.pendingManualAbility == 0)
+          {
+              return;
+          }
+          if(this.pendingManualAbility == UnitCommand.ARCHER_BOSS_ARROW_STORM)
+          {
+              archers = this.getNearbyBossStormArchers();
+              targetPoint = this.getBossStormTargetPointManual(game);
+                if(targetPoint != null && this.hasValidBossStormShooter(archers,targetPoint.x,targetPoint.y))
+                {
+                    this.bossAbilityPendingType = UnitCommand.ARCHER_BOSS_ARROW_STORM;
+                   this.bossAbilityPendingTargetPoint = targetPoint;
+                   this.bossAbilityPendingArchers = archers;
+                   this.startBossDrawAnimation(null,targetPoint);
+                   this.pendingManualAbility = 0;
+               }
+          }
+          else if(this.pendingManualAbility == UnitCommand.ARCHER_BOSS_EXPLOSION)
+          {
+              target = this.findBossExplosionArrowTarget();
+              if(target != null)
+              {
+                   if(Math.abs(target.px - this.px) < BOSS_EXPLOSION_ARROW_MIN_DISTANCE)
+                   {
+                       this.startBossExplosionSetup(game,target);
+                   }
+                    else
+                    {
+                        this.bossAbilityPendingType = UnitCommand.ARCHER_BOSS_EXPLOSION;
+                       this.bossAbilityPendingTarget = target;
+                       this.startBossDrawAnimation(target);
+                   }
+                   this.pendingManualAbility = 0;
+              }
+          }
       }
 
-      public function tryBossCommandFireArrows(game:StickWar) : Boolean
+       public function tryBossCommandFireArrows(game:StickWar) : Boolean
       {
          var ally:Unit = null;
          var target:Unit = null;
@@ -565,23 +713,30 @@ package com.brockw.stickwar.engine.units
       private function tryBossExecuteShot(game:StickWar) : Boolean
       {
          var target:Unit = null;
-         if(this.bossExecuteCooldownFrames > 0 || this.team.enemyTeam.currentAttackState != Team.G_DEFEND)
+         if(this.bossExecuteCooldownFrames > 0)
          {
             return false;
          }
          target = this.findBossExecuteTarget();
          if(target == null)
          {
-            return false;
+            target = this.ai.getClosestTarget();
+            if(target == null || target.team == this.team || Math.abs(target.px - this.px) > this.normalRange + 260)
+            {
+               return false;
+            }
          }
-         this.startBossPendingShot(game,"poison",target);
+         this.bossAbilityPendingType = UnitCommand.ARCHER_BOSS_POISON_EXECUTE;
+         this.bossAbilityPendingTarget = target;
+         this.startBossDrawAnimation(target);
+         this.bossExecuteCooldownFrames = BOSS_EXECUTE_COOLDOWN_FRAMES;
          return true;
       }
 
       private function tryBossExplosionArrow(game:StickWar) : Boolean
       {
          var target:Unit = null;
-         if(this.bossExplosionArrowCooldownFrames > 0 || this.isRebelsUnitedLevel(game))
+         if(this.bossExplosionArrowCooldownFrames > 0 || this.isRebelsUnitedLevel(game) || !team.tech.isResearched(Tech.ARCHER_BOSS_EXPLOSION_ARROW) || team.mana < 25)
          {
             return false;
          }
@@ -595,9 +750,43 @@ package com.brockw.stickwar.engine.units
             this.startBossExplosionSetup(game,target);
             return true;
          }
-         this.startBossPendingShot(game,"explosion",target);
+         team.mana -= 25;
+         this.bossAbilityPendingType = UnitCommand.ARCHER_BOSS_EXPLOSION;
+         this.bossAbilityPendingTarget = target;
+         this.startBossDrawAnimation(target);
+         this.bossExplosionArrowCooldownFrames = BOSS_EXPLOSION_ARROW_COOLDOWN_FRAMES;
          return true;
       }
+
+      public function tryBossExplosionArrowManual(game:StickWar) : Boolean
+       {
+           var target:Unit = null;
+           if(this.pendingManualAbility != 0)
+           {
+              return false;
+           }
+           if(this.hasBossSpecialArrowLoaded())
+           {
+              game.gameScreen.userInterface.helpMessage.showMessage("Special arrow already loaded");
+              return false;
+           }
+           if(this.bossExplosionArrowCooldownFrames > 0 || this.isRebelsUnitedLevel(game) || !team.tech.isResearched(Tech.ARCHER_BOSS_EXPLOSION_ARROW) || team.mana < 25)
+           {
+              return false;
+           }
+           team.mana -= 25;
+           this.bossExplosionArrowCooldownFrames = BOSS_EXPLOSION_ARROW_COOLDOWN_FRAMES;
+           target = this.findBossExplosionArrowTarget();
+           if(target == null)
+           {
+              this.pendingManualAbility = UnitCommand.ARCHER_BOSS_EXPLOSION;
+              return true;
+           }
+            this.bossAbilityPendingType = UnitCommand.ARCHER_BOSS_EXPLOSION;
+            this.bossAbilityPendingTarget = target;
+            this.startBossDrawAnimation(target);
+            return true;
+        }
 
       private function isRebelsUnitedLevel(game:StickWar) : Boolean
       {
@@ -617,12 +806,15 @@ package com.brockw.stickwar.engine.units
          {
             return false;
          }
-         target = this.findBossTripleShotTarget();
-         if(target == null)
+         target = this.ai.getClosestTarget();
+         if(target == null || target.team == this.team || !this.inRange(target))
          {
             return false;
          }
-         this.startBossPendingShot(game,"triple",target);
+         this.bossAbilityPendingType = UnitCommand.ARCHER_BOSS_TRIPLE_SHOT;
+         this.bossAbilityPendingTarget = target;
+         this.startBossDrawAnimation(target);
+         this.bossTripleShotCooldownFrames = BOSS_TRIPLE_SHOT_COOLDOWN_FRAMES;
          return true;
       }
 
@@ -631,7 +823,7 @@ package com.brockw.stickwar.engine.units
          var archers:Array = null;
          var targetPoint:Point = null;
          var i:int = 0;
-         if(this.bossArrowStormCooldownFrames > 0 || this.bossArrowStormQueue.length > 0 || this.team.enemyTeam.currentAttackState != Team.G_ATTACK)
+         if(this.bossArrowStormCooldownFrames > 0 || this.bossArrowStormQueue.length > 0 || !team.tech.isResearched(Tech.ARCHER_BOSS_ARROW_STORM) || team.mana < 70)
          {
             return false;
          }
@@ -645,7 +837,88 @@ package com.brockw.stickwar.engine.units
          {
             return false;
          }
-         this.startBossPendingShot(game,"storm",null,targetPoint,archers);
+          team.mana -= 70;
+          this.bossAbilityPendingType = UnitCommand.ARCHER_BOSS_ARROW_STORM;
+          this.bossAbilityPendingTargetPoint = targetPoint;
+          this.bossAbilityPendingArchers = archers;
+          this.startBossDrawAnimation(null,targetPoint);
+          this.bossArrowStormCooldownFrames = BOSS_ARROW_STORM_COOLDOWN_FRAMES;
+          return true;
+       }
+
+       public function tryBossArrowStormManual(game:StickWar) : Boolean
+       {
+          var archers:Array = null;
+          var targetPoint:Point = null;
+          var i:int = 0;
+           if(this.pendingManualAbility != 0)
+           {
+              return false;
+           }
+           if(this.hasBossSpecialArrowLoaded())
+           {
+              game.gameScreen.userInterface.helpMessage.showMessage("Special arrow already loaded");
+              return false;
+           }
+            if(this.bossArrowStormCooldownFrames > 0 || this.bossArrowStormQueue.length > 0 || !team.tech.isResearched(Tech.ARCHER_BOSS_ARROW_STORM) || team.mana < 70)
+           {
+              return false;
+           }
+           team.mana -= 70;
+           this.bossArrowStormCooldownFrames = BOSS_ARROW_STORM_COOLDOWN_FRAMES;
+           archers = this.getNearbyBossStormArchers();
+           targetPoint = this.getBossStormTargetPointManual(game);
+           if(targetPoint == null)
+           {
+              this.pendingManualAbility = UnitCommand.ARCHER_BOSS_ARROW_STORM;
+              return true;
+           }
+           if(!this.hasValidBossStormShooter(archers,targetPoint.x,targetPoint.y))
+           {
+              this.pendingManualAbility = UnitCommand.ARCHER_BOSS_ARROW_STORM;
+              return true;
+           }
+            this.bossAbilityPendingType = UnitCommand.ARCHER_BOSS_ARROW_STORM;
+            this.bossAbilityPendingTargetPoint = targetPoint;
+            this.bossAbilityPendingArchers = archers;
+            this.startBossDrawAnimation(null,targetPoint);
+          return true;
+       }
+
+      public function tryBossTripleShotManual(game:StickWar) : Boolean
+      {
+         var target:Unit = null;
+         if(this.bossTripleShotCooldownFrames > 0)
+         {
+            return false;
+         }
+         target = this.ai.getClosestTarget();
+         if(target == null || target.team == this.team || !this.inRange(target))
+         {
+            return false;
+         }
+         this.startBossPendingShot(game,"triple",target);
+         return true;
+      }
+
+      public function tryBossExecuteShotManual(game:StickWar) : Boolean
+      {
+         var target:Unit = null;
+         if(this.bossExecuteCooldownFrames > 0 || team.mana < 10)
+         {
+            return false;
+         }
+         target = this.findBossExecuteTarget();
+         if(target == null)
+         {
+            target = this.ai.getClosestTarget();
+            if(target == null || target.team == this.team || Math.abs(target.px - this.px) > this.normalRange + 260)
+            {
+               return false;
+            }
+         }
+         team.mana -= 10;
+         this.startBossPendingShot(game,"poison",target);
          return true;
       }
 
@@ -661,18 +934,6 @@ package com.brockw.stickwar.engine.units
          {
             this.queueBossStormArrow(Archer(archers[i]),targetPoint.x,targetPoint.y,i + 1,4 + game.random.nextInt() % 21);
          }
-      }
-
-      private function startBossPendingShot(game:StickWar, shotType:String, target:Unit, targetPoint:Point = null, archers:Array = null) : void
-      {
-         this.bossPendingShot = {
-            type: shotType,
-            target: target,
-            targetPoint: targetPoint,
-            archers: archers,
-            frame: game.frame + BOSS_PENDING_SHOT_DELAY_FRAMES
-         };
-         this.startBossDrawAnimation(target,targetPoint);
       }
 
       private function startBossExplosionSetup(game:StickWar, target:Unit) : void
@@ -694,19 +955,22 @@ package com.brockw.stickwar.engine.units
             this.bossExplosionSetupTarget = null;
             return;
          }
-         distance = Math.abs(this.bossExplosionSetupTarget.px - this.px);
-         if(distance >= BOSS_EXPLOSION_ARROW_MIN_DISTANCE)
-         {
-            this.startBossPendingShot(game,"explosion",this.bossExplosionSetupTarget);
-            this.bossExplosionSetupTarget = null;
-         }
+          distance = Math.abs(this.bossExplosionSetupTarget.px - this.px);
+          if(distance >= BOSS_EXPLOSION_ARROW_MIN_DISTANCE)
+          {
+             team.mana -= 25;
+             this.bossAbilityPendingTarget = this.bossExplosionSetupTarget;
+             this.startBossDrawAnimation(this.bossExplosionSetupTarget);
+             this.bossExplosionArrowCooldownFrames = BOSS_EXPLOSION_ARROW_COOLDOWN_FRAMES;
+             this.bossExplosionSetupTarget = null;
+          }
       }
 
       public function handleBossExplosionSetupMovement(game:StickWar) : Boolean
       {
          var target:Unit = null;
          var away:int = 0;
-         if(this.bossExplosionSetupTarget == null || this.bossPendingShot != null)
+          if(this.bossExplosionSetupTarget == null || this.bossAbilityPendingType != 0)
          {
             return false;
          }
@@ -745,64 +1009,6 @@ package com.brockw.stickwar.engine.units
          {
             this.faceDirection(targetPoint.x - this.px);
             this.aimBossArrowAtPoint(this,targetPoint.x,targetPoint.y,0);
-         }
-         if(this.bowFrame == 1)
-         {
-            this.bowFrame = 2;
-         }
-      }
-
-      private function updateBossPendingShot(game:StickWar) : void
-      {
-         var shotType:String = null;
-         var target:Unit = null;
-         var targetPoint:Point = null;
-         var archers:Array = null;
-         if(this.bossPendingShot == null)
-         {
-            return;
-         }
-         if(game.frame < int(this.bossPendingShot.frame))
-         {
-            return;
-         }
-         shotType = String(this.bossPendingShot.type);
-         target = this.bossPendingShot.target as Unit;
-         targetPoint = this.bossPendingShot.targetPoint as Point;
-         archers = this.bossPendingShot.archers as Array;
-         this.bossPendingShot = null;
-         if(shotType == "poison")
-         {
-            if(target != null && target.isAlive() && this.fireBossArrowAtTarget(game,target,this.arrowDamage,12,0,1))
-            {
-               this.bossExecuteCooldownFrames = BOSS_EXECUTE_COOLDOWN_FRAMES;
-               this.notifyBossAbility(game,"ARCHER BOSS: Poison Arrow");
-            }
-         }
-         else if(shotType == "triple")
-         {
-            if(target != null && target.isAlive() && this.fireBossTripleShot(game,target))
-            {
-               this.bossTripleShotCooldownFrames = BOSS_TRIPLE_SHOT_COOLDOWN_FRAMES;
-               this.notifyBossAbility(game,"ARCHER BOSS: Triple Shot");
-            }
-         }
-         else if(shotType == "storm")
-         {
-            if(targetPoint != null && archers != null)
-            {
-               this.startBossArrowStormQueue(game,targetPoint,archers);
-               this.bossArrowStormCooldownFrames = BOSS_ARROW_STORM_COOLDOWN_FRAMES;
-               this.notifyBossAbility(game,"ARCHER BOSS: Arrow Storm");
-            }
-         }
-         else if(shotType == "explosion")
-         {
-            if(target != null && target.isAlive() && this.fireBossExplosionArrow(game,target))
-            {
-               this.bossExplosionArrowCooldownFrames = BOSS_EXPLOSION_ARROW_COOLDOWN_FRAMES;
-               this.notifyBossAbility(game,"ARCHER BOSS: Explosion Arrow");
-            }
          }
       }
 
@@ -900,6 +1106,27 @@ package com.brockw.stickwar.engine.units
                bestDistance = distance;
             }
          }
+         for each(enemy in this.team.enemyTeam.walls)
+         {
+            if(enemy == null || !enemy.isAlive() || enemy.health > enemy.maxHealth * 0.15)
+            {
+               continue;
+            }
+            distance = Math.abs(enemy.px - this.px);
+            if(distance <= this.normalRange + 260 && distance < bestDistance)
+            {
+               best = enemy;
+               bestDistance = distance;
+            }
+         }
+         if(this.team.enemyTeam.statue != null && this.team.enemyTeam.statue.isAlive() && this.team.enemyTeam.statue.health <= this.team.enemyTeam.statue.maxHealth * 0.15)
+         {
+            distance = Math.abs(this.team.enemyTeam.statue.px - this.px);
+            if(distance <= this.normalRange + 260 && distance < bestDistance)
+            {
+               best = this.team.enemyTeam.statue;
+            }
+         }
          return best;
       }
 
@@ -909,19 +1136,40 @@ package com.brockw.stickwar.engine.units
          var best:Unit = null;
          var score:Number = 0;
          var bestScore:Number = 0;
-         for each(enemy in this.team.enemyTeam.units)
+          for each(enemy in this.team.enemyTeam.units)
          {
-            if(enemy == null || !enemy.isAlive() || Math.abs(enemy.px - this.px) > this.normalRange + 180 || Math.abs(enemy.px - this.px) > Number(this.team.game.xml.xml.Order.Units.magikill.nuke.range))
-            {
-               continue;
-            }
-            score = this.getBossTripleShotTargetScore(enemy) + enemy.population;
-            if(score > bestScore)
-            {
-               best = enemy;
-               bestScore = score;
-            }
-         }
+             if(enemy == null || !enemy.isAlive() || Math.abs(enemy.px - this.px) > this.normalRange + 180)
+             {
+                continue;
+             }
+             score = this.getBossTripleShotTargetScore(enemy) + enemy.population;
+             if(score > bestScore)
+             {
+                best = enemy;
+                bestScore = score;
+             }
+          }
+          for each(enemy in this.team.enemyTeam.walls)
+          {
+             if(enemy == null || !enemy.isAlive() || Math.abs(enemy.px - this.px) > this.normalRange + 180)
+             {
+                continue;
+             }
+             score = this.getBossTripleShotTargetScore(enemy) + enemy.population + 50;
+             if(score > bestScore)
+             {
+                best = enemy;
+                bestScore = score;
+             }
+          }
+          if(this.team.enemyTeam.statue != null && this.team.enemyTeam.statue.isAlive() && Math.abs(this.team.enemyTeam.statue.px - this.px) <= this.normalRange + 180)
+          {
+             score = this.getBossTripleShotTargetScore(this.team.enemyTeam.statue) + this.team.enemyTeam.statue.population + 100;
+             if(score > bestScore)
+             {
+                best = this.team.enemyTeam.statue;
+             }
+          }
          return best;
       }
 
@@ -948,6 +1196,36 @@ package com.brockw.stickwar.engine.units
             {
                best = enemy;
                bestScore = score;
+            }
+         }
+         for each(enemy in this.team.enemyTeam.walls)
+         {
+            if(enemy == null || !enemy.isAlive())
+            {
+               continue;
+            }
+            distance = Math.abs(enemy.px - this.px);
+            if(distance > this.normalRange + 100)
+            {
+               continue;
+            }
+            score = this.getBossTripleShotTargetScore(enemy);
+            if(score > bestScore)
+            {
+               best = enemy;
+               bestScore = score;
+            }
+         }
+         if(this.team.enemyTeam.statue != null && this.team.enemyTeam.statue.isAlive())
+         {
+            distance = Math.abs(this.team.enemyTeam.statue.px - this.px);
+            if(distance <= this.normalRange + 100)
+            {
+               score = this.getBossTripleShotTargetScore(this.team.enemyTeam.statue);
+               if(score > bestScore)
+               {
+                  best = this.team.enemyTeam.statue;
+               }
             }
          }
          return best;
@@ -1014,6 +1292,100 @@ package com.brockw.stickwar.engine.units
             sumY += enemy.py;
             ++count;
          }
+         for each(enemy in this.team.enemyTeam.walls)
+         {
+            if(enemy == null || !enemy.isAlive())
+            {
+               continue;
+            }
+            distance = Math.abs(enemy.px - this.px);
+            if(distance < this.normalRange + BOSS_ARROW_STORM_MIN_RANGE_BONUS || distance > this.normalRange + BOSS_ARROW_STORM_RANGE_BONUS)
+            {
+               continue;
+            }
+            if(count == 0 || this.team.direction * enemy.px < this.team.direction * frontX)
+            {
+               frontX = enemy.px;
+            }
+            sumY += enemy.py;
+            ++count;
+         }
+         if(this.team.enemyTeam.statue != null && this.team.enemyTeam.statue.isAlive())
+         {
+            distance = Math.abs(this.team.enemyTeam.statue.px - this.px);
+            if(distance >= this.normalRange + BOSS_ARROW_STORM_MIN_RANGE_BONUS && distance <= this.normalRange + BOSS_ARROW_STORM_RANGE_BONUS)
+            {
+               if(count == 0 || this.team.direction * this.team.enemyTeam.statue.px < this.team.direction * frontX)
+               {
+                  frontX = this.team.enemyTeam.statue.px;
+               }
+               sumY += this.team.enemyTeam.statue.py;
+               ++count;
+            }
+         }
+         if(count == 0)
+         {
+            return null;
+         }
+         return new Point(frontX - this.team.direction * 120,Math.max(80,Math.min(game.map.height - 80,sumY / count)));
+      }
+
+      private function getBossStormTargetPointManual(game:StickWar) : Point
+      {
+         var enemy:Unit = null;
+         var count:int = 0;
+         var sumY:Number = 0;
+         var frontX:Number = NaN;
+         var distance:Number = NaN;
+         for each(enemy in this.team.enemyTeam.units)
+         {
+            if(enemy == null || !enemy.isAlive())
+            {
+               continue;
+            }
+            distance = Math.abs(enemy.px - this.px);
+            if(distance > this.normalRange + BOSS_ARROW_STORM_RANGE_BONUS)
+            {
+               continue;
+            }
+            if(count == 0 || this.team.direction * enemy.px < this.team.direction * frontX)
+            {
+               frontX = enemy.px;
+            }
+            sumY += enemy.py;
+            ++count;
+         }
+         for each(enemy in this.team.enemyTeam.walls)
+         {
+            if(enemy == null || !enemy.isAlive())
+            {
+               continue;
+            }
+            distance = Math.abs(enemy.px - this.px);
+            if(distance > this.normalRange + BOSS_ARROW_STORM_RANGE_BONUS)
+            {
+               continue;
+            }
+            if(count == 0 || this.team.direction * enemy.px < this.team.direction * frontX)
+            {
+               frontX = enemy.px;
+            }
+            sumY += enemy.py;
+            ++count;
+         }
+         if(this.team.enemyTeam.statue != null && this.team.enemyTeam.statue.isAlive())
+         {
+            distance = Math.abs(this.team.enemyTeam.statue.px - this.px);
+            if(distance <= this.normalRange + BOSS_ARROW_STORM_RANGE_BONUS)
+            {
+               if(count == 0 || this.team.direction * this.team.enemyTeam.statue.px < this.team.direction * frontX)
+               {
+                  frontX = this.team.enemyTeam.statue.px;
+               }
+               sumY += this.team.enemyTeam.statue.py;
+               ++count;
+            }
+         }
          if(count == 0)
          {
             return null;
@@ -1051,6 +1423,38 @@ package com.brockw.stickwar.engine.units
             if(score < bestScore)
             {
                best = enemy;
+               bestScore = score;
+            }
+         }
+         for each(enemy in this.team.enemyTeam.walls)
+         {
+            if(enemy == null || !enemy.isAlive())
+            {
+               continue;
+            }
+            distance = Math.abs(enemy.px - archer.px);
+            if(distance >= archer.normalRange + BOSS_ARROW_STORM_MIN_RANGE_BONUS && distance <= archer.normalRange + BOSS_ARROW_STORM_RANGE_BONUS)
+            {
+               candidates.push(enemy);
+            }
+            score = Math.abs(enemy.py - (archer.py + laneOffset)) + Math.abs(enemy.px - archer.px) * 0.18;
+            if(score < bestScore)
+            {
+               best = enemy;
+               bestScore = score;
+            }
+         }
+         if(this.team.enemyTeam.statue != null && this.team.enemyTeam.statue.isAlive())
+         {
+            distance = Math.abs(this.team.enemyTeam.statue.px - archer.px);
+            if(distance >= archer.normalRange + BOSS_ARROW_STORM_MIN_RANGE_BONUS && distance <= archer.normalRange + BOSS_ARROW_STORM_RANGE_BONUS)
+            {
+               candidates.push(this.team.enemyTeam.statue);
+            }
+            score = Math.abs(this.team.enemyTeam.statue.py - (archer.py + laneOffset)) + Math.abs(this.team.enemyTeam.statue.px - archer.px) * 0.18;
+            if(score < bestScore)
+            {
+               best = this.team.enemyTeam.statue;
                bestScore = score;
             }
          }

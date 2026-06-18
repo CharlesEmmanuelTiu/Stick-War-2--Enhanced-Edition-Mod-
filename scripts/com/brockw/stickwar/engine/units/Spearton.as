@@ -10,15 +10,14 @@ package com.brockw.stickwar.engine.units
    import com.brockw.stickwar.engine.Team.Tech;
    import com.brockw.stickwar.market.MarketItem;
    import flash.display.MovieClip;
+   import flash.geom.ColorTransform;
    
    public class Spearton extends Unit
    {
       private static const BOSS_WEAPON_SKIN:String = "Golden Jaged";
-      
-      private static const BOSS_ARMOR_SKIN:String = "HedgeHog Helmet";
-      
+
       private static const BOSS_MISC_SKIN:String = "Lion Sheild";
-      
+
       private static const BOSS_DAMAGE_MULTIPLIER:Number = 1.5;
       
       private static const BOSS_DAMAGE_TAKEN_MULTIPLIER:Number = 0.7;
@@ -46,7 +45,8 @@ package com.brockw.stickwar.engine.units
       private static var RAGE_COOLDOWN:int;
       
       private static var RAGE_EFFECT:int;
-      
+
+
       private var _isBlocking:Boolean;
       
       private var _inBlock:Boolean;
@@ -76,6 +76,12 @@ package com.brockw.stickwar.engine.units
       private var bossLastNormalAttackFrame:int;
       
       private var bossShieldSlamStunTime:int;
+
+      private var _isAutoBraceToggled:Boolean;
+
+      private var _lastAnimLabel:String;
+
+      private static var bossGoldTint:ColorTransform;
 
       private var forcedWeaponSkin:String = "";
       
@@ -146,8 +152,10 @@ package com.brockw.stickwar.engine.units
          _state = S_RUN;
          this.isShieldBashing = false;
          this.shieldBashSpell = new SpellCooldown(0,game.xml.xml.Order.Units.spearton.shieldBash.cooldown,game.xml.xml.Order.Units.spearton.shieldBash.mana);
-         this._isBoss = false;
-         this.bossAbilityCooldownFrames = 0;
+          this._isBoss = false;
+          this._isAutoBraceToggled = false;
+          this._lastAnimLabel = "";
+          this.bossAbilityCooldownFrames = 0;
          this.bossBraceDelayFrames = 0;
          this.bossShieldSlamActive = false;
          this.bossCommandedShieldBash = false;
@@ -357,8 +365,8 @@ package com.brockw.stickwar.engine.units
             {
                _mc.gotoAndStop(getDeathLabel(game));
             }
-            this.team.removeUnit(this,game);
-         }
+              this.team.removeUnit(this,game);
+           }
          if(!isDead && MovieClip(_mc.mc).currentFrame == MovieClip(_mc.mc).totalFrames)
          {
             MovieClip(_mc.mc).gotoAndStop(1);
@@ -367,21 +375,43 @@ package com.brockw.stickwar.engine.units
          {
             Util.animateMovieClip(_mc);
          }
-         if(this.forcedWeaponSkin != "" || this.forcedArmorSkin != "" || this.forcedMiscSkin != "")
-         {
-            Spearton.setItem(_speartonMc(mc),this.forcedWeaponSkin,this.forcedArmorSkin,this.forcedMiscSkin);
+            if(this._lastAnimLabel != _mc.currentLabel)
+            {
+               this._lastAnimLabel = _mc.currentLabel;
+               if(this.forcedWeaponSkin != "" || this.forcedArmorSkin != "" || this.forcedMiscSkin != "")
+               {
+                  Spearton.setItem(_speartonMc(mc),this.forcedWeaponSkin,this.forcedArmorSkin,this.forcedMiscSkin);
+               }
+               else if(this.isBoss)
+               {
+                  Spearton.setItem(_speartonMc(mc),BOSS_WEAPON_SKIN,"",BOSS_MISC_SKIN);
+                  if(bossGoldTint == null)
+                  {
+                     bossGoldTint = new ColorTransform();
+                     bossGoldTint.redMultiplier = 1.2;
+                     bossGoldTint.greenMultiplier = 0.9;
+                     bossGoldTint.blueMultiplier = 0.1;
+                     bossGoldTint.redOffset = 30;
+                     bossGoldTint.greenOffset = 15;
+                     bossGoldTint.blueOffset = 0;
+                  }
+                   if(Boolean(_speartonMc(mc).mc.helm))
+                   {
+                      var helm:MovieClip = MovieClip(_speartonMc(mc).mc.helm);
+                      for(var i:int = 0; i < helm.numChildren; i++)
+                      {
+                         helm.getChildAt(i).transform.colorTransform = bossGoldTint;
+                      }
+                   }
+               }
+               else if(!hasDefaultLoadout)
+               {
+                  Spearton.setItem(_speartonMc(mc),team.loadout.getItem(this.type,MarketItem.T_WEAPON),team.loadout.getItem(this.type,MarketItem.T_ARMOR),team.loadout.getItem(this.type,MarketItem.T_MISC));
+               }
+             }
          }
-         else if(this.isBoss)
-         {
-            Spearton.setItem(_speartonMc(mc),BOSS_WEAPON_SKIN,BOSS_ARMOR_SKIN,BOSS_MISC_SKIN);
-         }
-         else if(!hasDefaultLoadout)
-         {
-            Spearton.setItem(_speartonMc(mc),team.loadout.getItem(this.type,MarketItem.T_WEAPON),team.loadout.getItem(this.type,MarketItem.T_ARMOR),team.loadout.getItem(this.type,MarketItem.T_MISC));
-         }
-      }
-      
-      private function shieldHit(unit:Unit) : *
+       
+       private function shieldHit(unit:Unit) : *
       {
          if(this.stunned == null && unit.team != this.team && unit.pz == 0)
          {
@@ -455,11 +485,15 @@ package com.brockw.stickwar.engine.units
          {
             a.setAction(0,0,UnitCommand.SPEARTON_BLOCK);
          }
-         if(team.tech.isResearched(Tech.SHIELD_BASH))
-         {
-            a.setAction(1,0,UnitCommand.SHIELD_BASH);
-         }
-      }
+          if(team.tech.isResearched(Tech.SHIELD_BASH))
+          {
+             a.setAction(1,0,UnitCommand.SHIELD_BASH);
+          }
+           if(this.isBoss && team.tech.isResearched(Tech.BLOCK) && team.tech.isResearched(Tech.SHIELD_BASH))
+           {
+              a.setAction(2,0,UnitCommand.SPEARTON_BOSS_BRACE);
+           }
+       }
       
       override public function attack() : void
       {
@@ -545,19 +579,20 @@ package com.brockw.stickwar.engine.units
          this._inBlock = value;
       }
 
-      public function makeBoss() : void
-      {
-         if(this._isBoss)
-         {
-            return;
+        override public function makeBoss(enableDeathBurst:Boolean = false) : void
+        {
+           if(this._isBoss)
+           {
+              return;
+           }
+           this._isBoss = true;
+           this.isBossUnit = true;
+           this.bossAbilitySpawnLockFrames = 30 * 2;
+           damageToDeal *= BOSS_DAMAGE_MULTIPLIER;
+           this._damageToArmour *= BOSS_DAMAGE_MULTIPLIER;
+           this._damageToNotArmour *= BOSS_DAMAGE_MULTIPLIER;
+            this._isAutoBraceToggled = true;
          }
-         this._isBoss = true;
-         this.isBossUnit = true;
-         this.bossAbilitySpawnLockFrames = 30 * 2;
-         damageToDeal *= BOSS_DAMAGE_MULTIPLIER;
-         this._damageToArmour *= BOSS_DAMAGE_MULTIPLIER;
-         this._damageToNotArmour *= BOSS_DAMAGE_MULTIPLIER;
-      }
 
       public function tryBossBraceShieldSlam() : void
       {
@@ -573,7 +608,7 @@ package com.brockw.stickwar.engine.units
          this.isBossMovementLocked = true;
          for each(ally in team.unitGroups[Unit.U_SPEARTON])
          {
-            if(ally != null && ally.isAlive() && ally != this && ally.sqrDistanceToTarget(this) <= BOSS_BRACE_RADIUS * BOSS_BRACE_RADIUS && ally.canJoinBossBraceWithLeader())
+             if(ally != null && ally.isAlive() && ally != this && ally.sqrDistanceToTarget(this) <= BOSS_BRACE_RADIUS * BOSS_BRACE_RADIUS)
             {
                ally.commandBossBraceShieldBash();
             }
@@ -634,10 +669,20 @@ package com.brockw.stickwar.engine.units
          return this.sqrDistanceToTarget(target) <= BOSS_COMBAT_RADIUS * BOSS_COMBAT_RADIUS && this.mayAttack(target);
       }
 
-      public function get isBoss() : Boolean
-      {
-         return this._isBoss;
-      }
+       public function get isBoss() : Boolean
+       {
+          return this._isBoss;
+       }
+
+       public function get isAutoBraceToggled() : Boolean
+       {
+          return this._isAutoBraceToggled;
+       }
+
+       public function set isAutoBraceToggled(value:Boolean) : void
+       {
+          this._isAutoBraceToggled = value;
+       }
 
       public function resetBossSpecialDebugState() : void
       {

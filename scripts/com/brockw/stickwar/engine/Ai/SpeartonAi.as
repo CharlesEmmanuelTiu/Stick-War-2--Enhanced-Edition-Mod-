@@ -2,6 +2,7 @@ package com.brockw.stickwar.engine.Ai
 {
    import com.brockw.stickwar.engine.Ai.command.UnitCommand;
    import com.brockw.stickwar.engine.StickWar;
+   import com.brockw.stickwar.engine.Team.Tech;
    import com.brockw.stickwar.engine.units.Spearton;
    
    public class SpeartonAi extends UnitAi
@@ -24,19 +25,26 @@ package com.brockw.stickwar.engine.Ai
          {
             return;
          }
-         if(this.tryBossBraceShieldSlam(game))
-         {
-            if(!spearton.inBlock)
+            if(currentCommand.type == UnitCommand.SPEARTON_BOSS_BRACE)
             {
-               baseUpdate(game);
+               spearton.isAutoBraceToggled = !spearton.isAutoBraceToggled;
+               restoreMove(game);
+               super.update(game);
+               return;
             }
-            return;
-         }
-         if(spearton.isInBossBraceSequence)
-         {
-            return;
-         }
-         if(currentCommand.type == UnitCommand.SPEARTON_BLOCK)
+            if(spearton.isAutoBraceToggled && unit.team.tech.isResearched(Tech.SHIELD_BASH) && this.tryBossBraceShieldSlam(game))
+          {
+             if(!spearton.inBlock)
+             {
+                baseUpdate(game);
+             }
+             return;
+          }
+          if(spearton.isInBossBraceSequence)
+          {
+             return;
+          }
+          if(currentCommand.type == UnitCommand.SPEARTON_BLOCK)
          {
             if(spearton.inBlock)
             {
@@ -63,30 +71,26 @@ package com.brockw.stickwar.engine.Ai
          }
       }
 
-      private function tryBossBraceShieldSlam(game:StickWar) : Boolean
-      {
-         var spearton:Spearton = Spearton(unit);
-         var target:* = null;
-         if(!spearton.isBoss)
-         {
-            return false;
-         }
-         if(!spearton.hasRecentBossNormalAttack())
-         {
-            return false;
-         }
-         target = this.getClosestTarget();
-         if(target == null || target.team == unit.team || !target.isTargetable())
-         {
-            return false;
-         }
-         if(unit.sqrDistanceToTarget(target) > spearton.bossCombatRadius * spearton.bossCombatRadius)
-         {
-            return false;
-         }
-         spearton.tryBossBraceShieldSlam();
-         return spearton.inBlock;
-      }
+       private function tryBossBraceShieldSlam(game:StickWar) : Boolean
+       {
+          var spearton:Spearton = Spearton(unit);
+          var target:* = null;
+          if(!spearton.isBoss)
+          {
+             return false;
+          }
+          target = this.getClosestTarget();
+          if(target == null || target.team == unit.team || !target.isTargetable())
+          {
+             return false;
+          }
+          if(unit.sqrDistanceToTarget(target) > spearton.bossCombatRadius * spearton.bossCombatRadius)
+          {
+             return false;
+          }
+          spearton.tryBossBraceShieldSlam();
+          return spearton.inBlock;
+       }
    }
 }
 

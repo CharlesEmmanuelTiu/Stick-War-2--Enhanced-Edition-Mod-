@@ -123,6 +123,18 @@ package com.brockw.stickwar.engine.Team
       public static const TOWER_SPAWN_I:int = -60;
       
       public static const TOWER_SPAWN_II:int = -61;
+
+      public static const ARCHER_BOSS_TRIPLE_SHOT:int = -62;
+
+      public static const ARCHER_BOSS_POISON_EXECUTE:int = -63;
+
+      public static const ARCHER_BOSS_ARROW_STORM:int = -64;
+
+      public static const ARCHER_BOSS_EXPLOSION_ARROW:int = -65;
+
+      public static const NINJA_CLOAK3:int = -66;
+
+      public static const NINJA_SHADOW_CLONE:int = -67;
       
       public var upgrades:Dictionary;
       

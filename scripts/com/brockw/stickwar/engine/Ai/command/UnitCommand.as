@@ -92,7 +92,23 @@ package com.brockw.stickwar.engine.Ai.command
       public static const REMOVE_WALL_COMMAND:int = 47;
       
       public static const REMOVE_TOWER_COMMAND:int = 48;
-      
+
+      public static const SPEARTON_BOSS_BRACE:int = 49;
+
+      public static const ARCHER_BOSS_TRIPLE_SHOT:int = 50;
+
+      public static const ARCHER_BOSS_POISON_EXECUTE:int = 51;
+
+      public static const ARCHER_BOSS_ARROW_STORM:int = 52;
+
+      public static const ARCHER_BOSS_EXPLOSION:int = 53;
+
+      public static const ARCHER_BOSS_AUTO_TOGGLE:int = 54;
+
+      public static const NINJA_CLOAK3:int = 55;
+
+      public static const NINJA_SHADOW_CLONE:int = 56;
+
       public static const actualButtonBitmap:* = new Bitmap(new CommandMove());
       
       protected var game:StickWar;

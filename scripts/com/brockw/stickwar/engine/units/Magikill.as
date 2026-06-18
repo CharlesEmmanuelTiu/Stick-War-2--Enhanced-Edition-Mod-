@@ -538,7 +538,7 @@ package com.brockw.stickwar.engine.units
          this._isOnInitialSpawnMove = value;
       }
 
-      public function makeBoss() : void
+       override public function makeBoss(enableDeathBurst:Boolean = false) : void
       {
          this._isBoss = true;
          this.isBossUnit = true;

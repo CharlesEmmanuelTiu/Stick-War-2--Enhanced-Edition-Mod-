@@ -7,6 +7,7 @@ package com.brockw.stickwar.engine
    import com.brockw.stickwar.engine.units.Archer;
    import com.brockw.stickwar.engine.units.Magikill;
    import com.brockw.stickwar.engine.units.Ninja;
+   import com.brockw.stickwar.engine.units.Spearton;
    import com.brockw.stickwar.engine.units.Unit;
    import flash.display.*;
    import flash.ui.Mouse;
@@ -389,17 +390,55 @@ package com.brockw.stickwar.engine
                         }
                      }
                      else if(this.currentActions[action] == UnitCommand.CURE && this.currentEntity is Ninja)
-                     {
-                        if(Ninja(this.currentEntity).isAutoCloakToggled)
+                      {
+                         if(Ninja(this.currentEntity).isAutoCloakToggled)
+                         {
+                            gameScreen.game.team.updateButtonOver(gameScreen.game,"Auto Cloak","Shadowrath automatically cloaks when enemies come within engage range. Click to disable auto cloak.",0,0,0,0);
+                         }
+                         else
+                         {
+                            gameScreen.game.team.updateButtonOver(gameScreen.game,"Manual Cloak","Shadowrath only cloaks when you command it manually. Click to enable auto cloak.",0,0,0,0);
+                         }
+                      }
+                        else if(this.currentActions[action] == UnitCommand.SPEARTON_BOSS_BRACE && this.currentEntity is Spearton)
                         {
-                           gameScreen.game.team.updateButtonOver(gameScreen.game,"Auto Cloak","Shadowrath automatically cloaks when enemies come within engage range. Click to disable auto cloak.",0,0,0,0);
+                           if(Spearton(this.currentEntity).isAutoBraceToggled)
+                           {
+                              gameScreen.game.team.updateButtonOver(gameScreen.game,"Auto Brace Shield Slam","Spearton Boss automatically commands nearby Speartons to shield slam when enemies are near. Click to disable.",0,0,0,0);
+                           }
+                           else
+                           {
+                              gameScreen.game.team.updateButtonOver(gameScreen.game,"Manual Brace Shield Slam","Spearton Boss will not auto-use Brace Shield Slam. Click to enable auto brace.",0,0,0,0);
+                           }
                         }
-                        else
-                        {
-                           gameScreen.game.team.updateButtonOver(gameScreen.game,"Manual Cloak","Shadowrath only cloaks when you command it manually. Click to enable auto cloak.",0,0,0,0);
-                        }
-                     }
-                     else
+                         else if(this.currentActions[action] == UnitCommand.ARCHER_BOSS_AUTO_TOGGLE && this.currentEntity is Archer)
+                         {
+                            if(Archer(this.currentEntity).isAutoAbilityEnabled)
+                            {
+                               gameScreen.game.team.updateButtonOver(gameScreen.game,"Auto Abilities","Archer Boss automatically uses abilities when conditions are met. Click to disable.",0,0,0,0);
+                            }
+                            else
+                            {
+                               gameScreen.game.team.updateButtonOver(gameScreen.game,"Manual Abilities","Archer Boss will not auto-use abilities. Click to enable auto abilities.",0,0,0,0);
+                            }
+                         }
+                         else if(this.currentActions[action] == UnitCommand.ARCHER_BOSS_ARROW_STORM && this.currentEntity is Archer)
+                         {
+                            gameScreen.game.team.updateButtonOver(gameScreen.game,"Arrow Storm","Archer Boss calls down a rain of arrows at a target location.",1200,0,70,0);
+                         }
+                          else if(this.currentActions[action] == UnitCommand.ARCHER_BOSS_EXPLOSION && this.currentEntity is Archer)
+                         {
+                            gameScreen.game.team.updateButtonOver(gameScreen.game,"Explosion Arrow","Archer Boss fires a devastating explosive arrow.",1140,0,25,0);
+                         }
+                           else if(this.currentActions[action] == UnitCommand.NINJA_CLOAK3 && this.currentEntity is Ninja)
+                           {
+                              gameScreen.game.team.updateButtonOver(gameScreen.game,"Cloak 3","Shadowrath activates a powerful mana-fueled cloak. Costs 20 mana to activate, 10 mana per chain hit.",0,0,0,0);
+                           }
+                           else if(this.currentActions[action] == UnitCommand.NINJA_SHADOW_CLONE && this.currentEntity is Ninja)
+                           {
+                              gameScreen.game.team.updateButtonOver(gameScreen.game,"Shadow Clone","Shadowrath spawns 2 shadow clones that follow and attack his target.",0,0,15,0);
+                           }
+                         else
                      {
                         gameScreen.game.team.updateButtonOverXML(gameScreen.game,UnitCommand(this.actions[this.currentActions[action]]).xmlInfo);
                      }
@@ -410,16 +449,24 @@ package com.brockw.stickwar.engine
                      if(gameScreen.userInterface.keyBoardState.isDownForAction(UnitCommand(this.actions[this.currentActions[action]]).hotKey) || gameScreen.userInterface.mouseState.clicked && MovieClip(this.actionsToButtonMap[this.currentActions[action]]).hitTestPoint(stageMouseX,stageMouseY,false))
                      {
                         gameScreen.userInterface.mouseState.clicked = false;
-                        if(this.currentActions[action] == UnitCommand.CURE && this.currentEntity is Magikill)
-                        {
-                           UnitCommand(this.actions[this.currentActions[action]]).prepareNetworkedMove(gameScreen);
-                           if(this.actionsToButtonMap[this.currentActions[action]] != null)
-                           {
-                              MovieClip(this.actionsToButtonMap[this.currentActions[action]]).alpha = 0.2;
-                           }
-                           continue;
-                        }
-                        min = candidate.coolDownTime(gameScreen.userInterface.selectedUnits.unitTypes[this.currentEntity.type][0]);
+                         if(this.currentActions[action] == UnitCommand.CURE && this.currentEntity is Magikill)
+                         {
+                            UnitCommand(this.actions[this.currentActions[action]]).prepareNetworkedMove(gameScreen);
+                            if(this.actionsToButtonMap[this.currentActions[action]] != null)
+                            {
+                               MovieClip(this.actionsToButtonMap[this.currentActions[action]]).alpha = 0.2;
+                            }
+                            continue;
+                         }
+                         if((this.currentActions[action] == UnitCommand.ARCHER_FIRE || this.currentActions[action] == UnitCommand.ARCHER_BOSS_ARROW_STORM || this.currentActions[action] == UnitCommand.ARCHER_BOSS_EXPLOSION) && this.currentEntity is Archer)
+                         {
+                            if(Archer(this.currentEntity).hasBossSpecialArrowLoaded())
+                            {
+                               gameScreen.userInterface.helpMessage.showMessage("Special arrow already loaded");
+                               continue;
+                            }
+                         }
+                         min = candidate.coolDownTime(gameScreen.userInterface.selectedUnits.unitTypes[this.currentEntity.type][0]);
                         for(j = 1; j < gameScreen.userInterface.selectedUnits.unitTypes[this.currentEntity.type].length; j++)
                         {
                            v = candidate.coolDownTime(gameScreen.userInterface.selectedUnits.unitTypes[this.currentEntity.type][j]);
@@ -607,8 +654,16 @@ package com.brockw.stickwar.engine
          this.actions[new ConstructWallCommand(this._game).type] = new ConstructWallCommand(this._game);
          this.actions[new BomberDetonateCommand(this._game).type] = new BomberDetonateCommand(this._game);
          this.actions[new RemoveWallCommand(this._game).type] = new RemoveWallCommand(this._game);
-         this.actions[new RemoveTowerCommand(this._game).type] = new RemoveTowerCommand(this._game);
-      }
+          this.actions[new RemoveTowerCommand(this._game).type] = new RemoveTowerCommand(this._game);
+           this.actions[new SpeartonBossBraceCommand(this._game).type] = new SpeartonBossBraceCommand(this._game);
+           this.actions[new ArcherBossTripleShotCommand(this._game).type] = new ArcherBossTripleShotCommand(this._game);
+           this.actions[new ArcherBossPoisonExecuteCommand(this._game).type] = new ArcherBossPoisonExecuteCommand(this._game);
+           this.actions[new ArcherBossArrowStormCommand(this._game).type] = new ArcherBossArrowStormCommand(this._game);
+           this.actions[new ArcherBossExplosionCommand(this._game).type] = new ArcherBossExplosionCommand(this._game);
+            this.actions[new ArcherBossAutoToggleCommand(this._game).type] = new ArcherBossAutoToggleCommand(this._game);
+             this.actions[new NinjaCloak3Command(this._game).type] = new NinjaCloak3Command(this._game);
+             this.actions[new NinjaShadowCloneCommand(this._game).type] = new NinjaShadowCloneCommand(this._game);
+          }
       
       public function get currentMove() : UnitCommand
       {

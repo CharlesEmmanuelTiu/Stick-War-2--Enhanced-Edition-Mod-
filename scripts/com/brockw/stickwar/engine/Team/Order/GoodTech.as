@@ -3,6 +3,7 @@ package com.brockw.stickwar.engine.Team.Order
    import com.brockw.stickwar.engine.StickWar;
    import com.brockw.stickwar.engine.Team.*;
    import flash.display.*;
+   import flash.geom.ColorTransform;
    import flash.utils.Dictionary;
    
    public class GoodTech extends Tech
@@ -55,8 +56,28 @@ package com.brockw.stickwar.engine.Team.Order
          this.addNewUpgrade(MINER_WALL,game.xml.xml.Order.Tech.minerWall,new Bitmap(new OrderTowerBitmap()),87);
          this.addNewUpgrade(Tech.CROSSBOW_FIRE,game.xml.xml.Order.Tech.crossbowFire,new Bitmap(new allbowtrossFireArrowUpgrade()),87);
          this.addNewUpgrade(TOWER_SPAWN_I,game.xml.xml.Chaos.Tech.towerSpawnI,new Bitmap(new towerUpgradeI()),89);
-         this.addNewUpgrade(TOWER_SPAWN_II,game.xml.xml.Chaos.Tech.towerSpawnII,new Bitmap(new towerUpgradeII()),89);
-      }
+          this.addNewUpgrade(TOWER_SPAWN_II,game.xml.xml.Chaos.Tech.towerSpawnII,new Bitmap(new towerUpgradeII()),89);
+           var arrowStormFireBmd:BitmapData = new ArchidonFire();
+           var arrowStormCt:ColorTransform = new ColorTransform();
+           arrowStormCt.color = 0x4444FF;
+           arrowStormFireBmd.draw(arrowStormFireBmd, null, arrowStormCt, BlendMode.MULTIPLY);
+           this.addNewUpgrade(Tech.ARCHER_BOSS_ARROW_STORM,game.xml.xml.Order.Tech.arrowStorm,new Bitmap(arrowStormFireBmd),81);
+           var explosionFireBmd:BitmapData = new ArchidonFire();
+           var explosionCt:ColorTransform = new ColorTransform();
+           explosionCt.color = 0xFF0000;
+           explosionFireBmd.draw(explosionFireBmd, null, explosionCt, BlendMode.MULTIPLY);
+           this.addNewUpgrade(Tech.ARCHER_BOSS_EXPLOSION_ARROW,game.xml.xml.Order.Tech.explosionArrow,new Bitmap(explosionFireBmd),81);
+            var cloak3Bmd:BitmapData = new NinjaCloak();
+            var cloak3Ct:ColorTransform = new ColorTransform();
+            cloak3Ct.color = 0xAA00FF;
+            cloak3Bmd.draw(cloak3Bmd, null, cloak3Ct, BlendMode.MULTIPLY);
+            this.addNewUpgrade(Tech.NINJA_CLOAK3,game.xml.xml.Order.Tech.cloak3,new Bitmap(cloak3Bmd),81);
+            var shadowCloneBmd:BitmapData = new NinjaStack();
+            var shadowCloneCt:ColorTransform = new ColorTransform();
+            shadowCloneCt.color = 0x4444FF;
+            shadowCloneBmd.draw(shadowCloneBmd, null, shadowCloneCt, BlendMode.MULTIPLY);
+            this.addNewUpgrade(Tech.NINJA_SHADOW_CLONE,game.xml.xml.Order.Tech.shadowClone,new Bitmap(shadowCloneBmd),81);
+        }
       
       override public function update(game:StickWar) : void
       {

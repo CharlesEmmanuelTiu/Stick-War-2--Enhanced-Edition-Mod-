@@ -66,11 +66,14 @@ package com.brockw.game
          return null;
       }
       
-      public function returnItem(item:Object) : void
-      {
-         --this.fIndex;
-         this.free[this.fIndex] = item;
-      }
+       public function returnItem(item:Object) : void
+       {
+          if(this.fIndex > 0)
+          {
+             --this.fIndex;
+             this.free[this.fIndex] = item;
+          }
+       }
    }
 }
 

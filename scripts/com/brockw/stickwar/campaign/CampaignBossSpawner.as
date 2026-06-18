@@ -154,10 +154,12 @@ package com.brockw.stickwar.campaign
             case "Blot out the sun: Archidons Declare War":
                this.game.teamB.tech.isResearchedMap[Tech.ARCHIDON_FIRE] = true;
                break;
-            case "Silent Assassins: Ninjas Declare War":
-               this.game.teamB.tech.isResearchedMap[Tech.CLOAK] = true;
-               this.game.teamB.tech.isResearchedMap[Tech.CLOAK_II] = true;
-               break;
+             case "Silent Assassins: Ninjas Declare War":
+                this.game.teamB.tech.isResearchedMap[Tech.CLOAK] = true;
+                this.game.teamB.tech.isResearchedMap[Tech.CLOAK_II] = true;
+                this.game.teamB.tech.isResearchedMap[Tech.NINJA_CLOAK3] = true;
+                this.game.teamB.tech.isResearchedMap[Tech.NINJA_SHADOW_CLONE] = true;
+                break;
             case "Magic in the Air: Wizards and monks Declare War ":
                this.game.teamB.tech.isResearchedMap[Tech.MAGIKILL_WALL] = true;
                this.game.teamB.tech.isResearchedMap[Tech.MAGIKILL_POISON] = true;

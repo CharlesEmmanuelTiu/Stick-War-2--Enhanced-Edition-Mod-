@@ -45,7 +45,15 @@ package com.brockw.stickwar.engine.Ai.command
          this.commandMap[UnitCommand.BOMBER_DETONATE] = BomberDetonateCommand;
          this.commandMap[UnitCommand.REMOVE_WALL_COMMAND] = RemoveWallCommand;
          this.commandMap[UnitCommand.REMOVE_TOWER_COMMAND] = RemoveTowerCommand;
-      }
+          this.commandMap[UnitCommand.SPEARTON_BOSS_BRACE] = SpeartonBossBraceCommand;
+          this.commandMap[UnitCommand.ARCHER_BOSS_TRIPLE_SHOT] = ArcherBossTripleShotCommand;
+          this.commandMap[UnitCommand.ARCHER_BOSS_POISON_EXECUTE] = ArcherBossPoisonExecuteCommand;
+          this.commandMap[UnitCommand.ARCHER_BOSS_ARROW_STORM] = ArcherBossArrowStormCommand;
+          this.commandMap[UnitCommand.ARCHER_BOSS_EXPLOSION] = ArcherBossExplosionCommand;
+           this.commandMap[UnitCommand.ARCHER_BOSS_AUTO_TOGGLE] = ArcherBossAutoToggleCommand;
+            this.commandMap[UnitCommand.NINJA_CLOAK3] = NinjaCloak3Command;
+            this.commandMap[UnitCommand.NINJA_SHADOW_CLONE] = NinjaShadowCloneCommand;
+         }
       
       public function createCommand(game:StickWar, type:int, goalX:int, goalY:int, arg0:int, arg1:int, arg2:int, arg3:int, arg4:int, isGroup:Boolean = true) : UnitCommand
       {

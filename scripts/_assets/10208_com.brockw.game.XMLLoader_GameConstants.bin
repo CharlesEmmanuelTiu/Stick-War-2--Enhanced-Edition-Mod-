@@ -905,6 +905,15 @@
 <tip>Cloak and the next attack out of Shinobi will do massive increased damage and inflict poison on the enemy.</tip>
 </cloak2>
 
+<cloak3>
+<name>Cloak Level 3</name>
+<cost>200</cost>
+<mana>200</mana>
+<effect>1</effect>
+<time>900</time>
+<tip>Shadowrath boss activates a powerful mana-fueled cloak.</tip>
+</cloak3>
+
 <ninjaCriticalStrike>
 <name>Critical Strike</name>
 <cost>100</cost>
@@ -1077,6 +1086,33 @@
 
 </crossbowFire>
 
+<arrowStorm>
+<name>Arrow Storm</name>
+<cost>250</cost>
+<mana>120</mana>
+<effect>1</effect>
+<time>2250</time>
+<tip>Archer boss calls down a rain of arrows at a target location slows enemies that are hit.</tip>
+</arrowStorm>
+
+<explosionArrow>
+<name>Explosion Arrow</name>
+<cost>125</cost>
+<mana>50</mana>
+<effect>1</effect>
+<time>1200</time>
+<tip>Archer boss fires a devastating explosive arrow.</tip>
+</explosionArrow>
+
+<shadowClone>
+<name>Shadow Clone</name>
+<cost>150</cost>
+<mana>100</mana>
+<effect>1</effect>
+<time>600</time>
+<tip>Shadowrath creates 2 shadow clones that follow and attack enemies.</tip>
+</shadowClone>
+
 </Tech>
 
 <Units>
@@ -1245,6 +1281,16 @@
 <damageToNotArmour2>200</damageToNotArmour2>
 <poison2>3</poison2>
 </stealth>
+
+<shadowClone>
+<name>Shadow Clone</name>
+<info>Creates 2 shadow clones that follow and attack enemies before returning.</info>
+<hotkey>81</hotkey>
+<gold>0</gold>
+<mana>15</mana>
+<effect>0</effect>
+<cooldown>900</cooldown>
+</shadowClone>
 
 
 
@@ -1580,6 +1626,7 @@ Sound Effects by: Pepper
 
 Thanks to Stickpage.com and the Stick Page Community!
 
-Â©Copyright Stickpage
+©Copyright Stickpage
 </credits>
 </GameConstants>
+

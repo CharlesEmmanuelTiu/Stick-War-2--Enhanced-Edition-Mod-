@@ -45,12 +45,31 @@ package com.brockw.stickwar.engine.Ai
             super.update(game);
             return;
          }
-         if(currentCommand.type == UnitCommand.ARCHER_FIRE)
-         {
-            Archer(unit).archerFireArrow();
-            nextMove(game);
-         }
-         super.update(game);
+          if(currentCommand.type == UnitCommand.ARCHER_FIRE)
+          {
+             Archer(unit).archerFireArrow();
+             nextMove(game);
+          }
+          if(currentCommand.type == UnitCommand.ARCHER_BOSS_AUTO_TOGGLE)
+          {
+             Archer(unit).bossAutoAbilityEnabled = !Archer(unit).bossAutoAbilityEnabled;
+             restoreMove(game);
+             super.update(game);
+             return;
+          }
+
+
+          if(currentCommand.type == UnitCommand.ARCHER_BOSS_ARROW_STORM)
+          {
+             Archer(unit).tryBossArrowStormManual(unit.team.game);
+             nextMove(game);
+          }
+          if(currentCommand.type == UnitCommand.ARCHER_BOSS_EXPLOSION)
+          {
+             Archer(unit).tryBossExplosionArrowManual(unit.team.game);
+             nextMove(game);
+          }
+          super.update(game);
       }
    }
 }

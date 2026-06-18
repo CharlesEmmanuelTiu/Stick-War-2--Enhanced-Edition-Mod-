@@ -28,14 +28,14 @@ package com.brockw.stickwar.engine.Ai.command
          }
       }
       
-      override public function isToggled(entity:Entity) : Boolean
-      {
-         if(entity is Archer)
-         {
-            return Archer(entity).isAutoKiteToggled;
-         }
-         return Monk(entity).isHealToggled;
-      }
+       override public function isToggled(entity:Entity) : Boolean
+       {
+          if(entity is Archer)
+          {
+             return Archer(entity).isAutoKiteToggled;
+          }
+          return Monk(entity).isHealToggled;
+       }
       
       override public function coolDownTime(entity:Entity) : Number
       {

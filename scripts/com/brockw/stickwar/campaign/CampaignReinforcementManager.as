@@ -294,10 +294,7 @@ package com.brockw.stickwar.campaign
                if(this.bossSpawner.shouldPromoteWestwindBoss(unitType,int(spawnedBossTypeCounts[unitType])))
                {
                   this.bossSpawner.configureWestwindBoss(newUnit);
-                  if(newUnit is Ninja)
-                  {
-                     Ninja(newUnit).disableBossCautiousPhase();
-                  }
+
                   newUnit.enableCampaignBossEscape();
                }
             }

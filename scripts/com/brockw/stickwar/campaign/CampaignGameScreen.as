@@ -187,13 +187,17 @@ package com.brockw.stickwar.campaign
          {
             damageModifier = level.normalDamageModifier;
          }
-         if(Boolean(level.player.unitsAvailable[Unit.U_NINJA]))
-         {
-            upgrade = CampaignUpgrade(main.campaign.upgradeMap["Cloak_BASIC"]);
-            upgrade.upgraded = true;
-            main.campaign.techAllowed[Tech.CLOAK] = 1;
-         }
-         game.initTeams(Team.getIdFromRaceName(level.player.race),Team.getIdFromRaceName(level.oponent.race),level.player.statueHealth,level.oponent.statueHealth,main.campaign.techAllowed,null,1,level.insaneModifier,1,healthModifier,1,damageModifier);
+          if(Boolean(level.player.unitsAvailable[Unit.U_NINJA]))
+          {
+             upgrade = CampaignUpgrade(main.campaign.upgradeMap["Cloak_BASIC"]);
+             upgrade.upgraded = true;
+              main.campaign.techAllowed[Tech.CLOAK] = 1;
+               main.campaign.techAllowed[Tech.NINJA_CLOAK3] = 1;
+               main.campaign.techAllowed[Tech.NINJA_SHADOW_CLONE] = 1;
+            }
+            main.campaign.techAllowed[Tech.ARCHER_BOSS_ARROW_STORM] = 1;
+            main.campaign.techAllowed[Tech.ARCHER_BOSS_EXPLOSION_ARROW] = 1;
+          game.initTeams(Team.getIdFromRaceName(level.player.race),Team.getIdFromRaceName(level.oponent.race),level.player.statueHealth,level.oponent.statueHealth,main.campaign.techAllowed,null,1,level.insaneModifier,1,healthModifier,1,damageModifier);
          team = game.teamA;
          game.team = team;
          game.teamA.id = a;

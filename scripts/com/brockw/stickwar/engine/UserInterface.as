@@ -17,9 +17,7 @@ package com.brockw.stickwar.engine
    import flash.display.*;
    import flash.events.*;
     import flash.geom.Point;
-    import flash.text.TextField;
-    import flash.text.TextFormat;
-    import flash.ui.Keyboard;
+     import flash.ui.Keyboard;
     import flash.utils.Timer;
     import flash.utils.getTimer;
    
@@ -210,32 +208,12 @@ package com.brockw.stickwar.engine
                 this.hud.hud.fastForward.visible = false;
              }
           }
-          if(team.type == Team.T_GOOD)
-          {
-             var bossToggle:MovieClip = new MovieClip();
-             bossToggle.name = "bossToggle";
-             bossToggle.buttonMode = true;
-             bossToggle.useHandCursor = true;
-             var toggleGfx:Graphics = bossToggle.graphics;
-             toggleGfx.beginFill(5921370);
-             toggleGfx.drawRoundRect(0,0,18,18,4);
-             toggleGfx.endFill();
-             bossToggle.x = this.hud.hud.map.x - 22;
-             bossToggle.y = this.hud.hud.map.y;
-             var toggleLabel:TextField = new TextField();
-             toggleLabel.text = "N";
-             toggleLabel.width = 18;
-             toggleLabel.height = 18;
-             toggleLabel.selectable = false;
-             var toggleFormat:TextFormat = new TextFormat(null,12,16777215,true);
-             toggleFormat.align = "center";
-             toggleLabel.defaultTextFormat = toggleFormat;
-             toggleLabel.x = 0;
-             toggleLabel.y = 0;
-             bossToggle.addChild(toggleLabel);
-             bossToggle.addEventListener(MouseEvent.CLICK,this.bossToggleClick);
-             this.hud.hud.addChild(bossToggle);
-          }
+           if(Boolean(this.hud.hud.bossToggle))
+           {
+              this.hud.hud.bossToggle.addEventListener(MouseEvent.CLICK,this.bossToggleClick);
+              MovieClip(this.hud.hud.bossToggle).buttonMode = true;
+              MovieClip(this.hud.hud.bossToggle).useHandCursor = true;
+           }
        }
        
        private function exitButton(evt:Event) : void
@@ -300,10 +278,10 @@ package com.brockw.stickwar.engine
          }
          this.hud.hud.defendButton.removeEventListener(MouseEvent.CLICK,this.defendButton);
          this.hud.hud.menuButton.removeEventListener(MouseEvent.CLICK,this.openMenu);
-         if(Boolean(this.hud.hud.getChildByName("bossToggle")))
-         {
-            this.hud.hud.getChildByName("bossToggle").removeEventListener(MouseEvent.CLICK,this.bossToggleClick);
-         }
+          if(Boolean(this.hud.hud.bossToggle))
+          {
+             this.hud.hud.bossToggle.removeEventListener(MouseEvent.CLICK,this.bossToggleClick);
+          }
          this.hud.hud.lowButton.removeEventListener(MouseEvent.CLICK,this.lowButton);
          this.hud.hud.medButton.removeEventListener(MouseEvent.CLICK,this.medButton);
          this.hud.hud.highButton.removeEventListener(MouseEvent.CLICK,this.highButton);
@@ -494,26 +472,11 @@ package com.brockw.stickwar.engine
        }
        
        private function bossToggleClick(evt:Event) : void
-       {
-          var newState:Boolean = this.team.toggleBossMode();
-          var btn:MovieClip = MovieClip(MovieClip(evt.currentTarget));
-          var bg:Graphics = btn.graphics;
-          bg.clear();
-          if(newState)
-          {
-             bg.beginFill(13951488);
-             bg.drawRoundRect(0,0,18,18,4);
-             bg.endFill();
-             TextField(btn.getChildAt(0)).text = "B";
-          }
-          else
-          {
-             bg.beginFill(5921370);
-             bg.drawRoundRect(0,0,18,18,4);
-             bg.endFill();
-             TextField(btn.getChildAt(0)).text = "N";
-          }
-       }
+        {
+           var newState:Boolean = this.team.toggleBossMode();
+           var btn:MovieClip = MovieClip(evt.currentTarget);
+           btn.gotoAndStop(newState ? 2 : 1);
+        }
        
        public function update(evt:Event, timeDiff:Number) : void
       {
@@ -678,6 +641,11 @@ package com.brockw.stickwar.engine
          if(this.keyBoardState.isPressed(70) && Boolean(this.hud.hud.fastForward) && this.hud.hud.fastForward.visible)
          {
             this.clickFastForward(null);
+         }
+         if(this.keyBoardState.isPressed(66) && Boolean(this.hud.hud.bossToggle))
+         {
+            var bossToggleNewState:Boolean = this.team.toggleBossMode();
+            this.hud.hud.bossToggle.gotoAndStop(bossToggleNewState ? 2 : 1);
          }
          this.gameScreen.game.soundManager.setPosition(this.gameScreen.game.screenX,0);
          if(this.gameScreen.isPaused)
@@ -865,7 +833,7 @@ package com.brockw.stickwar.engine
                   }
                }
                candidate = this.gameScreen.game.mouseOverUnit;
-               if(candidate != null && candidate is Unit && Unit(candidate).team == this.team && !Unit(candidate).isConfused() && !(candidate is Statue))
+               if(candidate != null && candidate is Unit && Unit(candidate).team == this.team && !Unit(candidate).isConfused() && !(candidate is Statue) && !Unit(candidate).isBossSummoned)
                {
                   if(this.keyBoardState.isShift)
                   {
@@ -885,7 +853,7 @@ package com.brockw.stickwar.engine
                   this.selectedUnits.clear();
                }
                type = -1;
-               if(this.gameScreen.game.mouseOverUnit != null && this.gameScreen.game.mouseOverUnit is Unit && Unit(this.gameScreen.game.mouseOverUnit).team == this.team && !Unit(this.gameScreen.game.mouseOverUnit).isConfused())
+               if(this.gameScreen.game.mouseOverUnit != null && this.gameScreen.game.mouseOverUnit is Unit && Unit(this.gameScreen.game.mouseOverUnit).team == this.team && !Unit(this.gameScreen.game.mouseOverUnit).isConfused() && !Unit(this.gameScreen.game.mouseOverUnit).isBossSummoned)
                {
                   type = this.gameScreen.game.mouseOverUnit.type;
                }
@@ -893,7 +861,7 @@ package com.brockw.stickwar.engine
                {
                   x = this.team.units[unit].x - this.gameScreen.game.screenX;
                   y = this.team.units[unit].y + this.gameScreen.game.battlefield.y;
-                  if(!Unit(this.team.units[unit]).isConfused() && (Unit(this.team.units[unit]).type == type || Unit(this.team.units[unit]).selected && this.keyBoardState.isShift))
+                  if(!Unit(this.team.units[unit]).isConfused() && !Unit(this.team.units[unit]).isBossSummoned && (Unit(this.team.units[unit]).type == type || Unit(this.team.units[unit]).selected && this.keyBoardState.isShift))
                   {
                      Unit(this.team.units[unit]).selected = true;
                   }
@@ -921,11 +889,11 @@ package com.brockw.stickwar.engine
                      y = int(this.team.units[unit].y);
                      if(this.keyBoardState.isShift)
                      {
-                        Unit(this.team.units[unit]).selected = !Unit(this.team.units[unit]).isConfused() && (this.box.isInside(x,y,this.team.units[unit].mc.height / 2,20) || Unit(this.team.units[unit]).selected || this.gameScreen.game.mouseOverUnit == this.team.units[unit]);
+                        Unit(this.team.units[unit]).selected = !Unit(this.team.units[unit]).isConfused() && !Unit(this.team.units[unit]).isBossSummoned && (this.box.isInside(x,y,this.team.units[unit].mc.height / 2,20) || Unit(this.team.units[unit]).selected || this.gameScreen.game.mouseOverUnit == this.team.units[unit]);
                      }
                      else
                      {
-                        Unit(this.team.units[unit]).selected = !Unit(this.team.units[unit]).isConfused() && (this.box.isInside(x,y,this.team.units[unit].mc.height / 2,20) || this.gameScreen.game.mouseOverUnit == this.team.units[unit]);
+                        Unit(this.team.units[unit]).selected = !Unit(this.team.units[unit]).isConfused() && !Unit(this.team.units[unit]).isBossSummoned && (this.box.isInside(x,y,this.team.units[unit].mc.height / 2,20) || this.gameScreen.game.mouseOverUnit == this.team.units[unit]);
                      }
                      if(Unit(this.team.units[unit]).selected)
                      {

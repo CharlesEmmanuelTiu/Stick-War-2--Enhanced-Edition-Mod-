@@ -540,8 +540,8 @@ package com.brockw.stickwar.engine.units
          }
       }
 
-      public function makeBoss(enableDeathBurst:Boolean = false) : void
-      {
+       override public function makeBoss(enableDeathBurst:Boolean = false) : void
+       {
          if(this._isBoss)
          {
             this.bossDeathBurstEnabled = this.bossDeathBurstEnabled || enableDeathBurst;

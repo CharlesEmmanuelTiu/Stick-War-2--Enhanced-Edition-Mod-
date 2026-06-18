@@ -311,6 +311,12 @@ package com.brockw.stickwar.engine.units
 
       private var _bossAbilitySpawnLockFrames:int;
 
+      private var _queuedAsBoss:Boolean;
+
+      private var _goldPaid:int;
+
+      private var _manaPaid:int;
+
       private var _campaignBossEscapeEnabled:Boolean;
 
       private var _campaignBossEscaping:Boolean;
@@ -2239,6 +2245,36 @@ package com.brockw.stickwar.engine.units
          return this._bossAbilitySpawnLockFrames > 0;
       }
 
+      public function get queuedAsBoss() : Boolean
+      {
+         return this._queuedAsBoss;
+      }
+
+      public function set queuedAsBoss(value:Boolean) : void
+      {
+         this._queuedAsBoss = value;
+      }
+
+      public function get goldPaid() : int
+      {
+         return this._goldPaid;
+      }
+
+      public function set goldPaid(value:int) : void
+      {
+         this._goldPaid = value;
+      }
+
+      public function get manaPaid() : int
+      {
+         return this._manaPaid;
+      }
+
+      public function set manaPaid(value:int) : void
+      {
+         this._manaPaid = value;
+      }
+
       public function enableCampaignBossEscape() : void
       {
          this._campaignBossEscapeEnabled = true;
@@ -2339,7 +2375,7 @@ package com.brockw.stickwar.engine.units
           return true;
        }
        
-       public function makeBoss() : void
+       public function makeBoss(enableDeathBurst:Boolean = false) : void
        {
        }
     }

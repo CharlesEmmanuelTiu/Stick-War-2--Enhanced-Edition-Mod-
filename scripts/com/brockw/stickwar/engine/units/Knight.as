@@ -409,7 +409,7 @@ package com.brockw.stickwar.engine.units
          return this._state == S_RUN && (!this.chargeSpell.inEffect() || this.isChargeSet);
       }
 
-      public function makeBoss() : void
+       override public function makeBoss(enableDeathBurst:Boolean = false) : void
       {
          if(this._isBoss)
          {

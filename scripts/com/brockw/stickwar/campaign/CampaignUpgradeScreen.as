@@ -101,8 +101,9 @@ package com.brockw.stickwar.campaign
          this.addUpgradeTip(Tech.MINER_WALL,this.main.xml.xml.Order.Tech.minerWall,new Bitmap(new OrderTowerBitmap()));
          this.addUpgradeTip(Tech.CROSSBOW_FIRE,this.main.xml.xml.Order.Tech.crossbowFire,new Bitmap(new allbowtrossFireArrowUpgrade()));
          this.addUpgradeTip(Tech.TOWER_SPAWN_I,this.main.xml.xml.Chaos.Tech.towerSpawnI,new Bitmap(new towerUpgradeI()));
-         this.addUpgradeTip(Tech.TOWER_SPAWN_II,this.main.xml.xml.Chaos.Tech.towerSpawnII,new Bitmap(new towerUpgradeII()));
-      }
+          this.addUpgradeTip(Tech.TOWER_SPAWN_II,this.main.xml.xml.Chaos.Tech.towerSpawnII,new Bitmap(new towerUpgradeII()));
+
+       }
       
       private function update(evt:Event) : void
       {

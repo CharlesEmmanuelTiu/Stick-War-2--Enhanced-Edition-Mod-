@@ -16,7 +16,7 @@ package com.brockw.stickwar.engine.units
    public class Monk extends Unit
    {
       
-      private static const BOSS_WEAPON_SKIN:String = "Golden Staff";
+      private static const BOSS_WEAPON_SKIN:String = "Spellbook";
       
       private static const BOSS_REVIVE_RANGE:Number = 180;
 
@@ -380,10 +380,10 @@ package com.brockw.stickwar.engine.units
          return false;
       }
 
-      public function isBossPriorityHealTarget(target:Unit) : Boolean
-      {
-         return this.isBoss && target != null && target.team == this.team && target is Ninja && Ninja(target).isBoss && Ninja(target).bossIsRetreating && target.health < target.maxHealth;
-      }
+       public function isBossPriorityHealTarget(target:Unit) : Boolean
+       {
+          return false;
+       }
 
       public function getHealAmountForTarget(target:Unit) : Number
       {
@@ -525,7 +525,7 @@ package com.brockw.stickwar.engine.units
          this._healDuration = value;
       }
 
-      public function makeBoss() : void
+       override public function makeBoss(enableDeathBurst:Boolean = false) : void
       {
          this._isBoss = true;
          this.isBossUnit = true;

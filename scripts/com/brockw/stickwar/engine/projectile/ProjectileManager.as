@@ -447,19 +447,19 @@ package com.brockw.stickwar.engine.projectile
          unit.team.game.soundManager.playSound("ElectricWallSoundEffect",x,y);
       }
       
-      public function initNuke(x:Number, y:Number, unit:Unit, damage:Number) : void
-      {
-         var n:Nuke = Nuke(this._projectileMap[Projectile.NUKE].getItem());
-         var showVisual:Boolean = false;
-         var visualLimit:int = 0;
-         if(n == null)
-         {
-            return;
-         }
-         if(Math.abs(x - unit.px) > unit.team.game.xml.xml.Order.Units.magikill.nuke.range)
-         {
-            x = unit.px + Util.sgn(x - unit.px) * unit.team.game.xml.xml.Order.Units.magikill.nuke.range;
-         }
+       public function initNuke(x:Number, y:Number, unit:Unit, damage:Number, clampToRange:Boolean = true) : void
+       {
+          var n:Nuke = Nuke(this._projectileMap[Projectile.NUKE].getItem());
+          var showVisual:Boolean = false;
+          var visualLimit:int = 0;
+          if(n == null)
+          {
+             return;
+          }
+          if(clampToRange && Math.abs(x - unit.px) > unit.team.game.xml.xml.Order.Units.magikill.nuke.range)
+          {
+             x = unit.px + Util.sgn(x - unit.px) * unit.team.game.xml.xml.Order.Units.magikill.nuke.range;
+          }
          n.inflictor = unit;
          n.controlledFriendlyFire = unit.isConfused();
          n.px = x;
