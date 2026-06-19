@@ -30,8 +30,6 @@ package com.brockw.stickwar.engine.units
       
       private static const BOSS_ESCAPE_INVISIBLE_FRAMES:int = 30 * 3;
 
-      private static const BOSS_WHIFF_PENALTY_FRAMES:int = 30 * 20;
-
       private static const BOSS_SPECIAL_CLOAK_DURATION_FRAMES:int = 30 * 12;
 
       private static const PLAYER_BOSS_CLOAK3_DURATION_FRAMES:int = 30 * 8;
@@ -39,8 +37,6 @@ package com.brockw.stickwar.engine.units
       private static const BOSS_CHAIN_CLOAK_DURATION_FRAMES:int = 45;
 
       private static const BOSS_CHAIN_CLOAK_DELAY_FRAMES:int = 15;
-
-      private static const SHADOW_CLONE_COOLDOWN_FRAMES:int = 30 * 15;
 
       private static const CLONE_IDLE_TIMEOUT_FRAMES:int = 30 * 10;
 
@@ -114,6 +110,10 @@ package com.brockw.stickwar.engine.units
 
       private var _shadowCloneCooldownFrames:int;
 
+      private var bossWhiffPenaltyCooldownMax:int;
+
+      private var shadowCloneCooldownMax:int;
+
       private var _cloneIdleTimerFrames:int;
 
       private var _lastAnimLabel:String;
@@ -132,7 +132,7 @@ package com.brockw.stickwar.engine.units
          this.dontStealth = true;
          this.ninjaCopyDistance = 1;
           this._isAutoCloakToggled = false;
-          this._autoPendingShadowCloneOnHit = false;
+           this._autoPendingShadowCloneOnHit = false;
           this._isBoss = false;
           this.bossPendingChainCloak = false;
          this.bossPendingChainCloakFrames = 0;
@@ -205,9 +205,9 @@ package com.brockw.stickwar.engine.units
       {
          initBase();
          this._isBoss = false;
-         this._isAutoCloakToggled = false;
-         this._autoPendingShadowCloneOnHit = false;
-         this._stealthSpellTimer = new SpellCooldown(game.xml.xml.Order.Units.ninja.stealth.effect,game.xml.xml.Order.Units.ninja.stealth.cooldown,game.xml.xml.Order.Units.ninja.stealthMana);
+          this._isAutoCloakToggled = false;
+          this._autoPendingShadowCloneOnHit = false;
+          this._stealthSpellTimer = new SpellCooldown(game.xml.xml.Order.Units.ninja.stealth.effect,game.xml.xml.Order.Units.ninja.stealth.cooldown,game.xml.xml.Order.Units.ninja.stealthMana);
          WEAPON_REACH = game.xml.xml.Order.Units.ninja.weaponReach;
          population = game.xml.xml.Order.Units.ninja.population;
          _mass = game.xml.xml.Order.Units.ninja.mass;
@@ -239,9 +239,11 @@ package com.brockw.stickwar.engine.units
          MovieClip(_mc.mc.gotoAndPlay(1));
          MovieClip(_mc.gotoAndStop(1));
          drawShadow();
-          this.isDash = true;
-           this._isPlayerBoss = false;
-        }
+           this.isDash = true;
+            this._isPlayerBoss = false;
+            this.bossWhiffPenaltyCooldownMax = game.xml.xml.Order.Units.ninja.cloak3.cooldown;
+            this.shadowCloneCooldownMax = game.xml.xml.Order.Units.ninja.shadowClone.cooldown;
+         }
 
        override public function setBuilding() : void
       {
@@ -308,8 +310,8 @@ package com.brockw.stickwar.engine.units
           var cloakDuration:int = isChainCloak ? BOSS_CHAIN_CLOAK_DURATION_FRAMES : (this._isPlayerBoss ? PLAYER_BOSS_CLOAK3_DURATION_FRAMES : BOSS_SPECIAL_CLOAK_DURATION_FRAMES);
           if(this._isPlayerBoss && team.tech.isResearched(Tech.NINJA_CLOAK3))
           {
-             var manaCost:int = isChainCloak ? 10 : 20;
-             if(team.mana < manaCost)
+              var manaCost:int = isChainCloak ? 10 : game.xml.xml.Order.Units.ninja.cloak3.mana;
+              if(team.mana < manaCost)
              {
                 return false;
              }
@@ -627,11 +629,11 @@ package com.brockw.stickwar.engine.units
                 }
                 a.setAction(1,0,UnitCommand.CURE);
              }
-            if(this.isBoss && this._isPlayerBoss && team.tech.isResearched(Tech.NINJA_SHADOW_CLONE))
-            {
-               a.setAction(0,1,UnitCommand.NINJA_SHADOW_CLONE);
-            }
-      }
+             if(this.isBoss && this._isPlayerBoss && team.tech.isResearched(Tech.NINJA_SHADOW_CLONE))
+             {
+                a.setAction(0,1,UnitCommand.NINJA_SHADOW_CLONE);
+             }
+       }
       
       override public function get damageToArmour() : Number
       {
@@ -719,12 +721,12 @@ package com.brockw.stickwar.engine.units
          return this._isAutoCloakToggled;
       }
 
-      public function set isAutoCloakToggled(value:Boolean) : void
-       {
-          this._isAutoCloakToggled = value;
-       }
+        public function set isAutoCloakToggled(value:Boolean) : void
+        {
+           this._isAutoCloakToggled = value;
+        }
 
-       public function get autoPendingShadowCloneOnHit() : Boolean
+        public function get autoPendingShadowCloneOnHit() : Boolean
        {
           return this._autoPendingShadowCloneOnHit;
        }
@@ -852,7 +854,7 @@ package com.brockw.stickwar.engine.units
               }
               this.bossPendingChainCloak = false;
               this.bossPendingChainCloakFrames = 0;
-              this.bossWhiffPenaltyFrames = BOSS_WHIFF_PENALTY_FRAMES;
+              this.bossWhiffPenaltyFrames = this.bossWhiffPenaltyCooldownMax;
               this.bossNeedsSpecialReset = true;
            }
           if(this.isBoss || this.isBossSummoned)
@@ -907,7 +909,7 @@ package com.brockw.stickwar.engine.units
           {
              if(team.mana < 50)
              {
-                this.bossWhiffPenaltyFrames = BOSS_WHIFF_PENALTY_FRAMES;
+                this.bossWhiffPenaltyFrames = this.bossWhiffPenaltyCooldownMax;
                 return false;
              }
              team.mana -= 50;
@@ -924,7 +926,7 @@ package com.brockw.stickwar.engine.units
        {
           if(this.bossWhiffPenaltyFrames > 0)
           {
-             return this.bossWhiffPenaltyFrames / BOSS_WHIFF_PENALTY_FRAMES;
+             return this.bossWhiffPenaltyFrames / this.bossWhiffPenaltyCooldownMax;
           }
           return 0;
        }
@@ -998,12 +1000,12 @@ package com.brockw.stickwar.engine.units
               }
               return;
            }
-           if(team.mana < 15)
-           {
-              return;
-           }
-           team.mana -= 15;
-           var game:StickWar = this.team.game;
+            var game:StickWar = this.team.game;
+             if(team.mana < game.xml.xml.Order.Units.ninja.shadowClone.mana)
+             {
+                return;
+             }
+             team.mana -= game.xml.xml.Order.Units.ninja.shadowClone.mana;
            var i:int = 0;
            for(i = 0; i < 2; i++)
            {
@@ -1151,9 +1153,9 @@ package com.brockw.stickwar.engine.units
                    this._shadowClone2.ai.setCommand(game,defaultHold2);
                 }
             }
-        }
+         }
 
-        private function removeShadowClone(clone:Ninja) : void
+          private function removeShadowClone(clone:Ninja) : void
         {
            if(clone == null) return;
            if(clone.isDead) return;
@@ -1188,7 +1190,7 @@ package com.brockw.stickwar.engine.units
                    this._shadowClone1 = null;
                    if(this._shadowCloneCooldownFrames == 0)
                    {
-                      this._shadowCloneCooldownFrames = SHADOW_CLONE_COOLDOWN_FRAMES;
+                      this._shadowCloneCooldownFrames = this.shadowCloneCooldownMax;
                    }
                 }
                 if(this._shadowClone2 != null && !this._shadowClone2.isAlive())
@@ -1197,7 +1199,7 @@ package com.brockw.stickwar.engine.units
                    this._shadowClone2 = null;
                    if(this._shadowCloneCooldownFrames == 0)
                    {
-                      this._shadowCloneCooldownFrames = SHADOW_CLONE_COOLDOWN_FRAMES;
+                      this._shadowCloneCooldownFrames = this.shadowCloneCooldownMax;
                    }
                 }
                if(this._shadowClone1 == null && this._shadowClone2 == null)
@@ -1325,7 +1327,7 @@ package com.brockw.stickwar.engine.units
                this._shadowClone1 = null;
                if(this._shadowCloneCooldownFrames == 0)
                {
-                  this._shadowCloneCooldownFrames = SHADOW_CLONE_COOLDOWN_FRAMES;
+                  this._shadowCloneCooldownFrames = this.shadowCloneCooldownMax;
                }
             }
             if(this._shadowClone2 != null && !this._shadowClone2.isAlive())
@@ -1334,7 +1336,7 @@ package com.brockw.stickwar.engine.units
                this._shadowClone2 = null;
                if(this._shadowCloneCooldownFrames == 0)
                {
-                  this._shadowCloneCooldownFrames = SHADOW_CLONE_COOLDOWN_FRAMES;
+                  this._shadowCloneCooldownFrames = this.shadowCloneCooldownMax;
                }
             }
             if(this._shadowClone1 == null && this._shadowClone2 == null)
@@ -1347,7 +1349,7 @@ package com.brockw.stickwar.engine.units
        {
           if(this._shadowCloneCooldownFrames > 0)
           {
-             return this._shadowCloneCooldownFrames / SHADOW_CLONE_COOLDOWN_FRAMES;
+             return this._shadowCloneCooldownFrames / this.shadowCloneCooldownMax;
           }
           return 0;
        }
@@ -1371,7 +1373,7 @@ package com.brockw.stickwar.engine.units
          this.bossPendingChainCloakFrames = 0;
          this.bossSpecialCloakActive = false;
          this.bossSpecialCloakHit = false;
-         this.bossWhiffPenaltyFrames = BOSS_WHIFF_PENALTY_FRAMES;
+         this.bossWhiffPenaltyFrames = this.bossWhiffPenaltyCooldownMax;
          this.bossNeedsSpecialReset = true;
          this.dontStealth = true;
       }
@@ -1412,7 +1414,7 @@ package com.brockw.stickwar.engine.units
              {
                 this.activateShadowClone();
              }
-             this.bossWhiffPenaltyFrames = BOSS_WHIFF_PENALTY_FRAMES;
+             this.bossWhiffPenaltyFrames = this.bossWhiffPenaltyCooldownMax;
             this.bossPendingChainCloak = false;
             this.bossPendingChainCloakFrames = 0;
             this.bossNeedsSpecialReset = true;

@@ -145,12 +145,12 @@ package com.brockw.stickwar.campaign
          this.upgradeMap[u.name] = u;
          u = new CampaignUpgrade("Statue Health",["Castle Archer III"],["Castle Archer IV"],Tech.STATUE_HEALTH);
          this.upgradeMap[u.name] = u;
-         u = new CampaignUpgrade("Cure",["Miner Speed"],["Electric Wall"],Tech.MONK_CURE);
-         this.upgradeMap[u.name] = u;
-         u = new CampaignUpgrade("Electric Wall",["Cure"],["Poison Spray"],Tech.MAGIKILL_WALL);
-         this.upgradeMap[u.name] = u;
-         u = new CampaignUpgrade("Poison Spray",["Electric Wall"],[],Tech.MAGIKILL_POISON);
-         this.upgradeMap[u.name] = u;
+          u = new CampaignUpgrade("Cure",["Miner Speed"],["Electric Wall"],Tech.MONK_CURE);
+          this.upgradeMap[u.name] = u;
+          u = new CampaignUpgrade("Electric Wall",["Cure"],["Poison Spray"],Tech.MAGIKILL_WALL);
+          this.upgradeMap[u.name] = u;
+          u = new CampaignUpgrade("Poison Spray",["Electric Wall"],[],Tech.MAGIKILL_POISON);
+          this.upgradeMap[u.name] = u;
       }
       
       public function toString() : String

@@ -77,7 +77,17 @@ package com.brockw.stickwar.engine.Team.Order
             shadowCloneCt.color = 0x4444FF;
             shadowCloneBmd.draw(shadowCloneBmd, null, shadowCloneCt, BlendMode.MULTIPLY);
             this.addNewUpgrade(Tech.NINJA_SHADOW_CLONE,game.xml.xml.Order.Tech.shadowClone,new Bitmap(shadowCloneBmd),81);
-        }
+            var reviveBmd:BitmapData = new HealBitmap();
+            var reviveCt:ColorTransform = new ColorTransform();
+            reviveCt.color = 0xFFD700;
+            reviveBmd.draw(reviveBmd, null, reviveCt, BlendMode.MULTIPLY);
+             this.addNewUpgrade(Tech.MONK_BOSS_REVIVE,game.xml.xml.Order.Tech.monkRevive,new Bitmap(reviveBmd),81);
+            var summonUpgradeBmd:BitmapData = new MagikillSummon();
+            var summonUpgradeCt:ColorTransform = new ColorTransform();
+            summonUpgradeCt.color = 0xFFD700;
+            summonUpgradeBmd.draw(summonUpgradeBmd, null, summonUpgradeCt, BlendMode.MULTIPLY);
+            this.addNewUpgrade(Tech.MAGIKILL_SUMMON_UPGRADE,game.xml.xml.Order.Tech.magikillSummonUpgrade,new Bitmap(summonUpgradeBmd),81);
+          }
       
       override public function update(game:StickWar) : void
       {

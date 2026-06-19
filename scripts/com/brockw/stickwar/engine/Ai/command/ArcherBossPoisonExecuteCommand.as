@@ -24,10 +24,13 @@ package com.brockw.stickwar.engine.Ai.command
       {
          super();
          type = UnitCommand.ARCHER_BOSS_POISON_EXECUTE;
-         hotKey = 87;
          _hasCoolDown = true;
          _intendedEntityType = Unit.U_ARCHER;
          buttonBitmap = actualButtonBitmap;
+         if(game != null)
+         {
+            this.loadXML(game.xml.xml.Order.Units.archer.poisonExecute);
+         }
       }
 
       override public function coolDownTime(entity:Entity) : Number

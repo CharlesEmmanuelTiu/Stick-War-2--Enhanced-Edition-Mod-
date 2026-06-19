@@ -424,16 +424,20 @@ package com.brockw.stickwar.engine.projectile
          n.inflictor = unit;
          n.controlledFriendlyFire = unit.isConfused();
          stunDamage = unit.team.game.xml.xml.Order.Units.magikill.electricWall.damage;
-         if(unit is Magikill && Magikill(unit).isBoss)
-         {
-            stunDamage = Math.max(1,int(stunDamage * 0.15));
-            n.applyBossStun = true;
-            n.bossStunFrames = 30 * 2;
-         }
-         else
-         {
-            n.applyBossStun = false;
-         }
+          if(unit is Magikill && Magikill(unit).isBoss)
+          {
+             var magikill:Magikill = Magikill(unit);
+             if(!magikill.isPlayerBoss || unit.team.tech.isResearched(Tech.MAGIKILL_LIGHTNING_STUN))
+             {
+                stunDamage = Math.max(1,int(stunDamage * 0.15));
+                n.applyBossStun = true;
+                n.bossStunFrames = 30 * 2;
+             }
+          }
+          else
+          {
+             n.applyBossStun = false;
+          }
          n.damageToDeal = stunDamage;
          n.px = x;
          n.py = 0;

@@ -1113,6 +1113,41 @@
 <tip>Shadowrath creates 2 shadow clones that follow and attack enemies.</tip>
 </shadowClone>
 
+<monkRevive>
+<name>Revive</name>
+<cost>250</cost>
+<mana>85</mana>
+<time>1200</time>
+<tip>Allows Meric boss to revive dead allies.</tip>
+</monkRevive>
+
+<magikillNuke2>
+<name>Meteor II</name>
+<cost>150</cost>
+<mana>100</mana>
+<effect>1</effect>
+<time>400</time>
+<tip>Magikill Boss Meteor now creates a chain of 3 meteors.</tip>
+</magikillNuke2>
+
+<magikillLightningStun>
+<name>Lightning Stun</name>
+<cost>100</cost>
+<mana>100</mana>
+<effect>1</effect>
+<time>800</time>
+<tip>Magikill Boss Electric Wall now stuns enemies hit.</tip>
+</magikillLightningStun>
+
+<magikillSummonUpgrade>
+<name>Summon Upgrade</name>
+<cost>250</cost>
+<mana>150</mana>
+<effect>1</effect>
+<time>1500</time>
+<tip>Upgrades Magikill Boss summoning: Ninja replaces Swordwrath, Archer capacity doubled.</tip>
+</magikillSummonUpgrade>
+
 </Tech>
 
 <Units>
@@ -1220,6 +1255,17 @@
 <stunForce>9</stunForce>
 </shieldBash>
 
+<brace>
+<name>Auto Brace Shield Slam</name>
+<info>Spearton Boss automatically commands nearby Speartons to shield slam when enemies are near. Click to disable.</info>
+<hotkey>81</hotkey>
+<gold>0</gold>
+<mana>0</mana>
+<effect>0</effect>
+<cooldown>600</cooldown>
+<radius>250</radius>
+</brace>
+
 </spearton>
 
 
@@ -1289,11 +1335,18 @@
 <gold>0</gold>
 <mana>15</mana>
 <effect>0</effect>
-<cooldown>900</cooldown>
+<cooldown>450</cooldown>
 </shadowClone>
 
-
-
+<cloak3>
+<name>Cloak 3</name>
+<info>Shadowrath activates a powerful mana-fueled cloak.</info>
+<hotkey>81</hotkey>
+<gold>0</gold>
+<mana>20</mana>
+<effect>0</effect>
+<cooldown>600</cooldown>
+</cloak3>
 </ninja>
 
 
@@ -1365,9 +1418,18 @@
 <damage>15</damage>
 </poisonSpray>
 
+<summon>
+<name>Summon</name>
+<info>Magikill Boss summons allied units to fight alongside.</info>
+<hotkey>81</hotkey>
+<gold>0</gold>
+<mana>0</mana>
+<effect>0</effect>
+<cooldown>450</cooldown>
+</summon>
 
-<population>5</population>
-</magikill>
+  <population>5</population>
+  </magikill>
 
 <monk>
 <name>Meric</name>
@@ -1416,6 +1478,27 @@
 
 <range>450</range>
 </cure>
+
+<revive>
+<name>Revive</name>
+<info>Meric boss revives a dead ally.</info>
+<hotkey>81</hotkey>
+<gold>0</gold>
+<mana>70</mana>
+<effect>0</effect>
+<cooldown>1350</cooldown>
+<range>180</range>
+</revive>
+
+<autoRevive>
+<name>Auto Revive</name>
+<info>Meric boss automatically revives nearby dead units.</info>
+<hotkey>84</hotkey>
+<gold>0</gold>
+<mana>0</mana>
+<effect>0</effect>
+<cooldown>0</cooldown>
+</autoRevive>
 
 <population>3</population>
 </monk>
@@ -1466,6 +1549,57 @@
 <velocity>27</velocity>
 <damage>10</damage>
 </fire>
+
+<tripleShot>
+<name>Triple Shot</name>
+<info>Archer Boss fires three arrows in a spread.</info>
+<hotkey>81</hotkey>
+<gold>0</gold>
+<mana>0</mana>
+<effect>0</effect>
+<cooldown>360</cooldown>
+<range>700</range>
+</tripleShot>
+
+<poisonExecute>
+<name>Poison Execute</name>
+<info>Archer Boss executes a poisoned enemy with a powerful shot.</info>
+<hotkey>87</hotkey>
+<gold>0</gold>
+<mana>10</mana>
+<effect>0</effect>
+<cooldown>720</cooldown>
+</poisonExecute>
+
+<arrowStorm>
+<name>Arrow Storm</name>
+<info>Archer Boss calls down a rain of arrows at a target location.</info>
+<hotkey>69</hotkey>
+<gold>0</gold>
+<mana>70</mana>
+<effect>0</effect>
+<cooldown>1200</cooldown>
+</arrowStorm>
+
+<explosion>
+<name>Explosion Arrow</name>
+<info>Archer Boss fires a devastating explosive arrow.</info>
+<hotkey>82</hotkey>
+<gold>0</gold>
+<mana>25</mana>
+<effect>0</effect>
+<cooldown>1140</cooldown>
+</explosion>
+
+<autoToggle>
+<name>Auto Abilities</name>
+<info>Toggles whether Archer Boss automatically uses abilities.</info>
+<hotkey>84</hotkey>
+<gold>0</gold>
+<mana>0</mana>
+<effect>0</effect>
+<cooldown>0</cooldown>
+</autoToggle>
 
 <population>2</population>
 </archer>
@@ -1626,7 +1760,7 @@ Sound Effects by: Pepper
 
 Thanks to Stickpage.com and the Stick Page Community!
 
-©Copyright Stickpage
+ï¿½Copyright Stickpage
 </credits>
 </GameConstants>
 

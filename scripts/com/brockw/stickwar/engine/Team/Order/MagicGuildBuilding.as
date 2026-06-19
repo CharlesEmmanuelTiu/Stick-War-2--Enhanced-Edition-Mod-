@@ -26,11 +26,15 @@ package com.brockw.stickwar.engine.Team.Order
          {
             a.setAction(0,0,Tech.MAGIKILL_POISON);
          }
-         if(!tech.isResearched(Tech.MAGIKILL_WALL))
-         {
-            a.setAction(1,0,Tech.MAGIKILL_WALL);
-         }
-      }
+          if(!tech.isResearched(Tech.MAGIKILL_WALL))
+          {
+             a.setAction(1,0,Tech.MAGIKILL_WALL);
+          }
+          if(!tech.isResearched(Tech.MAGIKILL_SUMMON_UPGRADE))
+          {
+             a.setAction(2,0,Tech.MAGIKILL_SUMMON_UPGRADE);
+          }
+       }
    }
 }
 

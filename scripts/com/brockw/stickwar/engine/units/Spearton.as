@@ -24,8 +24,6 @@ package com.brockw.stickwar.engine.units
       
       private static const BOSS_PROJECTILE_RESISTANCE:Number = 0.5;
       
-      private static const BOSS_BRACE_RADIUS:Number = 250;
-
       private static const BOSS_TRIGGER_ALLY_RADIUS:Number = 340;
       
       private static const BOSS_COMBAT_RADIUS:Number = 350;
@@ -37,8 +35,6 @@ package com.brockw.stickwar.engine.units
       private static const BOSS_BRACE_DELAY_FRAMES:int = 20;
 
       private static const BOSS_RECENT_ATTACK_WINDOW_FRAMES:int = 30 * 2;
-      
-      private static const BOSS_ABILITY_COOLDOWN_FRAMES:int = 30 * 20;
       
       private static var WEAPON_REACH:int;
       
@@ -66,6 +62,10 @@ package com.brockw.stickwar.engine.units
       private var _isBoss:Boolean;
       
       private var bossAbilityCooldownFrames:int;
+
+      private var bossAbilityCooldownMax:int;
+
+      private var bossBraceRadius:Number;
       
       private var bossBraceDelayFrames:int;
       
@@ -160,8 +160,10 @@ package com.brockw.stickwar.engine.units
          this.bossShieldSlamActive = false;
          this.bossCommandedShieldBash = false;
          this.bossLastNormalAttackFrame = -999999;
-         this.bossShieldSlamStunTime = game.xml.xml.Chaos.Units.knight.charge.stun;
-         this.forcedWeaponSkin = "";
+          this.bossShieldSlamStunTime = game.xml.xml.Chaos.Units.knight.charge.stun;
+          this.bossAbilityCooldownMax = game.xml.xml.Order.Units.spearton.brace.cooldown;
+          this.bossBraceRadius = game.xml.xml.Order.Units.spearton.brace.radius;
+          this.forcedWeaponSkin = "";
          this.forcedArmorSkin = "";
          this.forcedMiscSkin = "";
          MovieClip(_mc.mc.gotoAndPlay(1));
@@ -242,11 +244,10 @@ package com.brockw.stickwar.engine.units
                {
                   this.bossShieldBash();
                }
-               else if(this.bossCommandedShieldBash)
-               {
-                  this.bossCommandedShieldBash = false;
-                  this.forcedShieldBash();
-               }
+                else if(this.bossCommandedShieldBash)
+                {
+                   this.forcedShieldBash();
+                }
                else
                {
                   this.shieldBash();
@@ -284,16 +285,20 @@ package com.brockw.stickwar.engine.units
                   hit = this.checkForBlockHit();
                   if(this.bossShieldSlamActive)
                   {
-                     this.bossAbilityCooldownFrames = BOSS_ABILITY_COOLDOWN_FRAMES;
+                     this.bossAbilityCooldownFrames = this.bossAbilityCooldownMax;
                      this.bossShieldSlamActive = false;
                      this.releaseBossBraceFormation();
                   }
                }
-               if(_mc.mc.currentFrame == _mc.mc.totalFrames)
-               {
-                  this.isShieldBashing = false;
-                  this.bossCommandedShieldBash = false;
-               }
+                if(_mc.mc.currentFrame == _mc.mc.totalFrames)
+                {
+                   this.isShieldBashing = false;
+                   if(this.bossCommandedShieldBash)
+                   {
+                      this.bossCommandedShieldBash = false;
+                      this.stopBlocking();
+                   }
+                }
             }
             else if(this.inBlock)
             {
@@ -608,7 +613,7 @@ package com.brockw.stickwar.engine.units
          this.isBossMovementLocked = true;
          for each(ally in team.unitGroups[Unit.U_SPEARTON])
          {
-             if(ally != null && ally.isAlive() && ally != this && ally.sqrDistanceToTarget(this) <= BOSS_BRACE_RADIUS * BOSS_BRACE_RADIUS)
+             if(ally != null && ally.isAlive() && ally != this && ally.sqrDistanceToTarget(this) <= this.bossBraceRadius * this.bossBraceRadius)
             {
                ally.commandBossBraceShieldBash();
             }
@@ -713,7 +718,7 @@ package com.brockw.stickwar.engine.units
          this.stopBlocking();
          for each(ally in team.unitGroups[Unit.U_SPEARTON])
          {
-            if(ally != null && ally.isAlive() && ally.sqrDistanceToTarget(this) <= BOSS_BRACE_RADIUS * BOSS_BRACE_RADIUS)
+            if(ally != null && ally.isAlive() && ally.sqrDistanceToTarget(this) <= this.bossBraceRadius * this.bossBraceRadius)
             {
                ally.bossBraceDelayFrames = 0;
                ally.bossCommandedShieldBash = false;

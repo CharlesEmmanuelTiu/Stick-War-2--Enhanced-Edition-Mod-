@@ -101,11 +101,71 @@ package com.brockw.stickwar.engine.Ai
             baseUpdate(game);
             return;
          }
-          if(magikill.isBoss)
-          {
-             this.updateBossGenericCasting(game,magikill);
-             return;
-          }
+            if(magikill.isBoss)
+            {
+               if(currentCommand.type == UnitCommand.CURE)
+               {
+                  Magikill(unit).autoCastMode = (Magikill(unit).autoCastMode + 1) % 3;
+                  restoreMove(game);
+                  baseUpdate(game);
+                  return;
+               }
+               if(currentCommand.type == UnitCommand.MAGIKILL_SUMMON)
+               {
+                  if(magikill.tryBossSummonGuards(game))
+                  {
+                     restoreMove(game);
+                  }
+                  baseUpdate(game);
+                  return;
+               }
+               if(currentCommand.type == UnitCommand.NUKE || currentCommand.type == UnitCommand.STUN || currentCommand.type == UnitCommand.POISON_DART)
+               {
+                  if(this.shouldRestoreAutoSpellCommand && !this.isAutoSpellTargetStillValid(game))
+                  {
+                     this.finishSpellCommand(game);
+                     return;
+                  }
+                  this.updateSpellCommandTargetPosition(game);
+                  if(!currentCommand.inRange(unit))
+                  {
+                     unit.mayWalkThrough = true;
+                     unit.isBusyForSpell = true;
+                     unit.walk((currentCommand.realX - unit.px) / 100,(currentCommand.realY - unit.py) / 100,(currentCommand.realX - unit.px) / 100);
+                  }
+                  else if(currentCommand.type == UnitCommand.NUKE)
+                  {
+                     Magikill(unit).nukeSpell(NukeCommand(currentCommand).realX,NukeCommand(currentCommand).realY);
+                     this.finishSpellCommand(game);
+                  }
+                  else if(currentCommand.type == UnitCommand.STUN)
+                  {
+                     Magikill(unit).stunSpell(StunCommand(currentCommand).realX,StunCommand(currentCommand).realY);
+                     this.finishSpellCommand(game);
+                  }
+                  else if(currentCommand.type == UnitCommand.POISON_DART)
+                  {
+                     Magikill(unit).poisonDartSpell(PoisonDartCommand(currentCommand).realX,PoisonDartCommand(currentCommand).realY);
+                     this.finishSpellCommand(game);
+                  }
+                  return;
+               }
+               if(unit.team.isAi)
+               {
+                  this.updateBossGenericCasting(game,magikill);
+                  return;
+               }
+               if(magikill.isAutoCastEnabled)
+               {
+                  this.tryAutoCast(game);
+               }
+               if(currentCommand.type == UnitCommand.NUKE || currentCommand.type == UnitCommand.STUN || currentCommand.type == UnitCommand.POISON_DART)
+               {
+                  return;
+               }
+               baseUpdate(game);
+               return;
+            }
           if(this.tryFinishInitialSpawnMove(game))
          {
             return;
@@ -569,16 +629,24 @@ package com.brockw.stickwar.engine.Ai
          var totalWeight:int = 0;
          var roll:int = 0;
           if(unit.team == null || unit.team.isAi || unit.isGarrisoned || unit.isBusy())
+          {
+             return;
+          }
+          magikill = Magikill(unit);
+          if(magikill.isAutoCastEnabled && magikill.isBoss && magikill.summonCooldown() == 0 && magikill.canBossSummonAnyGuardType() && (!magikill.isSummonUpgradeActive() || magikill.team.mana >= 70))
+          {
+             magikill.tryBossSummonGuards(game);
+          }
+           defendMode = this.isDefendMode();
+           if(!defendMode && currentCommand.type == UnitCommand.MOVE && currentCommand.targetId == -1)
+           {
+              defendMode = true;
+           }
+          if(!defendMode && !this.isAttackMode(game))
          {
             return;
          }
-         defendMode = this.isDefendMode();
-         if(!defendMode && !this.isAttackMode(game))
-         {
-            return;
-         }
-         magikill = Magikill(unit);
-         if(!magikill.isAutoCastEnabled)
+          if(!magikill.isAutoCastEnabled)
          {
             return;
          }

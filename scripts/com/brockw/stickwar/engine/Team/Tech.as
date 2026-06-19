@@ -135,6 +135,14 @@ package com.brockw.stickwar.engine.Team
       public static const NINJA_CLOAK3:int = -66;
 
       public static const NINJA_SHADOW_CLONE:int = -67;
+
+      public static const MONK_BOSS_REVIVE:int = -68;
+
+      public static const MAGIKILL_NUKE_2:int = -69;
+
+      public static const MAGIKILL_LIGHTNING_STUN:int = -70;
+
+      public static const MAGIKILL_SUMMON_UPGRADE:int = -71;
       
       public var upgrades:Dictionary;
       

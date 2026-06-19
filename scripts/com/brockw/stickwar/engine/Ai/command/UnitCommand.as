@@ -109,6 +109,12 @@ package com.brockw.stickwar.engine.Ai.command
 
       public static const NINJA_SHADOW_CLONE:int = 56;
 
+      public static const MONK_BOSS_REVIVE:int = 57;
+
+      public static const MONK_BOSS_AUTO_REVIVE_TOGGLE:int = 58;
+
+      public static const MAGIKILL_SUMMON:int = 59;
+
       public static const actualButtonBitmap:* = new Bitmap(new CommandMove());
       
       protected var game:StickWar;

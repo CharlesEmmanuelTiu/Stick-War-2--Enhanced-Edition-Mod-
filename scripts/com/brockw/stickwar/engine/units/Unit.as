@@ -1076,16 +1076,23 @@ package com.brockw.stickwar.engine.units
                c.blueOffset = 0;
                this.mc.mc.filters = [];
             }
-            else
-            {
-               c.greenOffset = 255;
-               c.blueOffset = 255;
-               this.mc.mc.filters = [this.towerSpawnGlow];
-               if(game.frame % 60 == 0 && this.isAlive())
-               {
-                  game.projectileManager.initSpawnDrip(px,py,this.team);
-               }
-            }
+             else
+             {
+                c.greenOffset = 255;
+                c.blueOffset = 255;
+                if(!this.forceTowerSpawnVisual)
+                {
+                   this.mc.mc.filters = [this.towerSpawnGlow];
+                }
+                else
+                {
+                   this.mc.mc.filters = [];
+                }
+                if(game.frame % 60 == 0 && this.isAlive())
+                {
+                   game.projectileManager.initSpawnDrip(px,py,this.team);
+                }
+             }
          }
          else
          {

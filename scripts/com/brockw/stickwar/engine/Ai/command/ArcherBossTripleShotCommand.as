@@ -24,10 +24,13 @@ package com.brockw.stickwar.engine.Ai.command
       {
          super();
          type = UnitCommand.ARCHER_BOSS_TRIPLE_SHOT;
-         hotKey = 81;
          _hasCoolDown = true;
          _intendedEntityType = Unit.U_ARCHER;
          buttonBitmap = actualButtonBitmap;
+         if(game != null)
+         {
+            this.loadXML(game.xml.xml.Order.Units.archer.tripleShot);
+         }
       }
 
       override public function coolDownTime(entity:Entity) : Number

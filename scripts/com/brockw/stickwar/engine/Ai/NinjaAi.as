@@ -136,12 +136,12 @@ package com.brockw.stickwar.engine.Ai
               Ninja(unit).bossSpecialStealth();
               restoreMove(game);
            }
-           if(currentCommand.type == UnitCommand.NINJA_SHADOW_CLONE)
-           {
-              Ninja(unit).activateShadowClone();
-              restoreMove(game);
-           }
-         if(Ninja(unit).isAutoCloakToggled)
+            if(currentCommand.type == UnitCommand.NINJA_SHADOW_CLONE)
+            {
+               Ninja(unit).activateShadowClone();
+               restoreMove(game);
+            }
+           if(Ninja(unit).isAutoCloakToggled)
           {
              this.tryAutoAbilityCycle();
           }

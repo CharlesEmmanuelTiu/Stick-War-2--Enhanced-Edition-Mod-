@@ -24,10 +24,13 @@ package com.brockw.stickwar.engine.Ai.command
       {
          super();
          type = UnitCommand.NINJA_CLOAK3;
-         hotKey = 81;
          _hasCoolDown = true;
          _intendedEntityType = Unit.U_NINJA;
          buttonBitmap = actualButtonBitmap;
+         if(game != null)
+         {
+            this.loadXML(game.xml.xml.Order.Units.ninja.cloak3);
+         }
       }
 
       override public function coolDownTime(entity:Entity) : Number

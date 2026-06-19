@@ -23,14 +23,6 @@ package com.brockw.stickwar.engine.units
       
       private static const BOSS_COMMAND_COOLDOWN_FRAMES:int = 30 * 16;
 
-      private static const BOSS_TRIPLE_SHOT_COOLDOWN_FRAMES:int = 30 * 12;
-
-      private static const BOSS_EXECUTE_COOLDOWN_FRAMES:int = 30 * 24;
-
-      private static const BOSS_ARROW_STORM_COOLDOWN_FRAMES:int = 30 * 40;
-
-      private static const BOSS_EXPLOSION_ARROW_COOLDOWN_FRAMES:int = 30 * 38;
-
       private static const BOSS_ABILITY_CHECK_INTERVAL:int = 6;
 
       private static const BOSS_ARROW_STORM_RANGE_BONUS:Number = 650;
@@ -86,6 +78,14 @@ package com.brockw.stickwar.engine.units
       public var bossArrowStormCooldownFrames:int;
 
       public var bossExplosionArrowCooldownFrames:int;
+
+      private var bossTripleShotCooldownMax:int;
+      private var bossExecuteCooldownMax:int;
+      private var bossArrowStormCooldownMax:int;
+      private var bossExplosionArrowCooldownMax:int;
+      private var bossArrowStormMana:int;
+      private var bossExplosionMana:int;
+      private var bossExecuteMana:int;
 
       private var bossArrowStormQueue:Array;
 
@@ -205,8 +205,15 @@ package com.brockw.stickwar.engine.units
           this.bossArrowStormQueue = [];
            this.bossAbilityPendingType = 0;
            this.bossExplosionSetupTarget = null;
-          this.bossExplosionSetupUntilFrame = 0;
-          this.pendingManualAbility = 0;
+           this.bossExplosionSetupUntilFrame = 0;
+           this.pendingManualAbility = 0;
+           this.bossTripleShotCooldownMax = game.xml.xml.Order.Units.archer.tripleShot.cooldown;
+           this.bossExecuteCooldownMax = game.xml.xml.Order.Units.archer.poisonExecute.cooldown;
+           this.bossArrowStormCooldownMax = game.xml.xml.Order.Units.archer.arrowStorm.cooldown;
+           this.bossExplosionArrowCooldownMax = game.xml.xml.Order.Units.archer.explosion.cooldown;
+           this.bossArrowStormMana = game.xml.xml.Order.Units.archer.arrowStorm.mana;
+           this.bossExplosionMana = game.xml.xml.Order.Units.archer.explosion.mana;
+           this.bossExecuteMana = game.xml.xml.Order.Units.archer.poisonExecute.mana;
       }
       
       override protected function loadDamage(unitXml:XMLList) : void
@@ -575,13 +582,13 @@ package com.brockw.stickwar.engine.units
            switch(type)
            {
                case UnitCommand.ARCHER_BOSS_TRIPLE_SHOT:
-                   return this.bossTripleShotCooldownFrames / BOSS_TRIPLE_SHOT_COOLDOWN_FRAMES;
+                   return this.bossTripleShotCooldownFrames / this.bossTripleShotCooldownMax;
                case UnitCommand.ARCHER_BOSS_POISON_EXECUTE:
-                   return this.bossExecuteCooldownFrames / BOSS_EXECUTE_COOLDOWN_FRAMES;
+                   return this.bossExecuteCooldownFrames / this.bossExecuteCooldownMax;
                case UnitCommand.ARCHER_BOSS_ARROW_STORM:
-                   return this.bossArrowStormCooldownFrames / BOSS_ARROW_STORM_COOLDOWN_FRAMES;
+                   return this.bossArrowStormCooldownFrames / this.bossArrowStormCooldownMax;
                case UnitCommand.ARCHER_BOSS_EXPLOSION:
-                   return this.bossExplosionArrowCooldownFrames / BOSS_EXPLOSION_ARROW_COOLDOWN_FRAMES;
+                   return this.bossExplosionArrowCooldownFrames / this.bossExplosionArrowCooldownMax;
            }
            return 0;
        }
@@ -729,14 +736,14 @@ package com.brockw.stickwar.engine.units
          this.bossAbilityPendingType = UnitCommand.ARCHER_BOSS_POISON_EXECUTE;
          this.bossAbilityPendingTarget = target;
          this.startBossDrawAnimation(target);
-         this.bossExecuteCooldownFrames = BOSS_EXECUTE_COOLDOWN_FRAMES;
+         this.bossExecuteCooldownFrames = this.bossExecuteCooldownMax;
          return true;
       }
 
       private function tryBossExplosionArrow(game:StickWar) : Boolean
       {
          var target:Unit = null;
-         if(this.bossExplosionArrowCooldownFrames > 0 || this.isRebelsUnitedLevel(game) || !team.tech.isResearched(Tech.ARCHER_BOSS_EXPLOSION_ARROW) || team.mana < 25)
+         if(this.bossExplosionArrowCooldownFrames > 0 || this.isRebelsUnitedLevel(game) || !team.tech.isResearched(Tech.ARCHER_BOSS_EXPLOSION_ARROW) || team.mana < this.bossExplosionMana)
          {
             return false;
          }
@@ -750,11 +757,11 @@ package com.brockw.stickwar.engine.units
             this.startBossExplosionSetup(game,target);
             return true;
          }
-         team.mana -= 25;
+         team.mana -= this.bossExplosionMana;
          this.bossAbilityPendingType = UnitCommand.ARCHER_BOSS_EXPLOSION;
          this.bossAbilityPendingTarget = target;
          this.startBossDrawAnimation(target);
-         this.bossExplosionArrowCooldownFrames = BOSS_EXPLOSION_ARROW_COOLDOWN_FRAMES;
+         this.bossExplosionArrowCooldownFrames = this.bossExplosionArrowCooldownMax;
          return true;
       }
 
@@ -770,12 +777,12 @@ package com.brockw.stickwar.engine.units
               game.gameScreen.userInterface.helpMessage.showMessage("Special arrow already loaded");
               return false;
            }
-           if(this.bossExplosionArrowCooldownFrames > 0 || this.isRebelsUnitedLevel(game) || !team.tech.isResearched(Tech.ARCHER_BOSS_EXPLOSION_ARROW) || team.mana < 25)
+           if(this.bossExplosionArrowCooldownFrames > 0 || this.isRebelsUnitedLevel(game) || !team.tech.isResearched(Tech.ARCHER_BOSS_EXPLOSION_ARROW) || team.mana < this.bossExplosionMana)
            {
               return false;
            }
-           team.mana -= 25;
-           this.bossExplosionArrowCooldownFrames = BOSS_EXPLOSION_ARROW_COOLDOWN_FRAMES;
+           team.mana -= this.bossExplosionMana;
+           this.bossExplosionArrowCooldownFrames = this.bossExplosionArrowCooldownMax;
            target = this.findBossExplosionArrowTarget();
            if(target == null)
            {
@@ -814,7 +821,7 @@ package com.brockw.stickwar.engine.units
          this.bossAbilityPendingType = UnitCommand.ARCHER_BOSS_TRIPLE_SHOT;
          this.bossAbilityPendingTarget = target;
          this.startBossDrawAnimation(target);
-         this.bossTripleShotCooldownFrames = BOSS_TRIPLE_SHOT_COOLDOWN_FRAMES;
+         this.bossTripleShotCooldownFrames = this.bossTripleShotCooldownMax;
          return true;
       }
 
@@ -823,7 +830,7 @@ package com.brockw.stickwar.engine.units
          var archers:Array = null;
          var targetPoint:Point = null;
          var i:int = 0;
-         if(this.bossArrowStormCooldownFrames > 0 || this.bossArrowStormQueue.length > 0 || !team.tech.isResearched(Tech.ARCHER_BOSS_ARROW_STORM) || team.mana < 70)
+         if(this.bossArrowStormCooldownFrames > 0 || this.bossArrowStormQueue.length > 0 || !team.tech.isResearched(Tech.ARCHER_BOSS_ARROW_STORM) || team.mana < this.bossArrowStormMana)
          {
             return false;
          }
@@ -837,12 +844,12 @@ package com.brockw.stickwar.engine.units
          {
             return false;
          }
-          team.mana -= 70;
+          team.mana -= this.bossArrowStormMana;
           this.bossAbilityPendingType = UnitCommand.ARCHER_BOSS_ARROW_STORM;
           this.bossAbilityPendingTargetPoint = targetPoint;
           this.bossAbilityPendingArchers = archers;
           this.startBossDrawAnimation(null,targetPoint);
-          this.bossArrowStormCooldownFrames = BOSS_ARROW_STORM_COOLDOWN_FRAMES;
+          this.bossArrowStormCooldownFrames = this.bossArrowStormCooldownMax;
           return true;
        }
 
@@ -860,12 +867,12 @@ package com.brockw.stickwar.engine.units
               game.gameScreen.userInterface.helpMessage.showMessage("Special arrow already loaded");
               return false;
            }
-            if(this.bossArrowStormCooldownFrames > 0 || this.bossArrowStormQueue.length > 0 || !team.tech.isResearched(Tech.ARCHER_BOSS_ARROW_STORM) || team.mana < 70)
+            if(this.bossArrowStormCooldownFrames > 0 || this.bossArrowStormQueue.length > 0 || !team.tech.isResearched(Tech.ARCHER_BOSS_ARROW_STORM) || team.mana < this.bossArrowStormMana)
            {
               return false;
            }
-           team.mana -= 70;
-           this.bossArrowStormCooldownFrames = BOSS_ARROW_STORM_COOLDOWN_FRAMES;
+           team.mana -= this.bossArrowStormMana;
+           this.bossArrowStormCooldownFrames = this.bossArrowStormCooldownMax;
            archers = this.getNearbyBossStormArchers();
            targetPoint = this.getBossStormTargetPointManual(game);
            if(targetPoint == null)
@@ -904,7 +911,7 @@ package com.brockw.stickwar.engine.units
       public function tryBossExecuteShotManual(game:StickWar) : Boolean
       {
          var target:Unit = null;
-         if(this.bossExecuteCooldownFrames > 0 || team.mana < 10)
+         if(this.bossExecuteCooldownFrames > 0 || team.mana < this.bossExecuteMana)
          {
             return false;
          }
@@ -917,7 +924,7 @@ package com.brockw.stickwar.engine.units
                return false;
             }
          }
-         team.mana -= 10;
+         team.mana -= this.bossExecuteMana;
          this.startBossPendingShot(game,"poison",target);
          return true;
       }
@@ -958,10 +965,10 @@ package com.brockw.stickwar.engine.units
           distance = Math.abs(this.bossExplosionSetupTarget.px - this.px);
           if(distance >= BOSS_EXPLOSION_ARROW_MIN_DISTANCE)
           {
-             team.mana -= 25;
+             team.mana -= this.bossExplosionMana;
              this.bossAbilityPendingTarget = this.bossExplosionSetupTarget;
              this.startBossDrawAnimation(this.bossExplosionSetupTarget);
-             this.bossExplosionArrowCooldownFrames = BOSS_EXPLOSION_ARROW_COOLDOWN_FRAMES;
+             this.bossExplosionArrowCooldownFrames = this.bossExplosionArrowCooldownMax;
              this.bossExplosionSetupTarget = null;
           }
       }

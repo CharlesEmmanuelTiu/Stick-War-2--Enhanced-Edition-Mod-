@@ -42,6 +42,79 @@ package com.brockw.stickwar.engine.Ai
          var u:Unit = null;
          var poisoned:Unit = null;
          var range:Number = NaN;
+          if(monk.isBoss && monk.isPlayerBoss)
+          {
+             monk.isBossMovementLocked = false;
+             if(currentCommand.type == UnitCommand.MONK_BOSS_REVIVE)
+             {
+                var reviveTarget:Unit = unit.team.game.units[currentCommand.targetId];
+                if(reviveTarget != null && !reviveTarget.isAlive() && unit.team.deadUnits.indexOf(reviveTarget) != -1)
+                {
+                    if(monk.tryPlayerBossReviveTarget(reviveTarget))
+                    {
+                       monk.playerReviveIsManual = true;
+                       this.mayMoveToAttack = false;
+                       this.mayMove = false;
+                       this.mayAttack = false;
+                    }
+                   else
+                   {
+                      restoreMove(game);
+                   }
+                }
+                else
+                {
+                   restoreMove(game);
+                }
+             }
+             else if(currentCommand.type == UnitCommand.MONK_BOSS_AUTO_REVIVE_TOGGLE)
+             {
+                monk.isAutoReviveToggled = !monk.isAutoReviveToggled;
+                restoreMove(game);
+             }
+             if(currentCommand.type != UnitCommand.MONK_BOSS_REVIVE)
+             {
+                monk.playerBossCheckAutoRevive(game);
+             }
+            if(unit.team.tech.isResearched(Tech.MONK_CURE) && monk.isCureToggled && !monk.isBusy() && monk.cureCooldown() == 0 && (currentCommand is AttackMoveCommand || currentCommand is StandCommand || currentCommand is HoldCommand))
+            {
+               this.inRange = null;
+               if(cureCommand == null)
+               {
+                  cureCommand = new CureCommand(unit.team.game);
+               }
+               for each(poisoned in unit.team.poisonedUnits)
+               {
+                  cureCommand.realX = poisoned.px;
+                  cureCommand.realY = poisoned.py;
+                  if(cureCommand.inRange(unit))
+                  {
+                     this.inRange = poisoned;
+                     break;
+                  }
+               }
+               if(this.inRange != null)
+               {
+                  monk.cureSpell(this.inRange);
+                  baseUpdate(game);
+                  return;
+               }
+            }
+            if(monk.isHealToggled && !monk.isBusy() && monk.healCooldown() == 0 && mayAttack == true)
+            {
+               this.inRange = null;
+               range = 100;
+               game.spatialHash.mapInArea(unit.px - range,unit.py - range,unit.px + range,unit.py + range,this.lowestUnit,false);
+               if(this.inRange != null && this.inRange.health != this.inRange.maxHealth)
+               {
+                  monk.healSpell(this.inRange);
+                  baseUpdate(game);
+                  return;
+               }
+            }
+            baseUpdate(game);
+            return;
+         }
          if(unit.shouldStartCampaignBossEscape())
          {
             unit.startCampaignBossEscape();
@@ -166,6 +239,11 @@ package com.brockw.stickwar.engine.Ai
 
       override public function setCommand(game:StickWar, c:UnitCommand) : void
       {
+         if(Monk(unit).isBoss && Monk(unit).isPlayerBoss)
+         {
+            super.setCommand(game,c);
+            return;
+         }
          if(Monk(unit).isBoss && (Monk(unit).isBusy() || this.bossRescueCorpse != null) && this.shouldDeferBossCommand(c))
          {
             this.commandQueue.clear();

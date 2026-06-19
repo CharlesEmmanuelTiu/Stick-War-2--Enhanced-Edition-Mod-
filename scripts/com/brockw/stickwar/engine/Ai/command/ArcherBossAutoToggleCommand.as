@@ -24,13 +24,16 @@ package com.brockw.stickwar.engine.Ai.command
       {
          super();
          type = UnitCommand.ARCHER_BOSS_AUTO_TOGGLE;
-         hotKey = 84;
          _hasCoolDown = false;
          _intendedEntityType = Unit.U_ARCHER;
          requiresMouseInput = false;
          isSingleSpell = false;
          isToggle = true;
          this.buttonBitmap = actualButtonBitmap;
+         if(game != null)
+         {
+            this.loadXML(game.xml.xml.Order.Units.archer.autoToggle);
+         }
       }
 
       override public function isToggled(entity:Entity) : Boolean

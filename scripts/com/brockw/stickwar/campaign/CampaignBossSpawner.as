@@ -133,11 +133,13 @@ package com.brockw.stickwar.campaign
          this.game.teamB.tech.isResearchedMap[Tech.CLOAK_II] = true;
          this.game.teamB.tech.isResearchedMap[Tech.MAGIKILL_WALL] = true;
          this.game.teamB.tech.isResearchedMap[Tech.MAGIKILL_POISON] = true;
-         this.game.teamB.tech.isResearchedMap[Tech.MONK_CURE] = true;
-         this.game.teamB.tech.isResearchedMap[Tech.CASTLE_ARCHER_1] = true;
+          this.game.teamB.tech.isResearchedMap[Tech.MONK_CURE] = true;
+          this.game.teamB.tech.isResearchedMap[Tech.MONK_BOSS_REVIVE] = true;
+          this.game.teamB.tech.isResearchedMap[Tech.CASTLE_ARCHER_1] = true;
          this.game.teamB.tech.isResearchedMap[Tech.CASTLE_ARCHER_2] = true;
-         this.game.teamB.tech.isResearchedMap[Tech.WINGIDON_SPEED] = true;
-      }
+          this.game.teamB.tech.isResearchedMap[Tech.WINGIDON_SPEED] = true;
+          this.game.teamB.tech.isResearchedMap[Tech.MAGIKILL_SUMMON_UPGRADE] = true;
+       }
       
       public function grantFactionBossResearch(title:String) : void
       {
