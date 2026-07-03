@@ -560,9 +560,12 @@ package com.brockw.stickwar.engine.units
 
        override public function makeBoss(enableDeathBurst:Boolean = false) : void
        {
-          this._isBoss = true;
-          this.isBossUnit = true;
-          this.enableCampaignBossEscape();
+           this._isBoss = true;
+           this.isBossUnit = true;
+           if(this.team != null && this.team.isAi)
+           {
+              this.enableCampaignBossEscape();
+           }
           this.hasDefaultLoadout = true;
           this.bossAbilitySpawnLockFrames = 30 * 2;
           this.isAutoKiteToggled = true;
@@ -617,34 +620,42 @@ package com.brockw.stickwar.engine.units
           return this.isFire || this.pendingManualAbility != 0;
        }
 
-       public function tryBossAbilities(game:StickWar) : Boolean
-      {
-                   if(!this.isBoss || !this.bossAutoAbilityEnabled || this.hasBossAbilitySpawnLock() || this.bossAbilityPendingType != 0 || this.bossExplosionSetupTarget != null || this.bossArrowStormQueue.length > 0 || game.frame % BOSS_ABILITY_CHECK_INTERVAL != 0)
-         {
-            return false;
-         }
-         if(game.gameScreen is CampaignGameScreen && !CampaignGameScreen(game.gameScreen).canUseRebelsUnitedBossAbility(this,"archer"))
-         {
-            return false;
-         }
-         if(this.tryBossTripleShot(game))
-         {
-            return true;
-         }
-         if(this.tryBossExecuteShot(game))
-         {
-            return true;
-         }
-         if(this.tryBossExplosionArrow(game))
-         {
-            return true;
-         }
-         if(this.tryBossArrowStorm(game))
-         {
-            return true;
-         }
-          return false;
-       }
+        public function tryBossAbilities(game:StickWar) : Boolean
+       {
+                    if(!this.isBoss || !this.bossAutoAbilityEnabled || this.hasBossAbilitySpawnLock() || this.bossAbilityPendingType != 0 || this.hasBossSpecialArrowLoaded() || this.bossExplosionSetupTarget != null || this.bossArrowStormQueue.length > 0 || game.frame % BOSS_ABILITY_CHECK_INTERVAL != 0)
+          {
+             return false;
+          }
+          if(game.gameScreen is CampaignGameScreen && !CampaignGameScreen(game.gameScreen).canUseRebelsUnitedBossAbility(this,"archer"))
+          {
+             return false;
+          }
+          var isIdle:Boolean = this.ai.getClosestTarget() == null;
+          if(isIdle)
+          {
+             if(this.tryBossArrowStorm(game))
+             {
+                return true;
+             }
+          }
+          if(this.tryBossExplosionArrow(game))
+          {
+             return true;
+          }
+          if(this.tryBossTripleShot(game))
+          {
+             return true;
+          }
+          if(this.tryBossExecuteShot(game))
+          {
+             return true;
+          }
+          if(!isIdle && this.tryBossArrowStorm(game))
+          {
+             return true;
+          }
+           return false;
+        }
 
       private function checkPendingManualAbility(game:StickWar) : void
       {
@@ -717,13 +728,17 @@ package com.brockw.stickwar.engine.units
          return true;
       }
 
-      private function tryBossExecuteShot(game:StickWar) : Boolean
-      {
-         var target:Unit = null;
-         if(this.bossExecuteCooldownFrames > 0)
-         {
-            return false;
-         }
+       private function tryBossExecuteShot(game:StickWar) : Boolean
+       {
+          var target:Unit = null;
+          if(this.bossExecuteCooldownFrames > 0)
+          {
+             return false;
+          }
+          if(team.techAllowed != null && !(Tech.BOSS_ARCHER_UNLOCK in team.techAllowed))
+          {
+             return false;
+          }
          target = this.findBossExecuteTarget();
          if(target == null)
          {
@@ -806,13 +821,17 @@ package com.brockw.stickwar.engine.units
          return campaignScreen.main != null && campaignScreen.main.campaign != null && campaignScreen.main.campaign.getCurrentLevel() != null && campaignScreen.main.campaign.getCurrentLevel().title == "Rebels United";
       }
 
-      private function tryBossTripleShot(game:StickWar) : Boolean
-      {
-         var target:Unit = null;
-         if(this.bossTripleShotCooldownFrames > 0)
-         {
-            return false;
-         }
+       private function tryBossTripleShot(game:StickWar) : Boolean
+       {
+          var target:Unit = null;
+          if(this.bossTripleShotCooldownFrames > 0)
+          {
+             return false;
+          }
+          if(team.techAllowed != null && !(Tech.BOSS_ARCHER_UNLOCK in team.techAllowed))
+          {
+             return false;
+          }
          target = this.ai.getClosestTarget();
          if(target == null || target.team == this.team || !this.inRange(target))
          {
@@ -1137,130 +1156,47 @@ package com.brockw.stickwar.engine.units
          return best;
       }
 
-      private function findBossExplosionArrowTarget() : Unit
-      {
-         var enemy:Unit = null;
-         var best:Unit = null;
-         var score:Number = 0;
-         var bestScore:Number = 0;
+       private function findBossExplosionArrowTarget() : Unit
+       {
+          var enemy:Unit = null;
+          var best:Unit = null;
+          var minDist:Number = Number.MAX_VALUE;
+          var dist:Number;
           for each(enemy in this.team.enemyTeam.units)
-         {
-             if(enemy == null || !enemy.isAlive() || Math.abs(enemy.px - this.px) > this.normalRange + 180)
-             {
-                continue;
-             }
-             score = this.getBossTripleShotTargetScore(enemy) + enemy.population;
-             if(score > bestScore)
-             {
-                best = enemy;
-                bestScore = score;
-             }
-          }
-          for each(enemy in this.team.enemyTeam.walls)
           {
-             if(enemy == null || !enemy.isAlive() || Math.abs(enemy.px - this.px) > this.normalRange + 180)
+             if(enemy != null && enemy.isAlive() && Math.abs(enemy.px - this.px) <= this.normalRange + 180)
              {
-                continue;
-             }
-             score = this.getBossTripleShotTargetScore(enemy) + enemy.population + 50;
-             if(score > bestScore)
-             {
-                best = enemy;
-                bestScore = score;
+                dist = Math.abs(enemy.px - this.px);
+                if(dist < minDist)
+                {
+                   minDist = dist;
+                   best = enemy;
+                }
              }
           }
-          if(this.team.enemyTeam.statue != null && this.team.enemyTeam.statue.isAlive() && Math.abs(this.team.enemyTeam.statue.px - this.px) <= this.normalRange + 180)
+          if(best == null)
           {
-             score = this.getBossTripleShotTargetScore(this.team.enemyTeam.statue) + this.team.enemyTeam.statue.population + 100;
-             if(score > bestScore)
+             for each(enemy in this.team.enemyTeam.walls)
              {
-                best = this.team.enemyTeam.statue;
+                if(enemy != null && enemy.isAlive() && Math.abs(enemy.px - this.px) <= this.normalRange + 180)
+                {
+                   dist = Math.abs(enemy.px - this.px);
+                   if(dist < minDist)
+                   {
+                      minDist = dist;
+                      best = enemy;
+                   }
+                }
              }
           }
-         return best;
-      }
+          if(best == null && this.team.enemyTeam.statue != null && this.team.enemyTeam.statue.isAlive() && Math.abs(this.team.enemyTeam.statue.px - this.px) <= this.normalRange + 180)
+          {
+             best = this.team.enemyTeam.statue;
+          }
+          return best;
+       }
 
-      private function findBossTripleShotTarget() : Unit
-      {
-         var enemy:Unit = null;
-         var best:Unit = null;
-         var score:Number = 0;
-         var bestScore:Number = 0;
-         var distance:Number = NaN;
-         for each(enemy in this.team.enemyTeam.units)
-         {
-            if(enemy == null || !enemy.isAlive())
-            {
-               continue;
-            }
-            distance = Math.abs(enemy.px - this.px);
-            if(distance > this.normalRange + 100)
-            {
-               continue;
-            }
-            score = this.getBossTripleShotTargetScore(enemy);
-            if(score > bestScore)
-            {
-               best = enemy;
-               bestScore = score;
-            }
-         }
-         for each(enemy in this.team.enemyTeam.walls)
-         {
-            if(enemy == null || !enemy.isAlive())
-            {
-               continue;
-            }
-            distance = Math.abs(enemy.px - this.px);
-            if(distance > this.normalRange + 100)
-            {
-               continue;
-            }
-            score = this.getBossTripleShotTargetScore(enemy);
-            if(score > bestScore)
-            {
-               best = enemy;
-               bestScore = score;
-            }
-         }
-         if(this.team.enemyTeam.statue != null && this.team.enemyTeam.statue.isAlive())
-         {
-            distance = Math.abs(this.team.enemyTeam.statue.px - this.px);
-            if(distance <= this.normalRange + 100)
-            {
-               score = this.getBossTripleShotTargetScore(this.team.enemyTeam.statue);
-               if(score > bestScore)
-               {
-                  best = this.team.enemyTeam.statue;
-               }
-            }
-         }
-         return best;
-      }
-
-      private function getBossTripleShotTargetScore(target:Unit) : Number
-      {
-         var enemy:Unit = null;
-         var score:Number = 1;
-         if(target.type == Unit.U_SPEARTON || target.type == Unit.U_GIANT || target.type == Unit.U_ENSLAVED_GIANT)
-         {
-            score += 4;
-         }
-         if(target.type == Unit.U_MAGIKILL || target.type == Unit.U_MONK)
-         {
-            score += 2;
-         }
-         for each(enemy in this.team.enemyTeam.units)
-         {
-            if(enemy != null && enemy != target && enemy.isAlive() && Math.abs(enemy.px - target.px) < 115 && Math.abs(enemy.py - target.py) < 90)
-            {
-               score += 1;
-            }
-         }
-         return score;
-      }
-
-      private function getNearbyBossStormArchers() : Array
+       private function getNearbyBossStormArchers() : Array
       {
          var ally:Unit = null;
          var archers:Array = [];

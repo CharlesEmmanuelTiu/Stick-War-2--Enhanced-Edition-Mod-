@@ -36,9 +36,9 @@ package com.brockw.stickwar.engine.Ai
          this.bossRescueCorpse = null;
       }
       
-      override public function update(game:StickWar) : void
-      {
-         var monk:Monk = Monk(unit);
+       override public function update(game:StickWar) : void
+       {
+          var monk:Monk = Monk(unit);
          var u:Unit = null;
          var poisoned:Unit = null;
          var range:Number = NaN;
@@ -47,21 +47,27 @@ package com.brockw.stickwar.engine.Ai
              monk.isBossMovementLocked = false;
              if(currentCommand.type == UnitCommand.MONK_BOSS_REVIVE)
              {
-                var reviveTarget:Unit = unit.team.game.units[currentCommand.targetId];
-                if(reviveTarget != null && !reviveTarget.isAlive() && unit.team.deadUnits.indexOf(reviveTarget) != -1)
-                {
-                    if(monk.tryPlayerBossReviveTarget(reviveTarget))
+                 var reviveTarget:Unit = unit.team.game.units[currentCommand.targetId];
+                 if(reviveTarget != null && !reviveTarget.isAlive() && unit.team.deadUnits.indexOf(reviveTarget) != -1)
+                 {
+                    if(reviveTarget.isBossUnit && reviveTarget.type == Unit.U_MAGIKILL && unit.team.countAlivePlayerBosses() + unit.team.countQueuedPlayerBosses() >= 3)
                     {
-                       monk.playerReviveIsManual = true;
-                       this.mayMoveToAttack = false;
-                       this.mayMove = false;
-                       this.mayAttack = false;
+                       game.gameScreen.userInterface.helpMessage.showMessage("Maximum bosses limit reached");
+                       game.soundManager.playSoundFullVolume("UnitMakeFail");
+                       restoreMove(game);
                     }
-                   else
-                   {
-                      restoreMove(game);
-                   }
-                }
+                    else if(monk.tryPlayerBossReviveTarget(reviveTarget))
+                    {
+                        monk.playerReviveIsManual = true;
+                        this.mayMoveToAttack = false;
+                        this.mayMove = false;
+                        this.mayAttack = false;
+                    }
+                    else
+                    {
+                       restoreMove(game);
+                    }
+                 }
                 else
                 {
                    restoreMove(game);
@@ -107,9 +113,8 @@ package com.brockw.stickwar.engine.Ai
                game.spatialHash.mapInArea(unit.px - range,unit.py - range,unit.px + range,unit.py + range,this.lowestUnit,false);
                if(this.inRange != null && this.inRange.health != this.inRange.maxHealth)
                {
-                  monk.healSpell(this.inRange);
-                  baseUpdate(game);
-                  return;
+                   monk.healSpell(this.inRange);
+                   return;
                }
             }
             baseUpdate(game);
@@ -168,18 +173,18 @@ package com.brockw.stickwar.engine.Ai
                   }
                }
             }
-            else if(currentCommand.type == UnitCommand.CURE)
-            {
-               monk.isCureToggled = !monk.isCureToggled;
-               restoreMove(game);
-               baseUpdate(game);
-            }
-            else if(currentCommand.type == UnitCommand.HEAL)
-            {
-               monk.isHealToggled = !monk.isHealToggled;
-               restoreMove(game);
-               baseUpdate(game);
-            }
+             else if(currentCommand.type == UnitCommand.CURE)
+             {
+                monk.isCureToggled = currentCommand.realX != 0;
+                restoreMove(game);
+                baseUpdate(game);
+             }
+             else if(currentCommand.type == UnitCommand.HEAL)
+             {
+                monk.isHealToggled = currentCommand.realX != 0;
+                restoreMove(game);
+                baseUpdate(game);
+             }
             else if(currentCommand.type == UnitCommand.SLOW_DART)
             {
                monk.slowDartSpell(UnitCommand(currentCommand).realX);

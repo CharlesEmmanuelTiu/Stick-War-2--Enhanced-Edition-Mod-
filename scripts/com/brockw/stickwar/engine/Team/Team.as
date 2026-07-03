@@ -6,8 +6,9 @@ package com.brockw.stickwar.engine.Team
    import com.brockw.stickwar.GameScreen;
    import com.brockw.stickwar.engine.Ai.*;
    import com.brockw.stickwar.engine.Ai.command.*;
-   import com.brockw.stickwar.engine.Entity;
-   import com.brockw.stickwar.engine.StickWar;
+    import com.brockw.stickwar.engine.Entity;
+    import com.brockw.stickwar.engine.Ore;
+    import com.brockw.stickwar.engine.StickWar;
    import com.brockw.stickwar.engine.Team.Chaos.*;
    import com.brockw.stickwar.engine.Team.Order.*;
    import com.brockw.stickwar.engine.UserInterface;
@@ -20,9 +21,10 @@ package com.brockw.stickwar.engine.Team
     import flash.geom.ColorTransform;
     import flash.text.TextField;
    import flash.utils.Dictionary;
-   import flash.utils.getTimer;
-   
-   public class Team
+    import flash.utils.getTimer;
+    import com.brockw.stickwar.engine.Team.Tech;
+    
+    public class Team
    {
       
       public static const POP_CAP:int = 50;
@@ -83,6 +85,14 @@ package com.brockw.stickwar.engine.Team
       
       public var bypassMana:Boolean;
       
+      public var isCenterBase:Boolean;
+
+      public var onSpawnUnitPosition:Function;
+
+      public var depositPoints:Array;
+
+      public var autoMarchOnSpawn:Boolean;
+
       private var _currentAttackState:int;
       
       private var _units:Array;
@@ -119,6 +129,8 @@ package com.brockw.stickwar.engine.Team
       
       protected var _buttonInfoMap:Dictionary;
       
+      private var _queuedZone:Dictionary;
+      
       private var _isBossMode:Boolean = false;
       
       protected var _base:Entity;
@@ -128,7 +140,13 @@ package com.brockw.stickwar.engine.Team
       protected var _tech:Tech;
       
       private var _castleDefence:CastleDefence;
+ 
+      private var _secondCastleDefence:CastleDefence;
       
+       public var defendCommandFrame:int = 0;
+       public var garrisonCommandFrame:int = 0;
+       public var attackCommandFrame:int = 0;
+       
       private var _hit:Boolean;
       
       private var _garrisonedUnits:Dictionary;
@@ -151,9 +169,11 @@ package com.brockw.stickwar.engine.Team
       
       private var passiveIncomeAmountUpgraded3:Number;
       
-      public var techAllowed:Dictionary;
-      
-      private var passiveMana:Number;
+       public var techAllowed:Dictionary;
+       
+       public var hideBossTechs:Boolean;
+       
+       private var passiveMana:Number;
       
       private var passiveManaUpgraded1:Number;
       
@@ -206,8 +226,9 @@ package com.brockw.stickwar.engine.Team
          this.game = game;
          this.isEnemy = false;
          this.medianPosition = 0;
-         this._unitProductionQueue = new Dictionary();
-         this._buildings = new Dictionary();
+          this._unitProductionQueue = new Dictionary();
+          this._queuedZone = new Dictionary();
+          this._buildings = new Dictionary();
          this.unitInfo = new Dictionary();
          this.hit = false;
          this._garrisonedUnits = new Dictionary();
@@ -236,8 +257,11 @@ package com.brockw.stickwar.engine.Team
          this._damageModifier = 1;
          this._originalType = 0;
          this._armyChangeVersion = 0;
-         this.createTimeMultiplier = 1;
-      }
+          this.createTimeMultiplier = 1;
+           this.autoMarchOnSpawn = true;
+           this.isCenterBase = false;
+           this.depositPoints = [this.homeX];
+       }
       
       public static function getTeamFromId(id:int, game:StickWar, health:int, techAllowed:Dictionary, handicap:* = 1, healthModifier:Number = 1) : Team
       {
@@ -334,18 +358,20 @@ package com.brockw.stickwar.engine.Team
          this.game.projectileManager.initWallExplosion(w.px,5 * this.game.map.height / 5,this);
       }
       
-      public function garrisonMiner(isLocal:Boolean = false) : void
-      {
-         var unit:String = null;
-         var u:UnitMove = new UnitMove();
-         u.moveType = UnitCommand.GARRISON;
-         for(unit in this.units)
-         {
-            if(this.units[unit].type == this.getMinerType())
-            {
-               u.units.push(this.units[unit].id);
-            }
-         }
+        public function garrisonMiner(isLocal:Boolean = false, filterSide:int = 0) : void
+        {
+           var unit:String = null;
+           var u:UnitMove = new UnitMove();
+           u.moveType = UnitCommand.GARRISON;
+           for(unit in this.units)
+           {
+               if(this.units[unit].type == this.getMinerType())
+               {
+                  if(this.units[unit].assignedSide == 0 || (filterSide != 0 && this.units[unit].assignedSide != filterSide)) continue;
+                  MinerAi(this.units[unit].ai).garrisonTargetOre = MinerAi(this.units[unit].ai).targetOre;
+                  u.units.push(this.units[unit].id);
+               }
+           }
          u.arg0 = this.homeX;
          u.arg1 = this.game.gameScreen.game.map.height / 2;
          if(!isLocal)
@@ -358,69 +384,80 @@ package com.brockw.stickwar.engine.Team
          }
       }
       
-      public function unGarrisonMiner(isLocal:Boolean = false) : void
-      {
-         var u:Unit = null;
-         var m:UnitMove = null;
-         for each(u in this.units)
-         {
-            if(u.type == this.getMinerType())
-            {
-               if(MinerAi(u.ai).targetOre != null)
+        public function unGarrisonMiner(isLocal:Boolean = false, filterSide:int = 0) : void
+        {
+           var u:Unit = null;
+           var m:UnitMove = null;
+           for each(u in this.units)
+           {
+               if(u.type == this.getMinerType())
                {
-                  m = new UnitMove();
-                  m.moveType = UnitCommand.MOVE;
-                  m.units.push(u.id);
-                  m.owner = this.id;
-                  m.arg0 = MinerAi(u.ai).targetOre.x;
-                  m.arg1 = MinerAi(u.ai).targetOre.y;
-                  m.arg4 = MinerAi(u.ai).targetOre.id;
-                  if(!isLocal)
-                  {
-                     this.game.gameScreen.doMove(m,this.id);
-                  }
-                  else
-                  {
-                     m.execute(this.game);
-                  }
-               }
-               else
-               {
-                  m = new UnitMove();
-                  m.moveType = UnitCommand.ATTACK_MOVE;
-                  m.units.push(u.id);
-                  m.owner = this.id;
-                  m.arg0 = this.homeX + this.direction * 900;
-                  m.arg1 = this.game.gameScreen.game.map.height / 2;
-                  if(!isLocal)
-                  {
-                     this.game.gameScreen.doMove(m,this.id);
-                  }
-                  else
-                  {
-                     m.execute(this.game);
-                  }
-               }
-            }
-         }
-      }
+                  if(u.assignedSide == 0 || (filterSide != 0 && u.assignedSide != filterSide)) continue;
+                 var returnOre:Ore = MinerAi(u.ai).garrisonTargetOre != null ? MinerAi(u.ai).garrisonTargetOre : MinerAi(u.ai).targetOre;
+                if(returnOre != null)
+                {
+                   m = new UnitMove();
+                   m.moveType = UnitCommand.MOVE;
+                   m.units.push(u.id);
+                   m.owner = this.id;
+                   m.arg0 = returnOre.x;
+                   m.arg1 = returnOre.y;
+                   m.arg4 = returnOre.id;
+                   if(!isLocal)
+                   {
+                      this.game.gameScreen.doMove(m,this.id);
+                   }
+                   else
+                   {
+                      m.execute(this.game);
+                   }
+                }
+                else
+                {
+                   m = new UnitMove();
+                   m.moveType = UnitCommand.ATTACK_MOVE;
+                   m.units.push(u.id);
+                   m.owner = this.id;
+                   m.arg0 = this.homeX + this.direction * 900;
+                   m.arg1 = this.game.gameScreen.game.map.height / 2;
+                   if(!isLocal)
+                   {
+                      this.game.gameScreen.doMove(m,this.id);
+                   }
+                   else
+                   {
+                      m.execute(this.game);
+                   }
+                }
+             }
+          }
+       }
       
-      public function garrison(isLocal:Boolean = false, specificUnit:Unit = null) : void
-      {
-         var unit:String = null;
-         var u:UnitMove = new UnitMove();
-         u.moveType = UnitCommand.GARRISON;
-         if(specificUnit == null)
-         {
-            for(unit in this.units)
-            {
-               u.units.push(this.units[unit].id);
-            }
-         }
-         else
-         {
-            u.units.push(specificUnit.id);
-         }
+       public function garrison(isLocal:Boolean = false, specificUnit:Unit = null) : void
+       {
+          if(this.isCenterBase)
+          {
+             this.currentAttackState = Team.G_GARRISON;
+             this.garrisonCommandFrame++;
+             return;
+          }
+          var unit:String = null;
+           var u:UnitMove = new UnitMove();
+          u.moveType = UnitCommand.GARRISON;
+           if(specificUnit == null)
+           {
+              for(unit in this.units)
+              {
+                 if(this.units[unit].assignedSide == 0) continue;
+                 if(this.units[unit].isMiner()) MinerAi(this.units[unit].ai).garrisonTargetOre = MinerAi(this.units[unit].ai).targetOre;
+                 u.units.push(this.units[unit].id);
+              }
+           }
+          else
+          {
+             if(specificUnit.isMiner()) MinerAi(specificUnit.ai).garrisonTargetOre = MinerAi(specificUnit.ai).targetOre;
+             u.units.push(specificUnit.id);
+          }
          u.arg0 = this.homeX;
          u.arg1 = this.game.gameScreen.game.map.height / 2;
          if(!isLocal)
@@ -439,8 +476,14 @@ package com.brockw.stickwar.engine.Team
          return 0;
       }
       
-      public function defend(isLocal:Boolean = false) : void
-      {
+       public function defend(isLocal:Boolean = false) : void
+       {
+           if(this.isCenterBase)
+           {
+              this.currentAttackState = Team.G_DEFEND;
+              this.defendCommandFrame++;
+              return;
+          }
          var unit:String = null;
          var u:Unit = null;
          var m:UnitMove = null;
@@ -448,35 +491,43 @@ package com.brockw.stickwar.engine.Team
          attackMoveUnits.moveType = UnitCommand.ATTACK_MOVE;
          var moveUnits:* = new UnitMove();
          moveUnits.moveType = UnitCommand.MOVE;
-         for(unit in this.units)
-         {
-            u = this.units[unit];
-            if((u.type == Unit.U_MINER || u.type == Unit.U_CHAOS_MINER) && MinerAi(u.ai).targetOre != null)
-            {
-               m = new UnitMove();
-               m.moveType = UnitCommand.MOVE;
-               m.units.push(u.id);
-               m.owner = this.id;
-               m.arg0 = MinerAi(u.ai).targetOre.x;
-               m.arg1 = MinerAi(u.ai).targetOre.y;
-               m.arg4 = MinerAi(u.ai).targetOre.id;
-               if(!isLocal)
-               {
-                  this.game.gameScreen.doMove(m,this.id);
-               }
-               else
-               {
-                  m.execute(this.game);
-               }
-            }
-            else if(this.direction * u.px > this.direction * (this.homeX + this.direction * 900))
-            {
-               moveUnits.units.push(u.id);
-            }
-            else
-            {
-               attackMoveUnits.units.push(u.id);
-            }
+          for(unit in this.units)
+          {
+             u = this.units[unit];
+             if(u.assignedSide == 0) continue;
+              if(u.type == Unit.U_MINER || u.type == Unit.U_CHAOS_MINER)
+              {
+                 var defReturnOre:Ore = MinerAi(u.ai).garrisonTargetOre != null ? MinerAi(u.ai).garrisonTargetOre : MinerAi(u.ai).targetOre;
+                if(defReturnOre != null)
+                {
+                   m = new UnitMove();
+                   m.moveType = UnitCommand.MOVE;
+                   m.units.push(u.id);
+                   m.owner = this.id;
+                   m.arg0 = defReturnOre.x;
+                   m.arg1 = defReturnOre.y;
+                   m.arg4 = defReturnOre.id;
+                   if(!isLocal)
+                   {
+                      this.game.gameScreen.doMove(m,this.id);
+                   }
+                   else
+                   {
+                      m.execute(this.game);
+                   }
+                }
+             }
+             if(!u.isMiner())
+             {
+                if(this.direction * u.px > this.direction * (this.homeX + this.direction * 900))
+                {
+                   moveUnits.units.push(u.id);
+                }
+                else
+                {
+                   attackMoveUnits.units.push(u.id);
+                }
+             }
          }
          moveUnits.owner = this.id;
          moveUnits.arg0 = this.homeX + this.direction * 900;
@@ -497,54 +548,62 @@ package com.brockw.stickwar.engine.Team
          this.currentAttackState = Team.G_DEFEND;
       }
       
-      public function attack(isLocal:Boolean = false, toPosition:Boolean = false, position:Number = 0) : void
-      {
-         var unit:String = null;
-         var u:Unit = null;
-         var m:UnitMove = null;
-         var attackMoveUnits:* = new UnitMove();
-         attackMoveUnits.moveType = UnitCommand.ATTACK_MOVE;
-         for(unit in this.units)
-         {
-            u = this.units[unit];
-            if(u.type == Unit.U_MINER || u.type == Unit.U_CHAOS_MINER)
-            {
-               if(MinerAi(u.ai).targetOre != null)
-               {
-                  m = new UnitMove();
-                  m.moveType = UnitCommand.MOVE;
-                  m.units.push(u.id);
-                  m.owner = this.id;
-                  m.arg0 = MinerAi(u.ai).targetOre.x;
-                  m.arg1 = MinerAi(u.ai).targetOre.y;
-                  m.arg4 = MinerAi(u.ai).targetOre.id;
-                  if(!isLocal)
-                  {
-                     this.game.gameScreen.doMove(m,this.id);
-                  }
-                  else
-                  {
-                     m.execute(this.game);
-                  }
-               }
-               else if(this.direction * u.px < this.direction * (this.homeX + this.direction * 900))
-               {
-                  m = new UnitMove();
-                  m.moveType = UnitCommand.MOVE;
-                  m.units.push(u.id);
-                  m.owner = this.id;
-                  m.arg0 = this.homeX + this.direction * 900;
-                  m.arg1 = 100;
-                  if(!isLocal)
-                  {
-                     this.game.gameScreen.doMove(m,this.id);
-                  }
-                  else
-                  {
-                     m.execute(this.game);
-                  }
-               }
-            }
+       public function attack(isLocal:Boolean = false, toPosition:Boolean = false, position:Number = 0) : void
+       {
+          if(this.isCenterBase)
+          {
+             this.currentAttackState = Team.G_ATTACK;
+             this.attackCommandFrame++;
+             return;
+          }
+          var unit:String = null;
+          var u:Unit = null;
+          var m:UnitMove = null;
+          var attackMoveUnits:* = new UnitMove();
+          attackMoveUnits.moveType = UnitCommand.ATTACK_MOVE;
+          for(unit in this.units)
+          {
+             u = this.units[unit];
+             if(u.assignedSide == 0) continue;
+              if(u.type == Unit.U_MINER || u.type == Unit.U_CHAOS_MINER)
+              {
+                 var atkReturnOre:Ore = MinerAi(u.ai).garrisonTargetOre != null ? MinerAi(u.ai).garrisonTargetOre : MinerAi(u.ai).targetOre;
+                if(atkReturnOre != null)
+                {
+                   m = new UnitMove();
+                   m.moveType = UnitCommand.MOVE;
+                   m.units.push(u.id);
+                   m.owner = this.id;
+                   m.arg0 = atkReturnOre.x;
+                   m.arg1 = atkReturnOre.y;
+                   m.arg4 = atkReturnOre.id;
+                   if(!isLocal)
+                   {
+                      this.game.gameScreen.doMove(m,this.id);
+                   }
+                   else
+                   {
+                      m.execute(this.game);
+                   }
+                }
+                else if(this.direction * u.px < this.direction * (this.homeX + this.direction * 900))
+                {
+                   m = new UnitMove();
+                   m.moveType = UnitCommand.MOVE;
+                   m.units.push(u.id);
+                   m.owner = this.id;
+                   m.arg0 = this.homeX + this.direction * 900;
+                   m.arg1 = 100;
+                   if(!isLocal)
+                   {
+                      this.game.gameScreen.doMove(m,this.id);
+                   }
+                   else
+                   {
+                      m.execute(this.game);
+                   }
+                }
+             }
             else
             {
                attackMoveUnits.units.push(u.id);
@@ -589,8 +648,12 @@ package com.brockw.stickwar.engine.Team
             this._unitProductionQueue[building] = [];
          }
          this.population = 0;
-         this.castleDefence.cleanUpUnits();
-         delete this.tech.isResearchedMap[Tech.CASTLE_ARCHER_1];
+          this.castleDefence.cleanUpUnits();
+          if(this._secondCastleDefence != null)
+          {
+             this._secondCastleDefence.cleanUpUnits();
+          }
+          delete this.tech.isResearchedMap[Tech.CASTLE_ARCHER_1];
          for each(unit in this._units)
          {
             this.removeUnitCompletely(unit,this.game);
@@ -624,8 +687,13 @@ package com.brockw.stickwar.engine.Team
          this._garrisonedUnits = null;
          this._loadout = null;
          this._enemyTeam = null;
-         this._castleDefence.cleanUp();
-         this._castleDefence = null;
+          this._castleDefence.cleanUp();
+          this._castleDefence = null;
+          if(this._secondCastleDefence != null)
+          {
+             this._secondCastleDefence.cleanUp();
+             this._secondCastleDefence = null;
+          }
          this._tech.cleanUp();
          this._tech = null;
          this._base.cleanUp();
@@ -664,17 +732,18 @@ package com.brockw.stickwar.engine.Team
          return false;
       }
       
-      public function queueUnit(unit:Unit) : void
-      {
-         if(this.buttonInfoMap != null)
-         {
-            if(String(unit.type) in this.buttonInfoMap)
-            {
-               ++this.buttonInfoMap[unit.type][3];
-            }
-         }
-         this._unitProductionQueue[this.unitInfo[unit.type][2]].push([unit,0]);
-      }
+       public function queueUnit(unit:Unit, spawnZone:int = -1) : void
+       {
+          this._queuedZone[unit.type] = spawnZone;
+           if(this.buttonInfoMap != null)
+           {
+              if(String(unit.type) in this.buttonInfoMap)
+              {
+                 ++this.buttonInfoMap[unit.type][3];
+              }
+           }
+           this._unitProductionQueue[this.unitInfo[unit.type][2]].push([unit,0,spawnZone]);
+       }
 
       private function getEffectiveCreateTime(unit:Unit) : Number
       {
@@ -837,31 +906,65 @@ package com.brockw.stickwar.engine.Team
                 {
                    underlay.visible = true;
                 }
-                if(this._isBossMode)
-                {
-                   if(this.isBossUnitType(int(key)))
-                   {
-                      button.filters = [new GlowFilter(16766720,1,8,8,2)];
-                      button.mouseEnabled = true;
-                   }
-                   else
-                   {
-                      button.visible = false;
-                      button.mouseEnabled = false;
-                      overlay.visible = false;
-                      if(underlay != null)
-                      {
-                         underlay.visible = false;
-                      }
-                   }
-                }
+                 if(this._isBossMode)
+                 {
+                    if(this.isBossUnitType(int(key)))
+                    {
+                       var bossUnlockTech:int = this.getBossUnlockTechForUnit(int(key));
+                       var isUnlocked:Boolean = this.techAllowed == null || bossUnlockTech in this.techAllowed;
+                       if(isUnlocked)
+                       {
+                          button.filters = [new GlowFilter(16766720,1,8,8,2)];
+                          button.mouseEnabled = true;
+                       }
+                       else
+                       {
+                          button.visible = false;
+                          button.mouseEnabled = false;
+                          overlay.visible = false;
+                          if(underlay != null)
+                          {
+                             underlay.visible = false;
+                          }
+                       }
+                    }
+                    else
+                    {
+                       button.visible = false;
+                       button.mouseEnabled = false;
+                       overlay.visible = false;
+                       if(underlay != null)
+                       {
+                          underlay.visible = false;
+                       }
+                    }
+                 }
                 else
                 {
                    button.filters = [];
                    button.mouseEnabled = true;
                 }
-                number.text = "" + this.buttonInfoMap[key][3];
-               if(this.buttonInfoMap[key][3] > 0)
+                  number.text = "" + this.buttonInfoMap[key][3];
+                  var buildingType:int = int(this.unitInfo[key][2]);
+                  if(this._unitProductionQueue[buildingType].length != 0 && Unit(this._unitProductionQueue[buildingType][0][0]).type == int(key) && Unit(this._unitProductionQueue[buildingType][0][0]).queuedAsBoss)
+                  {
+                     number.textColor = 0xFFD700;
+                  }
+                  else if(this.isCenterBase && this._queuedZone[key] !== undefined)
+                  {
+                     var z:int = int(this._queuedZone[key]);
+                     if(z == 0)
+                        number.textColor = 0x00FF00;
+                     else if(z == 1)
+                        number.textColor = 0xFF0000;
+                     else
+                        number.textColor = 0x9900FF;
+                  }
+                  else
+                  {
+                     number.textColor = 0xFFFFFF;
+                  }
+                if(this.buttonInfoMap[key][3] > 0)
                {
                   cancelButtonMc.visible = true;
                   if(cancelButtonMc.hitTestPoint(x,y,false) && gameScreen.userInterface.mouseState.clicked)
@@ -905,25 +1008,31 @@ package com.brockw.stickwar.engine.Team
                          this.game.gameScreen.userInterface.helpMessage.showMessage("Not enough mana to construct unit");
                          this.game.soundManager.playSoundFullVolume("UnitMakeFail");
                       }
-                      else if(this._isBossMode && this.isBossUnitType(int(key)) && this.hasAliveBossOfType(int(key)))
-                      {
-                         this.game.gameScreen.userInterface.helpMessage.showMessage(String(tip.child("name")) + " Boss already exists");
-                         this.game.soundManager.playSoundFullVolume("UnitMakeFail");
-                      }
-                      else
-                      {
-                         c = new UnitCreateMove();
-                         c.unitType = int(key);
-                         gameScreen.doMove(c,this.id);
-                         this.game.soundManager.playSoundFullVolume("UnitMake");
-                      }
+                       else if(this._isBossMode && this.isBossUnitType(int(key)) && this.hasAliveBossOfType(int(key)))
+                       {
+                          this.game.gameScreen.userInterface.helpMessage.showMessage(String(tip.child("name")) + " Boss already exists");
+                          this.game.soundManager.playSoundFullVolume("UnitMakeFail");
+                       }
+                       else if(this._isBossMode && this.isBossUnitType(int(key)) && this.countAlivePlayerBosses() + this.countQueuedPlayerBosses() >= 3)
+                       {
+                          this.game.gameScreen.userInterface.helpMessage.showMessage("Maximum bosses alive reached");
+                          this.game.soundManager.playSoundFullVolume("UnitMakeFail");
+                       }
+                       else
+                       {
+                          c = new UnitCreateMove();
+                          c.unitType = int(key);
+                          gameScreen.doMove(c,this.id);
+                          this.game.soundManager.playSoundFullVolume("UnitMake");
+                       }
                   }
                    highlight.visible = true;
                    overlay.visible = false;
-                   if(this._isBossMode && this.isBossUnitType(int(key)))
-                   {
-                      this.updateButtonOver(this.game,String(tip.child("name")) + " Boss",String(tip.child("info")),int(tip.child("cooldown")),int(tip.child("gold")) * 2,int(tip.child("mana")) * 2,int(tip.child("population")) * 2);
-                   }
+                    if(this._isBossMode && this.isBossUnitType(int(key)))
+                    {
+                       var bossTipXml:XMLList = this.game.xml.xml.Order.Units[this.getBossXmlName(int(key))];
+                       this.updateButtonOver(this.game,String(bossTipXml.child("name")),String(bossTipXml.child("info")),int(tip.child("cooldown")),int(bossTipXml.child("gold")),int(bossTipXml.child("mana")),int(bossTipXml.child("population")));
+                    }
                    else
                    {
                       this.updateButtonOverXML(this.game,tip);
@@ -982,12 +1091,51 @@ package com.brockw.stickwar.engine.Team
          this._isBossMode = value;
       }
       
-      public function isBossUnitType(type:int) : Boolean
-      {
-         return type == Unit.U_SPEARTON || type == Unit.U_ARCHER || type == Unit.U_NINJA || type == Unit.U_MAGIKILL || type == Unit.U_MONK;
-      }
-      
-       public function hasAliveBossOfType(type:int) : Boolean
+       public function isBossUnitType(type:int) : Boolean
+       {
+          return type == Unit.U_SPEARTON || type == Unit.U_ARCHER || type == Unit.U_NINJA || type == Unit.U_MAGIKILL || type == Unit.U_MONK;
+       }
+
+        public function getBossUnlockTechForUnit(type:int) : int
+        {
+           switch(type)
+           {
+              case Unit.U_SPEARTON: return Tech.BOSS_SPEARTON_UNLOCK;
+              case Unit.U_ARCHER:   return Tech.BOSS_ARCHER_UNLOCK;
+              case Unit.U_NINJA:    return Tech.BOSS_NINJA_UNLOCK;
+              case Unit.U_MONK:     return Tech.BOSS_MONK_UNLOCK;
+              case Unit.U_MAGIKILL: return Tech.BOSS_MAGIKILL_UNLOCK;
+           }
+            return 0;
+         }
+
+        public function getBossXmlName(type:int) : String
+        {
+           switch(type)
+           {
+              case Unit.U_SPEARTON: return "spearos";
+              case Unit.U_ARCHER:   return "archis";
+              case Unit.U_NINJA:    return "shade";
+              case Unit.U_MONK:     return "vitalis";
+              case Unit.U_MAGIKILL: return "magis";
+           }
+           return "";
+        }
+
+        public function isAnyBossUnlocked() : Boolean
+        {
+           if(this.techAllowed == null)
+           {
+              return true;
+           }
+           return Tech.BOSS_SPEARTON_UNLOCK in this.techAllowed ||
+                  Tech.BOSS_ARCHER_UNLOCK in this.techAllowed ||
+                  Tech.BOSS_NINJA_UNLOCK in this.techAllowed ||
+                  Tech.BOSS_MONK_UNLOCK in this.techAllowed ||
+                  Tech.BOSS_MAGIKILL_UNLOCK in this.techAllowed;
+        }
+        
+         public function hasAliveBossOfType(type:int) : Boolean
        {
           var unit:Unit = null;
           var group:Array = this.unitGroups[type];
@@ -1005,24 +1153,54 @@ package com.brockw.stickwar.engine.Team
           return false;
        }
 
-       public function hasQueuedBossOfType(type:int) : Boolean
-       {
-          var building:* = undefined;
-          var queue:Array = null;
-          var entry:Array = null;
-          for(building in this._unitProductionQueue)
-          {
-             queue = this._unitProductionQueue[building];
-             for each(entry in queue)
-             {
-                if(entry != null && entry.length >= 1 && entry[0] != null && entry[0].type == type && entry[0].queuedAsBoss)
+         public function countAlivePlayerBosses() : int
+         {
+            var count:int = 0;
+            var unit:Unit = null;
+            for each(unit in this.units)
+            {
+                if(unit != null && unit.isAlive() && unit.isBossUnit && !this.isAi)
                 {
-                   return true;
+                    ++count;
                 }
-             }
-          }
-          return false;
-       }
+            }
+            return count;
+         }
+
+         public function countQueuedPlayerBosses() : int
+         {
+            var count:int = 0;
+            for(var building:* in this._unitProductionQueue)
+            {
+               for each(var entry:Array in this._unitProductionQueue[building])
+               {
+                  if(entry != null && entry.length >= 1 && entry[0] != null && entry[0].queuedAsBoss)
+                  {
+                     ++count;
+                  }
+               }
+            }
+            return count;
+         }
+
+         public function hasQueuedBossOfType(type:int) : Boolean
+        {
+           var building:* = undefined;
+           var queue:Array = null;
+           var entry:Array = null;
+           for(building in this._unitProductionQueue)
+           {
+              queue = this._unitProductionQueue[building];
+              for each(entry in queue)
+              {
+                 if(entry != null && entry.length >= 1 && entry[0] != null && entry[0].type == type && entry[0].queuedAsBoss)
+                 {
+                    return true;
+                 }
+              }
+           }
+           return false;
+        }
       
       public function get game() : StickWar
       {
@@ -1052,68 +1230,102 @@ package com.brockw.stickwar.engine.Team
                {
                   return;
                }
-              popMultiplier = (this._isBossMode && this.isBossUnitType(type)) ? 2 : 1;
-             unit = null;
-             if(this.gold >= this.unitInfo[type][0] && this.mana >= this.unitInfo[type][1])
-             {
-                unit = Unit(game.unitFactory.getUnit(int(type)));
-                if(unit.population * popMultiplier + this._population > this.populationLimit)
-                {
-                   game.unitFactory.returnUnit(unit.type,unit);
-                   unit = null;
-                }
-                else
-                {
-                   this.gold -= this.unitInfo[type][0];
-                   this.mana -= this.unitInfo[type][1];
-                }
-             }
-             else if(this == game.team)
-             {
-                if(this.gold < this.unitInfo[type][0])
-                {
-                   game.gameScreen.userInterface.helpMessage.showMessage("Not enough gold to construct unit");
-                }
-                else if(this.mana < this.unitInfo[type][1])
-                {
-                   game.gameScreen.userInterface.helpMessage.showMessage("Not enough mana to construct unit");
-                }
-             }
-              if(unit != null)
+               popMultiplier = 1;
+              unit = null;
+              if(this.gold >= this.unitInfo[type][0] && this.mana >= this.unitInfo[type][1])
               {
-                 unit.queuedAsBoss = this._isBossMode && this.isBossUnitType(type);
-                 unit.goldPaid = this.unitInfo[type][0];
-                 unit.manaPaid = this.unitInfo[type][1];
-                 this.queueUnit(unit);
-                 this._population += unit.population * popMultiplier;
+                unit = Unit(game.unitFactory.getUnit(int(type)));
+                  var spawnPop:int = unit.population;
+                 if(this._isBossMode && this.isBossUnitType(type))
+                 {
+                    var bossXml:XMLList = this.game.xml.xml.Order.Units[this.getBossXmlName(type)];
+                    spawnPop = int(bossXml.child("population"));
+                 }
+                 if(spawnPop * popMultiplier + this._population > this.populationLimit)
+                 {
+                    game.unitFactory.returnUnit(unit.type,unit);
+                    unit = null;
+                 }
+                 else
+                 {
+                    this.gold -= this.unitInfo[type][0];
+                    this.mana -= this.unitInfo[type][1];
+                 }
               }
+              else if(this == game.team)
+              {
+                 if(this.gold < this.unitInfo[type][0])
+                 {
+                    game.gameScreen.userInterface.helpMessage.showMessage("Not enough gold to construct unit");
+                 }
+                 else if(this.mana < this.unitInfo[type][1])
+                 {
+                    game.gameScreen.userInterface.helpMessage.showMessage("Not enough mana to construct unit");
+                 }
+              }
+                if(unit != null)
+                {
+                   unit.queuedAsBoss = this._isBossMode && this.isBossUnitType(type);
+                   unit.goldPaid = this.unitInfo[type][0];
+                   unit.manaPaid = this.unitInfo[type][1];
+                   var camCenter:Number = game.screenX + game.map.screenWidth / 2;
+                    var centerX:Number = game.map.width / 2;
+                    var zone:int;
+                    if(this.isCenterBase)
+                    {
+                       if(centerX > game.screenX && centerX < game.screenX + game.map.screenWidth)
+                          zone = -1;
+                        else
+                          zone = camCenter < centerX ? 0 : 1;
+                    }
+                    else
+                    {
+                       if(centerX > game.screenX && centerX < game.screenX + game.map.screenWidth)
+                          zone = 0;
+                        else
+                          zone = camCenter < centerX ? -1 : 1;
+                    }
+                    this.queueUnit(unit, zone);
+                   this._population += spawnPop * popMultiplier;
+               }
            }
            else
            {
-              var dequeuedUnit:Unit = this.dequeueUnit(-int(type),true);
-              if(dequeuedUnit != null)
-              {
-                 popMultiplier = dequeuedUnit.queuedAsBoss ? 2 : 1;
-                 this.gold += dequeuedUnit.goldPaid;
-                 this.mana += dequeuedUnit.manaPaid;
-                 this._population -= dequeuedUnit.population * popMultiplier;
-              }
+               var dequeuedUnit:Unit = this.dequeueUnit(-int(type),true);
+               if(dequeuedUnit != null)
+               {
+                   popMultiplier = 1;
+                   this.gold += dequeuedUnit.goldPaid;
+                  this.mana += dequeuedUnit.manaPaid;
+                  var cancelPop:int = dequeuedUnit.population;
+                  if(dequeuedUnit.queuedAsBoss)
+                  {
+                     var cancelBossXml:XMLList = this.game.xml.xml.Order.Units[this.getBossXmlName(dequeuedUnit.type)];
+                     cancelPop = int(cancelBossXml.child("population"));
+                  }
+                  this._population -= cancelPop * popMultiplier;
+               }
            }
        }
       
-      public function spawn(unit:Unit, game:StickWar) : void
+       public function spawn(unit:Unit, game:StickWar, spawnZone:int = -1) : void
       {
-         if(unit == null || game == null || unit.mc == null)
-         {
-            return;
-         }
+          if(unit == null || game == null || unit.mc == null || unit.healthBar == null)
+          {
+             return;
+          }
          unit.isTowerSpawned = false;
          unit.forceTowerSpawnVisual = false;
          unit.suppressTowerSpawnVisual = false;
-         unit.isBossSummoned = false;
-         unit.isDead = false;
-         unit.isDieing = false;
-         unit.team = this;
+          unit.isBossSummoned = false;
+           unit.isBossUnit = false;
+           unit.isBossMovementLocked = false;
+           var wasQueuedAsBoss:Boolean = unit.queuedAsBoss;
+           unit.queuedAsBoss = false;
+           unit.healthBar.alpha = 1;
+           unit.isDead = false;
+          unit.isDieing = false;
+          unit.team = this;
          unit.setBuilding();
          var c:ColorTransform = unit.mc.transform.colorTransform;
          var r:int = game.random.nextInt();
@@ -1158,28 +1370,47 @@ package com.brockw.stickwar.engine.Team
          unit.healthBar.reset();
          this.units.push(unit);
          game.battlefield.addChildAt(unit,0);
-         unit.ai.init();
-         var m:AttackMoveCommand = new AttackMoveCommand(game);
-         if(unit.type == Unit.U_MINER || unit.type == Unit.U_CHAOS_MINER)
-         {
-            m.goalX = this.homeX + this.direction * 850 + game.random.nextNumber() * 40 - 20;
-         }
-         else
-         {
-            m.goalX = this.homeX + this.direction * 1000;
-         }
+           unit.ai.init();
+            if(this.onSpawnUnitPosition != null)
+           {
+              var spawnPos:Object = this.onSpawnUnitPosition(unit, spawnZone);
+              if(spawnPos != null && "x" in spawnPos)
+              {
+                 unit.px = spawnPos.x;
+                 unit.x = unit.px;
+              }
+              if(spawnPos != null && "y" in spawnPos)
+              {
+                 unit.py = spawnPos.y;
+                 unit.y = unit.py;
+              }
+           }
+           if(this.autoMarchOnSpawn)
+          {
+          var m:AttackMoveCommand = new AttackMoveCommand(game);
+          if(unit.type == Unit.U_MINER || unit.type == Unit.U_CHAOS_MINER)
+          {
+             m.goalX = this.homeX + this.direction * 850 + game.random.nextNumber() * 40 - 20;
+          }
+          else
+          {
+             m.goalX = this.homeX + this.direction * 1000;
+          }
          if(unit.type == Unit.U_CAT)
          {
             ++this.numberOfCats;
          }
-         m.goalY = game.map.height / 2 + game.random.nextNumber() * 60 - 30;
-         unit.ai.setCommand(game,m);
-         unit.cure();
-          if(unit.queuedAsBoss)
-          {
-             unit.makeBoss();
+          m.goalY = game.map.height / 2 + game.random.nextNumber() * 60 - 30;
+          unit.ai.setCommand(game,m);
           }
-         this.unitGroups[unit.type].push(unit);
+          unit.cure();
+            if(wasQueuedAsBoss)
+            {
+               unit.makeBoss();
+            }
+          if(this.unitGroups[unit.type] == null)
+             this.unitGroups[unit.type] = [];
+          this.unitGroups[unit.type].push(unit);
          if(game.main.isKongregate)
          {
             if(unit.type == Unit.U_SPEARTON)
@@ -1244,9 +1475,10 @@ package com.brockw.stickwar.engine.Team
       {
       }
       
-      public function removeUnitCompletely(unit:Unit, game:StickWar) : void
-      {
-         var unitIndex:int = this._units.indexOf(unit);
+       public function removeUnitCompletely(unit:Unit, game:StickWar) : void
+       {
+          unit.isDead = true;
+          var unitIndex:int = this._units.indexOf(unit);
          if(unitIndex != -1)
          {
             this._units.splice(unitIndex,1);
@@ -1266,11 +1498,26 @@ package com.brockw.stickwar.engine.Team
          {
             delete this.garrisonedUnits[unit.id];
          }
-         this.notifyCampaignCutScene2SummonRemoved(unit,game);
-         ++this._armyChangeVersion;
-      }
+          this.notifyCampaignCutScene2SummonRemoved(unit,game);
+          ++this._armyChangeVersion;
+       }
 
-      private function notifyCampaignCutScene2SummonRemoved(unit:Unit, game:StickWar) : void
+       public function removeDeadUnit(unit:Unit, game:StickWar) : void
+       {
+          var i:int;
+          for(i = 0; i < this._deadUnits.length; i++)
+          {
+             if(this._deadUnits[i] == unit)
+             {
+                this._deadUnits[i] = this._deadUnits[this._deadUnits.length - 1];
+                this._deadUnits.length -= 1;
+                break;
+             }
+          }
+          this.removeUnitCompletely(unit, game);
+       }
+
+       private function notifyCampaignCutScene2SummonRemoved(unit:Unit, game:StickWar) : void
       {
          var campaignScreen:CampaignGameScreen = null;
          var controller:CampaignCutScene2 = null;
@@ -1299,28 +1546,43 @@ package com.brockw.stickwar.engine.Team
                return;
             }
             c = new UnitCreateMove();
-            if(userInterface.gameScreen is SingleplayerGameScreen && userInterface.gameScreen.isDebug && userInterface.keyBoardState.isShift)
-            {
-               c.unitType = unitType;
-               userInterface.gameScreen.doMove(c,userInterface.gameScreen.team.enemyTeam.id);
-            }
-            else if(this.gold < this.unitInfo[int(unitType)][0])
+             if(userInterface.gameScreen is SingleplayerGameScreen && userInterface.gameScreen.isDebug && userInterface.keyBoardState.isShift)
+             {
+                c.unitType = unitType;
+                userInterface.gameScreen.doMove(c,userInterface.gameScreen.team.enemyTeam.id);
+             }
+              else if(this._isBossMode && this.isBossUnitType(unitType) && this.techAllowed != null && !(this.getBossUnlockTechForUnit(unitType) in this.techAllowed))
+              {
+                 this.game.gameScreen.userInterface.helpMessage.showMessage(String(this.buttonInfoMap[unitType][2].child("name")) + " Boss is not unlocked");
+                this.game.soundManager.playSoundFullVolume("UnitMakeFail");
+             }
+             else if(this.gold < this.unitInfo[int(unitType)][0])
             {
                this.game.gameScreen.userInterface.helpMessage.showMessage("Not enough gold to construct unit");
                this.game.soundManager.playSoundFullVolume("UnitMakeFail");
             }
-            else if(this.mana < this.unitInfo[int(unitType)][1])
-            {
-               this.game.gameScreen.userInterface.helpMessage.showMessage("Not enough mana to construct unit");
-               this.game.soundManager.playSoundFullVolume("UnitMakeFail");
-            }
-            else
-            {
-               c = new UnitCreateMove();
-               c.unitType = int(unitType);
-               userInterface.gameScreen.doMove(c,this.id);
-               this.game.soundManager.playSoundFullVolume("UnitMake");
-            }
+             else if(this.mana < this.unitInfo[int(unitType)][1])
+             {
+                this.game.gameScreen.userInterface.helpMessage.showMessage("Not enough mana to construct unit");
+                this.game.soundManager.playSoundFullVolume("UnitMakeFail");
+             }
+              else if(this._isBossMode && this.isBossUnitType(unitType) && this.hasAliveBossOfType(unitType))
+              {
+                 this.game.gameScreen.userInterface.helpMessage.showMessage(String(this.buttonInfoMap[unitType][2].child("name")) + " Boss already exists");
+                this.game.soundManager.playSoundFullVolume("UnitMakeFail");
+             }
+             else if(this._isBossMode && this.isBossUnitType(unitType) && this.countAlivePlayerBosses() + this.countQueuedPlayerBosses() >= 3)
+             {
+                this.game.gameScreen.userInterface.helpMessage.showMessage("Maximum bosses alive reached");
+                this.game.soundManager.playSoundFullVolume("UnitMakeFail");
+             }
+             else
+             {
+                c = new UnitCreateMove();
+                c.unitType = int(unitType);
+                userInterface.gameScreen.doMove(c,this.id);
+                this.game.soundManager.playSoundFullVolume("UnitMake");
+             }
          }
       }
       
@@ -1468,10 +1730,11 @@ package com.brockw.stickwar.engine.Team
          {
             if(queue.length != 0)
             {
-               if(queue[0][1] > this.getEffectiveCreateTime(Unit(queue[0][0])) || isDebug)
-               {
-                  this.spawn(Unit(queue[0][0]),game);
-                  this.dequeueUnit(Unit(queue[0][0]).type,false);
+                if(queue[0][1] > this.getEffectiveCreateTime(Unit(queue[0][0])) || isDebug)
+                {
+                   var spawnZone:int = queue[0].length > 2 ? queue[0][2] : -1;
+                   this.spawn(Unit(queue[0][0]),game,spawnZone);
+                   this.dequeueUnit(Unit(queue[0][0]).type,false);
                }
                else
                {
@@ -1480,6 +1743,10 @@ package com.brockw.stickwar.engine.Team
             }
          }
          this._castleDefence.update(game);
+         if(this._secondCastleDefence != null)
+         {
+            this._secondCastleDefence.update(game);
+         }
          this._ai.update(game);
          this.statue.update(game);
          if(this._units.length != 0)
@@ -1525,11 +1792,19 @@ package com.brockw.stickwar.engine.Team
          {
             if(garrisonMove == null)
             {
-               garrisonMove = new UnitMove();
-               garrisonMove.moveType = UnitCommand.MOVE;
-               garrisonMove.owner = this.id;
-               garrisonMove.arg0 = this.homeX - this.direction * game.map.screenWidth / 3;
-               garrisonMove.arg1 = game.map.height / 2;
+                garrisonMove = new UnitMove();
+                garrisonMove.moveType = UnitCommand.MOVE;
+                garrisonMove.owner = this.id;
+                garrisonMove.arg1 = game.map.height / 2;
+                if(this.isCenterBase)
+                {
+                   garrisonMove.arg0 = this.homeX;
+                   garrisonMove.arg2 = int(game.map.height / 3);
+                }
+                else
+                {
+                   garrisonMove.arg0 = this.homeX - this.direction * game.map.screenWidth / 3;
+                }
             }
             garrisonMove.units.push(this.garrisonedUnits[unit].id);
          }
@@ -1853,10 +2128,20 @@ package com.brockw.stickwar.engine.Team
          return this._castleDefence;
       }
       
-      public function set castleDefence(value:CastleDefence) : void
-      {
-         this._castleDefence = value;
-      }
+       public function set castleDefence(value:CastleDefence) : void
+       {
+          this._castleDefence = value;
+       }
+
+       public function get secondCastleDefence() : CastleDefence
+       {
+          return this._secondCastleDefence;
+       }
+
+       public function set secondCastleDefence(value:CastleDefence) : void
+       {
+          this._secondCastleDefence = value;
+       }
       
       public function get hit() : Boolean
       {

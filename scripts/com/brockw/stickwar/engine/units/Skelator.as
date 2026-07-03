@@ -50,6 +50,14 @@ package com.brockw.stickwar.engine.units
       private var reaperSpell:SpellCooldown;
       
       private var isFistAttacking:Boolean;
+
+        public var suppressFistProjectiles:Boolean;
+
+        public var bossUndeadSummonCount:int;
+
+        public var spawnSpreadX:Number;
+
+        public var spawnSpreadY:Number;
       
       private var isReaperSpell:Boolean;
 
@@ -146,7 +154,11 @@ package com.brockw.stickwar.engine.units
          this.fistDamage = game.xml.xml.Chaos.Units.skelator.fist.damage;
          loadDamage(game.xml.xml.Chaos.Units.skelator);
          type = Unit.U_SKELATOR;
-         this.isFistAttacking = false;
+          this.isFistAttacking = false;
+          this.suppressFistProjectiles = false;
+          this.bossUndeadSummonCount = 0;
+          this.spawnSpreadX = 200;
+          this.spawnSpreadY = 150;
          this.isReaperSpell = false;
          this.isDeadRisingSpell = false;
          this.hasSummonedDeadRisingThisCast = false;
@@ -221,11 +233,23 @@ package com.brockw.stickwar.engine.units
             {
                _mc.gotoAndStop("fistAttack");
                num = (_mc.mc.currentFrame - 27) / 5;
-               if(_mc.mc.currentFrame >= 27 && (_mc.mc.currentFrame - 27) % 5 == 0 && num < 6)
-               {
-                  game.projectileManager.initFistAttack(this.spellX,this.spellY,this,num);
-               }
-               if(_mc.mc.currentFrame == _mc.mc.totalFrames)
+                 if(_mc.mc.currentFrame >= 27 && (_mc.mc.currentFrame - 27) % 5 == 0 && num < 6)
+                 {
+                    if(!this.suppressFistProjectiles)
+                    {
+                       game.projectileManager.initFistAttack(this.spellX,this.spellY,this,num);
+                    }
+                 }
+                  if(!hasHit && _mc.mc.currentFrameLabel == "hit" && this.bossUndeadSummonCount > 0)
+                  {
+                     this.spawnBossSummonedUndead(game);
+                     hasHit = true;
+                  }
+                  if(_mc.mc.currentFrameLabel != null && _mc.mc.currentFrame != _mc.mc.totalFrames)
+                  {
+                     _mc.mc.nextFrame();
+                  }
+                 if(_mc.mc.currentFrame == _mc.mc.totalFrames)
                {
                   _state = S_RUN;
                   this.isFistAttacking = false;
@@ -495,11 +519,71 @@ package com.brockw.stickwar.engine.units
             {
                this.bossFistCooldownFrames = BOSS_FIST_COOLDOWN_FRAMES;
             }
-            team.game.soundManager.playSound("skeltalFistsSound",px,py);
-         }
-      }
-      
-      public function reaperAttack(unit:Unit) : void
+             team.game.soundManager.playSound("skeltalFistsSound",px,py);
+          }
+       }
+
+          public function playCutsceneFist(x:Number, y:Number, undeadCount:int = 6):void
+          {
+             this.spellX = x;
+             this.spellY = y;
+             this.suppressFistProjectiles = true;
+             this.bossUndeadSummonCount = undeadCount;
+             this.spawnSpreadX = 500;
+             this.spawnSpreadY = this.team.game.map.height;
+             forceFaceDirection(x - this.px);
+             this.isFistAttacking = true;
+             hasHit = false;
+             _state = S_ATTACK;
+             team.game.soundManager.playSound("skeltalFistsSound", px, py);
+          }
+
+        public function bossSummonFist(x:Number, y:Number):void
+        {
+           this.suppressFistProjectiles = true;
+           this.bossUndeadSummonCount = 4;
+           this.fistAttack(x, y);
+        }
+
+        public function spawnBossSummonedUndead(game:StickWar):void
+        {
+           if(this.bossUndeadSummonCount <= 0 || this.team == null)
+           {
+              return;
+           }
+             var count:int = this.bossUndeadSummonCount;
+             this.bossUndeadSummonCount = 0;
+            if(game.soundManager != null)
+            {
+               game.soundManager.playSoundFullVolumeRandom("GhostTower", 2);
+            }
+            if(!Boolean(this.team.unitGroups[Unit.U_UNDEAD]))
+            {
+               this.team.unitGroups[Unit.U_UNDEAD] = [];
+            }
+            for(var i:int = 0; i < count; i++)
+            {
+               var undead:Undead = Undead(game.unitFactory.getUnit(Unit.U_UNDEAD));
+               if(undead == null)
+               {
+                  continue;
+               }
+               this.team.spawn(undead, game);
+                undead.px = Math.max(0, Math.min(game.map.width, this.spellX + (game.random.nextNumber() - 0.5) * this.spawnSpreadX));
+                undead.x = undead.px;
+                undead.py = Math.max(70, Math.min(game.map.height - 70, this.spellY + (game.random.nextNumber() - 0.5) * this.spawnSpreadY));
+                undead.y = undead.py;
+                undead.scaleX *= this.team.direction * -1;
+              game.projectileManager.initTowerSpawn(undead.px, undead.py, this.team, 0.6, 0x66FF66);
+              game.projectileManager.initSpawnDrip(undead.px, undead.py, this.team, 0x66FF66);
+              var cmd:AttackMoveCommand = new AttackMoveCommand(game);
+              cmd.goalX = this.team.enemyTeam.statue.px;
+               cmd.goalY = undead.py;
+                undead.ai.setCommand(game, cmd);
+            }
+        }
+        
+        public function reaperAttack(unit:Unit) : void
       {
          if(unit != null && unit.isAlive())
          {

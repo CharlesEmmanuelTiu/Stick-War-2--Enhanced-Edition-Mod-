@@ -83,9 +83,11 @@ package com.brockw.stickwar.engine.units
       
       public static const U_CHAOS_TOWER:int = 20;
       
-      public static const U_WALL:int = 21;
-      
-      public static const B_ORDER_BANK:int = 100;
+       public static const U_WALL:int = 21;
+       
+       public static const U_UNDEAD:int = 22;
+       
+       public static const B_ORDER_BANK:int = 100;
       
       public static const B_BARRACKS:int = 101;
       
@@ -264,8 +266,14 @@ package com.brockw.stickwar.engine.units
       private var _isOnFire:Boolean;
       
       public var isHome:Boolean;
-      
-      private var reaperMc:reaperEffectMc;
+
+      public var assignedSide:int;
+
+       public var isInfected:Boolean;
+
+       public var isTargetableOverride:Boolean;
+       
+       private var reaperMc:reaperEffectMc;
 
       private var slowReaperMc:reaperEffectMc;
 
@@ -762,10 +770,13 @@ package com.brockw.stickwar.engine.units
          return px + pwidth / 2 - game.screenX > 0 && px - pwidth / 2 - game.screenX < game.map.screenWidth;
       }
       
-      public function isTargetable() : Boolean
-      {
-         return !this.isDead && !this.isDieing && px * this.team.direction > this.team.homeX * this.team.direction;
-      }
+        public function isTargetable() : Boolean
+        {
+           if(this.isTargetableOverride) return true;
+           if(this.team != null && this.team.game != null && this.team.game.ignoreHomeXTargeting)
+              return !this.isDead && !this.isDieing;
+           return !this.isDead && !this.isDieing && px * this.team.direction > this.team.homeX * this.team.direction;
+        }
       
       public function isAlive() : Boolean
       {
@@ -1119,11 +1130,11 @@ package com.brockw.stickwar.engine.units
          {
             this.isHome = true;
          }
-         if(this.team.direction * px < this.team.direction * (this.team.homeX - this.team.direction * 25))
-         {
-            this.cure();
-            this.heal(this.garrisonHealRate,1);
-         }
+          if(this.team.statue != null && Math.abs(px - this.team.statue.px) < 350)
+          {
+             this.cure();
+             this.heal(this.garrisonHealRate,1);
+          }
           if(this.poisonDamage == 0)
           {
              this.removeMcChild(this.poisonMc);

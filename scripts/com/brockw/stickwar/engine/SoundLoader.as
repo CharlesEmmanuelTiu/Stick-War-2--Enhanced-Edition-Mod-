@@ -195,8 +195,9 @@ package com.brockw.stickwar.engine
          soundManager.addSound("BodyfallSound",BodyfallSound,1,6);
          soundManager.addSound("battleOfTheShadowElves",Battle_Of_The_Shadow_Elves,1,2);
          soundManager.addSound("enteringTheStronghold",Entering_The_Stronghold,1,2);
-         soundManager.addSound("fieldOfMemories",Field_Of_Memories,1,1);
-         soundManager.addSound("orderInGame",Battle_Of_The_Shadow_Elves,1,2);
+          soundManager.addSound("fieldOfMemories",Field_Of_Memories,1,1);
+          soundManager.addSound("fieldOfAmbush",Field_Of_Ambush,1,4);
+          soundManager.addSound("orderInGame",Battle_Of_The_Shadow_Elves,1,2);
       }
    }
 }

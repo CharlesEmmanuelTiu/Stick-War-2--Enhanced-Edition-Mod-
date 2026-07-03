@@ -10,7 +10,7 @@ package com.brockw.stickwar.engine.Ai.command
    public class PoisonDartCommand extends UnitCommand
    {
       
-      public static const actualButtonBitmap:Bitmap = new Bitmap(new MagikillSummon());
+      public static const actualButtonBitmap:Bitmap = new Bitmap(new poisonSprayBitmap());
       
       private var poisonRange:Number;
       

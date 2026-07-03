@@ -30,10 +30,10 @@ package com.brockw.stickwar.engine.Team.Order
          {
             a.setAction(0,1,Tech.MONK_CURE);
          }
-         if(!tech.isResearched(Tech.MONK_BOSS_REVIVE))
-         {
-            a.setAction(1,1,Tech.MONK_BOSS_REVIVE);
-         }
+           if(!tech.isResearched(Tech.MONK_BOSS_REVIVE) && !tech.isHideBossTechs())
+          {
+             a.setAction(1,1,Tech.MONK_BOSS_REVIVE);
+          }
       }
    }
 }

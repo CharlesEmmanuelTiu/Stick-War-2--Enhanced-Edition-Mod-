@@ -30,7 +30,7 @@ package com.brockw.stickwar.campaign
             case "Ambush: Shadowrath Stalkers":
             case "Ambush: Rebels Last Stand":
             case "Ambush: Chaos Breaks the Rebels":
-            case "Ambush: Dead Horde":
+            case "Ambush: Undead Horde":
             case "Ambush: Giants and Eclipsors":
                return "fieldOfMemories";
             case "Blot out the sun: Archidons Declare War":

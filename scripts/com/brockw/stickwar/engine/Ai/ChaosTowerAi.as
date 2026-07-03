@@ -13,9 +13,10 @@ package com.brockw.stickwar.engine.Ai
          unit = s;
       }
       
-      override public function update(game:StickWar) : void
-      {
-         if(this.currentCommand.type == UnitCommand.REMOVE_TOWER_COMMAND)
+       override public function update(game:StickWar) : void
+       {
+          checkNextMove(game);
+          if(this.currentCommand.type == UnitCommand.REMOVE_TOWER_COMMAND)
          {
             this.unit.isDieing = true;
             this.unit.health = 0;

@@ -56,6 +56,30 @@ package
       
       public var button17:MovieClip;
       
+      public var button21:MovieClip;
+      
+      public var button22:MovieClip;
+      
+      public var button23:MovieClip;
+      
+      public var button24:MovieClip;
+      
+      public var button25:MovieClip;
+      
+      public var button26:MovieClip;
+      
+      public var button27:MovieClip;
+      
+      public var button28:MovieClip;
+      
+      public var button29:MovieClip;
+      
+      public var button30:MovieClip;
+      
+      public var button31:MovieClip;
+      
+      public var UpgradeSelection:SimpleButton;
+      
       public function campaignUpgradeScreenMc()
       {
          super();

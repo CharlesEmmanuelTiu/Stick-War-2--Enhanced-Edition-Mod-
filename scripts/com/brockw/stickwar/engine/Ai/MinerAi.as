@@ -10,9 +10,11 @@ package com.brockw.stickwar.engine.Ai
    public class MinerAi extends UnitAi
    {
       
-      private var _targetOre:Ore;
-      
-      private var _isGoingForOre:Boolean;
+       private var _targetOre:Ore;
+
+       private var _garrisonTargetOre:Ore;
+       
+       private var _isGoingForOre:Boolean;
       
       private var _isUnassigned:Boolean;
       
@@ -33,13 +35,13 @@ package com.brockw.stickwar.engine.Ai
          this._isUnassigned = true;
       }
       
-      override public function update(game:StickWar) : void
-      {
-         var yWalk:Number = NaN;
-         var xWalking:Number = NaN;
-         var yOffset:Number = NaN;
-         var yMovement:Number = NaN;
-         var offset:Number = NaN;
+        override public function update(game:StickWar) : void
+        {
+           var yWalk:Number = NaN;
+          var xWalking:Number = NaN;
+          var yOffset:Number = NaN;
+          var yMovement:Number = NaN;
+           var offset:Number = NaN;
          if(this.targetOre != null)
          {
             this._isUnassigned = false;
@@ -98,7 +100,7 @@ package com.brockw.stickwar.engine.Ai
                {
                   yWalk = 0;
                }
-               unit.walk((unit.team.homeX - unit.x) / 20,yWalk / 20,(unit.team.homeX - unit.x) / 20);
+                unit.walk((unit.team.homeX - unit.x) / 20,yWalk / 20,(unit.team.homeX - unit.x) / 20);
             }
             else if(this.targetOre != null && !unit.isGarrisoned)
             {
@@ -187,7 +189,10 @@ package com.brockw.stickwar.engine.Ai
             unit.mayWalkThrough = false;
             unit.walk((goalX - unit.px) / 20,(goalY - unit.py) / 20,intendedX);
          }
-         this.updateAutoMiner(Miner(unit),game);
+          if(!Miner(unit).isBagFull())
+          {
+             this.updateAutoMiner(Miner(unit),game);
+          }
       }
       
       protected function updateAutoMiner(miner:Miner, game:StickWar) : void
@@ -214,7 +219,33 @@ package com.brockw.stickwar.engine.Ai
       {
          var i:int = 0;
          var gold:Ore = null;
-         if(unit.team.direction == 1)
+          if(unit.team.isCenterBase)
+          {
+             var half:int = int(game.map.gold.length / 2);
+             if(unit.assignedSide == -1)
+             {
+                for(i = half - 1; i >= 0; i--)
+                {
+                   gold = game.map.gold[i];
+                   if(this.getFreeMine(miner,game,gold))
+                   {
+                      break;
+                   }
+                }
+             }
+             else if(unit.assignedSide == 1)
+             {
+                for(i = game.map.gold.length - 1; i >= half; i--)
+                {
+                   gold = game.map.gold[i];
+                   if(this.getFreeMine(miner,game,gold))
+                   {
+                      break;
+                   }
+                }
+             }
+          }
+         else if(unit.team.direction == 1)
          {
             for(i = 0; i < game.map.gold.length / 2; i++)
             {
@@ -254,24 +285,37 @@ package com.brockw.stickwar.engine.Ai
          return this._targetOre;
       }
       
-      public function set targetOre(value:Ore) : void
-      {
-         if(this._targetOre == value)
-         {
-            return;
-         }
-         if(Boolean(this._targetOre))
-         {
-            this._targetOre.stopMining(Miner(unit));
-            this._targetOre.releaseMiningSpot(Miner(unit));
-         }
-         this._targetOre = value;
-      }
+       public function set targetOre(value:Ore) : void
+       {
+          if(this._targetOre == value)
+          {
+             return;
+          }
+          if(Boolean(this._targetOre))
+          {
+             this._targetOre.stopMining(Miner(unit));
+             this._targetOre.releaseMiningSpot(Miner(unit));
+          }
+          this._targetOre = value;
+          if(unit != null && unit.team != null && unit.team.isCenterBase && value != null && !(value is Statue))
+             unit.assignedSide = value.px < unit.team.game.map.width / 2 ? -1 : 1;
+       }
       
-      override public function cleanUp() : void
-      {
-         this.targetOre = null;
-      }
+       public function get garrisonTargetOre() : Ore
+       {
+          return this._garrisonTargetOre;
+       }
+       
+       public function set garrisonTargetOre(value:Ore) : void
+       {
+          this._garrisonTargetOre = value;
+       }
+       
+       override public function cleanUp() : void
+       {
+          this.targetOre = null;
+          this._garrisonTargetOre = null;
+       }
       
       public function get isGoingForOre() : Boolean
       {

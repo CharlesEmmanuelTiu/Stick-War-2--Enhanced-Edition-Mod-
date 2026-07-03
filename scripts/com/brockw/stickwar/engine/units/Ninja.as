@@ -116,6 +116,8 @@ package com.brockw.stickwar.engine.units
 
       private var _cloneIdleTimerFrames:int;
 
+      private var spawnProtectionFrames:int;
+
       private var _lastAnimLabel:String;
 
       private var _lastCloneRetargetId:int;
@@ -150,8 +152,9 @@ package com.brockw.stickwar.engine.units
           this._shadowClone2 = null;
           this._clonesInCombat = false;
            this._shadowCloneCooldownFrames = 0;
-           this._cloneIdleTimerFrames = 0;
-           this._lastAnimLabel = "";
+            this._cloneIdleTimerFrames = 0;
+            this.spawnProtectionFrames = 0;
+            this._lastAnimLabel = "";
            this._lastCloneRetargetId = -1;
          }
        
@@ -310,7 +313,7 @@ package com.brockw.stickwar.engine.units
           var cloakDuration:int = isChainCloak ? BOSS_CHAIN_CLOAK_DURATION_FRAMES : (this._isPlayerBoss ? PLAYER_BOSS_CLOAK3_DURATION_FRAMES : BOSS_SPECIAL_CLOAK_DURATION_FRAMES);
           if(this._isPlayerBoss && team.tech.isResearched(Tech.NINJA_CLOAK3))
           {
-              var manaCost:int = isChainCloak ? 10 : game.xml.xml.Order.Units.ninja.cloak3.mana;
+               var manaCost:int = isChainCloak ? 10 : team.game.xml.xml.Order.Units.ninja.cloak3.mana;
               if(team.mana < manaCost)
              {
                 return false;
@@ -437,12 +440,19 @@ package com.brockw.stickwar.engine.units
          {
             --this.bossWhiffPenaltyFrames;
          }
-         if(this.bossPendingChainCloakFrames > 0)
-         {
-            --this.bossPendingChainCloakFrames;
-         }
-         this._stealthSpellTimer.update();
-         this.updateShadowClones();
+          if(this.bossPendingChainCloakFrames > 0)
+          {
+             --this.bossPendingChainCloakFrames;
+          }
+          if(this.spawnProtectionFrames > 0)
+          {
+             --this.spawnProtectionFrames;
+          }
+          this._stealthSpellTimer.update();
+          if(this.isBoss)
+          {
+             this.updateShadowClones();
+          }
          updateCommon(game);
          if(!isDieing)
          {
@@ -528,7 +538,7 @@ package com.brockw.stickwar.engine.units
                               this.bossPendingChainCloakFrames = BOSS_CHAIN_CLOAK_DELAY_FRAMES;
                            }
                         }
-                       if(this._autoPendingShadowCloneOnHit && hasHit && !(this.currentTarget is Statue))
+                        if(this._autoPendingShadowCloneOnHit && hasHit && this.isBoss && !(this.currentTarget is Statue))
                        {
                           this._autoPendingShadowCloneOnHit = false;
                           if(this.team != null && this.team.tech.isResearched(Tech.NINJA_SHADOW_CLONE))
@@ -629,10 +639,10 @@ package com.brockw.stickwar.engine.units
                 }
                 a.setAction(1,0,UnitCommand.CURE);
              }
-             if(this.isBoss && this._isPlayerBoss && team.tech.isResearched(Tech.NINJA_SHADOW_CLONE))
-             {
-                a.setAction(0,1,UnitCommand.NINJA_SHADOW_CLONE);
-             }
+             if(this.isBoss && this._isPlayerBoss && team.tech.isResearched(Tech.NINJA_SHADOW_CLONE) && (team.techAllowed == null || Tech.BOSS_NINJA_UNLOCK in team.techAllowed))
+              {
+                 a.setAction(0,1,UnitCommand.NINJA_SHADOW_CLONE);
+              }
        }
       
       override public function get damageToArmour() : Number
@@ -736,36 +746,50 @@ package com.brockw.stickwar.engine.units
           this._autoPendingShadowCloneOnHit = value;
        }
 
-        override public function makeBoss(enableDeathBurst:Boolean = false) : void
-       {
-          this._isBoss = true;
-          this.isBossUnit = true;
-          this.hasDefaultLoadout = true;
-          this.bossAbilitySpawnLockFrames = 30;
-          this.isAutoCloakToggled = true;
-          this.damageToDeal *= 1.25;
-          this.normalVelocity *= 1.12;
-          this._maxVelocity = this.normalVelocity;
-          if(this.team != null && !this.team.isAi)
-          {
-             this.markAsPlayerBoss();
-          }
-       }
+         override public function makeBoss(enableDeathBurst:Boolean = false) : void
+        {
+           this._isBoss = true;
+           this.isBossUnit = true;
+           this.hasDefaultLoadout = true;
+           this.bossAbilitySpawnLockFrames = 30;
+           this.isAutoCloakToggled = true;
+           this.damageToDeal *= 1.25;
+           this.normalVelocity *= 1.12;
+           this._maxVelocity = this.normalVelocity;
+           if(this.team != null && !this.team.isAi)
+           {
+              this.markAsPlayerBoss();
+           }
+        }
 
-       override public function damage(type:int, amount:int, inflictor:Entity, modifier:Number = 1) : void
-       {
-             if(this.isBossSummoned && this.team != null && this.team.game != null)
-             {
-                if(this.isDead || this.health <= 0) return;
-                this.team.game.projectileManager.initStealthWallExplosion(this.px,this.py,this.team);
-                 this.team.removeUnit(this,this.team.game);
-               if(this.team.game.battlefield.contains(this))
-               {
-                  this.team.game.battlefield.removeChild(this);
-               }
-                this.health = 0;
-                this.isDead = true;
-               return;
+        public function releaseFromBossPool() : void
+        {
+           this._isBoss = false;
+           this._isPlayerBoss = false;
+           this._isAutoCloakToggled = false;
+           this._autoPendingShadowCloneOnHit = false;
+           Ninja.setItem(_ninja(mc),"","","");
+           this._lastAnimLabel = "";
+        }
+
+        override public function damage(type:int, amount:int, inflictor:Entity, modifier:Number = 1) : void
+        {
+              if(this.isBossSummoned && this.team != null && this.team.game != null)
+              {
+                 if(this.spawnProtectionFrames > 0)
+                 {
+                    return;
+                 }
+                 if(this.isDead || this.health <= 0) return;
+                 this.team.game.projectileManager.initStealthWallExplosion(this.px,this.py,this.team);
+                  this.team.removeUnit(this,this.team.game);
+                if(this.team.game.battlefield.contains(this))
+                {
+                   this.team.game.battlefield.removeChild(this);
+                }
+                 this.health = 0;
+                 this.isDead = true;
+                return;
              }
             if(this.isBoss && this._isPlayerBoss && (this._shadowClone1 != null || this._shadowClone2 != null) && !this._clonesInCombat)
             {
@@ -1017,13 +1041,15 @@ package com.brockw.stickwar.engine.units
               clone.py = Math.max(80,Math.min(game.map.height - 80,this.py + (i - 1) * 40));
               clone.x = clone.px;
               clone.y = clone.py;
-              clone.isBossUnit = true;
-              clone.isBossSummoned = true;
-              clone.health = 9999;
+               clone.isBossUnit = true;
+               clone.isBossSummoned = true;
+               clone.spawnProtectionFrames = 90;
+               clone.health = 9999;
               clone.maxHealth = 9999;
               clone.healthBar.alpha = 0;
-              clone.isBossMovementLocked = true;
-               var holdCommand:HoldCommand = new HoldCommand(game);
+               clone.isBossMovementLocked = true;
+               clone.population = 0;
+                var holdCommand:HoldCommand = new HoldCommand(game);
                holdCommand.type = UnitCommand.HOLD;
                clone.ai.setCommand(game,holdCommand);
               game.projectileManager.initStealthWallExplosion(clone.px,clone.py,this.team);
@@ -1240,28 +1266,24 @@ package com.brockw.stickwar.engine.units
                   this._clonesInCombat = true;
                   return;
                }
-              if(this._shadowClone1 != null)
-              {
-                 this._shadowClone1.isBossMovementLocked = true;
-                 var targetX1:Number = this.px + this.team.direction * -50;
-                 var targetY1:Number = this.py - 20;
-                 var dist1:Number = Math.sqrt(Math.pow(this._shadowClone1.px - targetX1,2) + Math.pow(this._shadowClone1.py - targetY1,2));
-                 if(dist1 > 30)
-                 {
-                    this._shadowClone1.walk((targetX1 - this._shadowClone1.px) / 20,(targetY1 - this._shadowClone1.py) / 20,Util.sgn(targetX1 - this._shadowClone1.px));
-                 }
-              }
-              if(this._shadowClone2 != null)
-              {
-                 this._shadowClone2.isBossMovementLocked = true;
-                 var targetX2:Number = this.px + this.team.direction * -50;
-                 var targetY2:Number = this.py + 20;
-                 var dist2:Number = Math.sqrt(Math.pow(this._shadowClone2.px - targetX2,2) + Math.pow(this._shadowClone2.py - targetY2,2));
-                 if(dist2 > 30)
-                 {
-                    this._shadowClone2.walk((targetX2 - this._shadowClone2.px) / 20,(targetY2 - this._shadowClone2.py) / 20,Util.sgn(targetX2 - this._shadowClone2.px));
-                 }
-              }
+               if(this._shadowClone1 != null)
+               {
+                  this._shadowClone1.isBossMovementLocked = false;
+                  var forwardCmd1:AttackMoveCommand = new AttackMoveCommand(this.team.game);
+                  forwardCmd1.type = UnitCommand.ATTACK_MOVE;
+                  forwardCmd1.goalX = this.team.homeX + this.team.direction * 5000;
+                  forwardCmd1.goalY = this.py - 20;
+                  this._shadowClone1.ai.setCommand(this.team.game,forwardCmd1);
+               }
+               if(this._shadowClone2 != null)
+               {
+                  this._shadowClone2.isBossMovementLocked = false;
+                  var forwardCmd2:AttackMoveCommand = new AttackMoveCommand(this.team.game);
+                  forwardCmd2.type = UnitCommand.ATTACK_MOVE;
+                  forwardCmd2.goalX = this.team.homeX + this.team.direction * 5000;
+                  forwardCmd2.goalY = this.py + 20;
+                  this._shadowClone2.ai.setCommand(this.team.game,forwardCmd2);
+               }
            }
               else
               {
@@ -1301,25 +1323,29 @@ package com.brockw.stickwar.engine.units
                        enemiesNear = true;
                     }
                  }
-                 if(!enemiesNear)
-                 {
-                    this._clonesInCombat = false;
-                    this._cloneIdleTimerFrames = CLONE_IDLE_TIMEOUT_FRAMES;
-                    if(this._shadowClone1 != null)
-                    {
-                       this._shadowClone1.isBossMovementLocked = true;
-                       var hold1:HoldCommand = new HoldCommand(this.team.game);
-                       hold1.type = UnitCommand.HOLD;
-                       this._shadowClone1.ai.setCommand(this.team.game,hold1);
-                    }
-                    if(this._shadowClone2 != null)
-                    {
-                       this._shadowClone2.isBossMovementLocked = true;
-                       var hold2:HoldCommand = new HoldCommand(this.team.game);
-                       hold2.type = UnitCommand.HOLD;
-                       this._shadowClone2.ai.setCommand(this.team.game,hold2);
-                    }
-                 }
+                  if(!enemiesNear)
+                  {
+                     this._clonesInCombat = false;
+                     this._cloneIdleTimerFrames = CLONE_IDLE_TIMEOUT_FRAMES;
+                     if(this._shadowClone1 != null)
+                     {
+                        this._shadowClone1.isBossMovementLocked = false;
+                        var idleCmd1:AttackMoveCommand = new AttackMoveCommand(this.team.game);
+                        idleCmd1.type = UnitCommand.ATTACK_MOVE;
+                        idleCmd1.goalX = this.team.homeX + this.team.direction * 5000;
+                        idleCmd1.goalY = this.py - 20;
+                        this._shadowClone1.ai.setCommand(this.team.game,idleCmd1);
+                     }
+                     if(this._shadowClone2 != null)
+                     {
+                        this._shadowClone2.isBossMovementLocked = false;
+                        var idleCmd2:AttackMoveCommand = new AttackMoveCommand(this.team.game);
+                        idleCmd2.type = UnitCommand.ATTACK_MOVE;
+                        idleCmd2.goalX = this.team.homeX + this.team.direction * 5000;
+                        idleCmd2.goalY = this.py + 20;
+                        this._shadowClone2.ai.setCommand(this.team.game,idleCmd2);
+                     }
+                  }
               }
             if(this._shadowClone1 != null && !this._shadowClone1.isAlive())
             {

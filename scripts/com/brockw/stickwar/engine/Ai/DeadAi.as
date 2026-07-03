@@ -13,9 +13,9 @@ package com.brockw.stickwar.engine.Ai
          unit = s;
       }
       
-      override public function update(game:StickWar) : void
-      {
-         checkNextMove(game);
+        override public function update(game:StickWar) : void
+        {
+           checkNextMove(game);
          if(currentCommand.type == UnitCommand.DEAD_POISON)
          {
             Dead(unit).isPoisonedToggled = !Dead(unit).isPoisonedToggled;

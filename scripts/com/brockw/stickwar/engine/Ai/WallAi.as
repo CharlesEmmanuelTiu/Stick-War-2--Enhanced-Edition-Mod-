@@ -13,10 +13,10 @@ package com.brockw.stickwar.engine.Ai
          unit = s;
       }
       
-      override public function update(game:StickWar) : void
-      {
-         checkNextMove(game);
-         if(this.currentCommand.type == UnitCommand.REMOVE_WALL_COMMAND)
+       override public function update(game:StickWar) : void
+       {
+          checkNextMove(game);
+          if(this.currentCommand.type == UnitCommand.REMOVE_WALL_COMMAND)
          {
             this.unit.team.removeWall(Wall(unit));
          }

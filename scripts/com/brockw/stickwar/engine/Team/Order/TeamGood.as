@@ -16,9 +16,10 @@ package com.brockw.stickwar.engine.Team.Order
    import flash.text.TextFormat;
    import flash.utils.Dictionary;
    
-    public class TeamGood extends Team
-    {
-       private var _originalUnitCosts:Dictionary;
+     public class TeamGood extends Team
+     {
+        private var _originalUnitCosts:Dictionary;
+        public var depositPoints:Array;
        
        public function TeamGood(game:StickWar, statueHealth:int, techAllowed:Dictionary = null, handicap:* = 1, healthModifier:Number = 1)
        {
@@ -34,8 +35,9 @@ package com.brockw.stickwar.engine.Team.Order
          var u:Statue = new Statue(new _statueMc(),game,statueHealth);
          game.units[u.id] = u;
          statue = u;
-         super(game);
-         this.handicap = handicap;
+          super(game);
+          this.depositPoints = [this.homeX];
+          this.handicap = handicap;
          this.techAllowed = techAllowed;
          type = T_GOOD;
          buttonOver = null;
@@ -185,32 +187,47 @@ package com.brockw.stickwar.engine.Team.Order
           }
        }
        
-         override public function toggleBossMode() : Boolean
-        {
-            this.isBossMode = !this.isBossMode;
-           var bossTypes:Array = [Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_NINJA,Unit.U_MAGIKILL,Unit.U_MONK];
-           var i:int = 0;
-           var t:int = 0;
-            if(this.isBossMode)
-            {
-               for(i = 0; i < bossTypes.length; i++)
-               {
-                  t = bossTypes[i];
-                  this.unitInfo[t][0] = this._originalUnitCosts[t][0] * 2;
-                  this.unitInfo[t][1] = this._originalUnitCosts[t][1] * 2;
-               }
-            }
-            else
-            {
-               for(i = 0; i < bossTypes.length; i++)
-               {
-                  t = bossTypes[i];
-                  this.unitInfo[t][0] = this._originalUnitCosts[t][0];
-                  this.unitInfo[t][1] = this._originalUnitCosts[t][1];
-               }
-            }
-            return this.isBossMode;
-        }
+       private function getBossXmlName(type:int) : String
+       {
+           switch(type)
+           {
+               case Unit.U_SPEARTON: return "spearos";
+               case Unit.U_ARCHER:   return "archis";
+               case Unit.U_NINJA:    return "shade";
+               case Unit.U_MONK:     return "vitalis";
+               case Unit.U_MAGIKILL: return "magis";
+           }
+           return "";
+       }
+
+          override public function toggleBossMode() : Boolean
+         {
+             this.isBossMode = !this.isBossMode;
+            var bossTypes:Array = [Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_NINJA,Unit.U_MAGIKILL,Unit.U_MONK];
+            var i:int = 0;
+            var t:int = 0;
+            var bossXml:XMLList = null;
+             if(this.isBossMode)
+             {
+                for(i = 0; i < bossTypes.length; i++)
+                {
+                   t = bossTypes[i];
+                   bossXml = this.game.xml.xml.Order.Units[this.getBossXmlName(t)];
+                   this.unitInfo[t][0] = int(bossXml.child("gold")) * this.handicap;
+                   this.unitInfo[t][1] = int(bossXml.child("mana")) * this.handicap;
+                }
+             }
+             else
+             {
+                for(i = 0; i < bossTypes.length; i++)
+                {
+                   t = bossTypes[i];
+                   this.unitInfo[t][0] = this._originalUnitCosts[t][0];
+                   this.unitInfo[t][1] = this._originalUnitCosts[t][1];
+                }
+             }
+             return this.isBossMode;
+         }
     }
 }
 

@@ -12,9 +12,9 @@ package com.brockw.stickwar.engine.Ai
          unit = s;
       }
       
-      override public function update(game:StickWar) : void
-      {
-         checkNextMove(game);
+        override public function update(game:StickWar) : void
+        {
+           checkNextMove(game);
          if(unit.shouldStartCampaignBossEscape())
          {
             unit.startCampaignBossEscape();
@@ -37,26 +37,26 @@ package com.brockw.stickwar.engine.Ai
          {
             this.mayKite = Archer(unit).isAutoKiteToggled;
          }
-         if(currentCommand.type == UnitCommand.HEAL)
-         {
-            Archer(unit).isAutoKiteToggled = !Archer(unit).isAutoKiteToggled;
-            this.mayKite = Archer(unit).isAutoKiteToggled;
-            restoreMove(game);
-            super.update(game);
-            return;
-         }
-          if(currentCommand.type == UnitCommand.ARCHER_FIRE)
+          if(currentCommand.type == UnitCommand.HEAL)
           {
-             Archer(unit).archerFireArrow();
-             nextMove(game);
-          }
-          if(currentCommand.type == UnitCommand.ARCHER_BOSS_AUTO_TOGGLE)
-          {
-             Archer(unit).bossAutoAbilityEnabled = !Archer(unit).bossAutoAbilityEnabled;
+             Archer(unit).isAutoKiteToggled = currentCommand.realX != 0;
+             this.mayKite = Archer(unit).isAutoKiteToggled;
              restoreMove(game);
              super.update(game);
              return;
           }
+           if(currentCommand.type == UnitCommand.ARCHER_FIRE)
+           {
+              Archer(unit).archerFireArrow();
+              nextMove(game);
+           }
+           if(currentCommand.type == UnitCommand.ARCHER_BOSS_AUTO_TOGGLE)
+           {
+              Archer(unit).bossAutoAbilityEnabled = currentCommand.realX != 0;
+              restoreMove(game);
+              super.update(game);
+              return;
+           }
 
 
           if(currentCommand.type == UnitCommand.ARCHER_BOSS_ARROW_STORM)

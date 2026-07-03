@@ -897,7 +897,7 @@
 </cloak>
 
 <cloak2>
-<name>Cloak Level 2</name>
+<name>Shinobi Level 2</name>
 <cost>150</cost>
 <mana>150</mana>
 <effect>1</effect>
@@ -906,12 +906,12 @@
 </cloak2>
 
 <cloak3>
-<name>Cloak Level 3</name>
+<name>Shinobi Level 3</name>
 <cost>200</cost>
 <mana>200</mana>
 <effect>1</effect>
 <time>900</time>
-<tip>Shadowrath boss activates a powerful mana-fueled cloak.</tip>
+<tip>Shade activates a powerful mana-fueled cloak that chains into another cloak on successful hit.</tip>
 </cloak3>
 
 <ninjaCriticalStrike>
@@ -1092,7 +1092,7 @@
 <mana>120</mana>
 <effect>1</effect>
 <time>2250</time>
-<tip>Archer boss calls down a rain of arrows at a target location slows enemies that are hit.</tip>
+<tip>Archis calls down a rain of arrows at a target location slows enemies that are hit.</tip>
 </arrowStorm>
 
 <explosionArrow>
@@ -1101,7 +1101,7 @@
 <mana>50</mana>
 <effect>1</effect>
 <time>1200</time>
-<tip>Archer boss fires a devastating explosive arrow.</tip>
+<tip>Archis fires a devastating explosive arrow.</tip>
 </explosionArrow>
 
 <shadowClone>
@@ -1110,7 +1110,7 @@
 <mana>100</mana>
 <effect>1</effect>
 <time>600</time>
-<tip>Shadowrath creates 2 shadow clones that follow and attack enemies.</tip>
+<tip>Shade creates 2 shadow clones that attack and surround enemy targets.</tip>
 </shadowClone>
 
 <monkRevive>
@@ -1118,16 +1118,16 @@
 <cost>250</cost>
 <mana>85</mana>
 <time>1200</time>
-<tip>Allows Meric boss to revive dead allies.</tip>
+<tip>Allows Vitalis to revive dead allies.</tip>
 </monkRevive>
 
 <magikillNuke2>
-<name>Meteor II</name>
+<name>Meteor Level 2</name>
 <cost>150</cost>
 <mana>100</mana>
 <effect>1</effect>
 <time>400</time>
-<tip>Magikill Boss Meteor now creates a chain of 3 meteors.</tip>
+<tip>Magis' Meteor spell now creates a chain of 3 meteors.</tip>
 </magikillNuke2>
 
 <magikillLightningStun>
@@ -1136,16 +1136,16 @@
 <mana>100</mana>
 <effect>1</effect>
 <time>800</time>
-<tip>Magikill Boss Electric Wall now stuns enemies hit.</tip>
+<tip>Magis' Electric Wall now stuns enemies when hit.</tip>
 </magikillLightningStun>
 
 <magikillSummonUpgrade>
-<name>Summon Upgrade</name>
+<name>Summon Level 2</name>
 <cost>250</cost>
 <mana>150</mana>
 <effect>1</effect>
 <time>1500</time>
-<tip>Upgrades Magikill Boss summoning: Ninja replaces Swordwrath, Archer capacity doubled.</tip>
+<tip>Upgrades Magis' summoning: Shadowrath replaces Swordwrath minions, spawn 2 archers in one cast.</tip>
 </magikillSummonUpgrade>
 
 </Tech>
@@ -1257,7 +1257,7 @@
 
 <brace>
 <name>Auto Brace Shield Slam</name>
-<info>Spearton Boss automatically commands nearby Speartons to shield slam when enemies are near. Click to disable.</info>
+<info>Spearos automatically commands nearby Speartons to shield slam when enemies are near. Click to disable.</info>
 <hotkey>81</hotkey>
 <gold>0</gold>
 <mana>0</mana>
@@ -1267,6 +1267,15 @@
 </brace>
 
 </spearton>
+
+<spearos>
+<name>Spearos</name>
+<info>Commands nearby Speartons to form Shield Walls and execute devastating Shield Bashes.</info>
+<gold>700</gold>
+<mana>100</mana>
+<cooldown>600</cooldown>
+<population>3</population>
+</spearos>
 
 
 <ninja>
@@ -1349,6 +1358,15 @@
 </cloak3>
 </ninja>
 
+<shade>
+<name>Shade</name>
+<info>Strikes unseen with chaining cloak attacks while commanding clones to overwhelm her prey.</info>
+<gold>750</gold>
+<mana>300</mana>
+<cooldown>600</cooldown>
+<population>4</population>
+</shade>
+
 
 <magikill>
 <name>Magikill</name>
@@ -1420,7 +1438,7 @@
 
 <summon>
 <name>Summon</name>
-<info>Magikill Boss summons allied units to fight alongside.</info>
+<info>Magis summons allied units to fight alongside with no population cost.</info>
 <hotkey>81</hotkey>
 <gold>0</gold>
 <mana>0</mana>
@@ -1428,8 +1446,17 @@
 <cooldown>450</cooldown>
 </summon>
 
-  <population>5</population>
-  </magikill>
+<population>5</population>
+</magikill>
+
+<magis>
+<name>Magis</name>
+<info>Summons loyal minions, calls down meteor barrages, and cripples enemies with powerful lightning magic.</info>
+<gold>800</gold>
+<mana>800</mana>
+<cooldown>600</cooldown>
+<population>10</population>
+</magis>
 
 <monk>
 <name>Meric</name>
@@ -1481,7 +1508,7 @@
 
 <revive>
 <name>Revive</name>
-<info>Meric boss revives a dead ally.</info>
+<info>Vitalis revives a dead ally.</info>
 <hotkey>81</hotkey>
 <gold>0</gold>
 <mana>70</mana>
@@ -1492,7 +1519,7 @@
 
 <autoRevive>
 <name>Auto Revive</name>
-<info>Meric boss automatically revives nearby dead units.</info>
+<info>Vitalis automatically revives nearby dead units.</info>
 <hotkey>84</hotkey>
 <gold>0</gold>
 <mana>0</mana>
@@ -1502,6 +1529,17 @@
 
 <population>3</population>
 </monk>
+
+
+
+<vitalis>
+<name>Vitalis</name>
+<info>Healer capable of curing multiple allies at once and returning fallen warriors to the battlefield.</info>
+<gold>500</gold>
+<mana>400</mana>
+<cooldown>600</cooldown>
+<population>3</population>
+</vitalis>
 
 
 
@@ -1552,7 +1590,7 @@
 
 <tripleShot>
 <name>Triple Shot</name>
-<info>Archer Boss fires three arrows in a spread.</info>
+<info>Archis fires three arrows in a spread.</info>
 <hotkey>81</hotkey>
 <gold>0</gold>
 <mana>0</mana>
@@ -1563,7 +1601,7 @@
 
 <poisonExecute>
 <name>Poison Execute</name>
-<info>Archer Boss executes a poisoned enemy with a powerful shot.</info>
+<info>Archis executes a poisoned enemy with a powerful shot.</info>
 <hotkey>87</hotkey>
 <gold>0</gold>
 <mana>10</mana>
@@ -1573,7 +1611,7 @@
 
 <arrowStorm>
 <name>Arrow Storm</name>
-<info>Archer Boss calls down a rain of arrows at a target location.</info>
+<info>Archis calls down a rain of arrows at a target location.</info>
 <hotkey>69</hotkey>
 <gold>0</gold>
 <mana>70</mana>
@@ -1583,7 +1621,7 @@
 
 <explosion>
 <name>Explosion Arrow</name>
-<info>Archer Boss fires a devastating explosive arrow.</info>
+<info>Archis fires a devastating explosive arrow.</info>
 <hotkey>82</hotkey>
 <gold>0</gold>
 <mana>25</mana>
@@ -1593,7 +1631,7 @@
 
 <autoToggle>
 <name>Auto Abilities</name>
-<info>Toggles whether Archer Boss automatically uses abilities.</info>
+<info>Toggles whether Archis automatically uses abilities.</info>
 <hotkey>84</hotkey>
 <gold>0</gold>
 <mana>0</mana>
@@ -1603,6 +1641,16 @@
 
 <population>2</population>
 </archer>
+
+
+<archis>
+<name>Archis</name>
+<info>Fires explosive arrows, commands deadly Arrow Storms, and executes weakened foes with poisonous precision.</info>
+<gold>550</gold>
+<mana>150</mana>
+<cooldown>600</cooldown>
+<population>2</population>
+</archis>
 
 
 <flyingCrossbowman>

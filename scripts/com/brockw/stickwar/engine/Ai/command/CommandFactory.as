@@ -56,7 +56,9 @@ package com.brockw.stickwar.engine.Ai.command
              this.commandMap[UnitCommand.MONK_BOSS_REVIVE] = MonkBossReviveCommand;
                 this.commandMap[UnitCommand.MONK_BOSS_AUTO_REVIVE_TOGGLE] = MonkBossAutoReviveToggleCommand;
               this.commandMap[UnitCommand.MAGIKILL_SUMMON] = MagikillSummonCommand;
-           }
+              this.commandMap[UnitCommand.NUKE_2] = Nuke2Command;
+              this.commandMap[UnitCommand.LIGHTNING_STUN] = LightningStunCommand;
+            }
       
       public function createCommand(game:StickWar, type:int, goalX:int, goalY:int, arg0:int, arg1:int, arg2:int, arg3:int, arg4:int, isGroup:Boolean = true) : UnitCommand
       {

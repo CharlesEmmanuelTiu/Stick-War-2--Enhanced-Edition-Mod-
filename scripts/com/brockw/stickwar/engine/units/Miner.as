@@ -190,12 +190,12 @@ package com.brockw.stickwar.engine.units
          {
             _maxVelocity = this.upgradedMaxVelocity;
          }
-         if(Math.abs(team.homeX - x) < 220 && !this.isShadowrathDisguise)
-         {
-            team.gold += this.valueOfOre;
-            this.valueOfOre = 0;
-            this.oreInBag = 0;
-         }
+           if(!this.isShadowrathDisguise && Math.abs(team.homeX - x) < 650)
+           {
+              team.gold += this.valueOfOre;
+              this.valueOfOre = 0;
+              this.oreInBag = 0;
+           }
          if(!isDieing)
          {
             updateMotion(game);

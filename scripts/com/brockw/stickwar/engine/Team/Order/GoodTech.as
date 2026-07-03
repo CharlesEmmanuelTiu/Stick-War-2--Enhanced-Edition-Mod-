@@ -82,12 +82,18 @@ package com.brockw.stickwar.engine.Team.Order
             reviveCt.color = 0xFFD700;
             reviveBmd.draw(reviveBmd, null, reviveCt, BlendMode.MULTIPLY);
              this.addNewUpgrade(Tech.MONK_BOSS_REVIVE,game.xml.xml.Order.Tech.monkRevive,new Bitmap(reviveBmd),81);
-            var summonUpgradeBmd:BitmapData = new MagikillSummon();
-            var summonUpgradeCt:ColorTransform = new ColorTransform();
-            summonUpgradeCt.color = 0xFFD700;
-            summonUpgradeBmd.draw(summonUpgradeBmd, null, summonUpgradeCt, BlendMode.MULTIPLY);
-            this.addNewUpgrade(Tech.MAGIKILL_SUMMON_UPGRADE,game.xml.xml.Order.Tech.magikillSummonUpgrade,new Bitmap(summonUpgradeBmd),81);
-          }
+            this.addNewUpgrade(Tech.MAGIKILL_SUMMON_UPGRADE,game.xml.xml.Order.Tech.magikillSummonUpgrade,new Bitmap(new MagikillSummon()),81);
+            var nuke2Bmd:BitmapData = new MagikillFireballs();
+            var nuke2Ct:ColorTransform = new ColorTransform();
+            nuke2Ct.color = 0xFFD700;
+            nuke2Bmd.draw(nuke2Bmd, null, nuke2Ct, BlendMode.MULTIPLY);
+            this.addNewUpgrade(Tech.MAGIKILL_NUKE_2,game.xml.xml.Order.Tech.magikillNuke2,new Bitmap(nuke2Bmd),81);
+            var stunBmd:BitmapData = new MagikillWall();
+            var stunCt:ColorTransform = new ColorTransform();
+            stunCt.color = 0xFFD700;
+            stunBmd.draw(stunBmd, null, stunCt, BlendMode.MULTIPLY);
+            this.addNewUpgrade(Tech.MAGIKILL_LIGHTNING_STUN,game.xml.xml.Order.Tech.magikillLightningStun,new Bitmap(stunBmd),81);
+           }
       
       override public function update(game:StickWar) : void
       {

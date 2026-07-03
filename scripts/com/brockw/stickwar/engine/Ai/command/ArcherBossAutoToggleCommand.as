@@ -1,7 +1,9 @@
 package com.brockw.stickwar.engine.Ai.command
 {
+   import com.brockw.stickwar.GameScreen;
    import com.brockw.stickwar.engine.Entity;
    import com.brockw.stickwar.engine.StickWar;
+   import com.brockw.stickwar.engine.multiplayer.moves.*;
    import com.brockw.stickwar.engine.units.*;
    import flash.display.*;
    import flash.geom.ColorTransform;
@@ -20,6 +22,8 @@ package com.brockw.stickwar.engine.Ai.command
 
       public static const actualButtonBitmap:Bitmap = createButtonBitmap();
 
+      public var toggleTargetState:int = 0;
+
       public function ArcherBossAutoToggleCommand(game:StickWar)
       {
          super();
@@ -34,6 +38,32 @@ package com.brockw.stickwar.engine.Ai.command
          {
             this.loadXML(game.xml.xml.Order.Units.archer.autoToggle);
          }
+      }
+
+      override public function prepareNetworkedMove(gameScreen:GameScreen) : *
+      {
+         var unit:String = null;
+         this.playSound(gameScreen.game);
+         var u:UnitMove = new UnitMove();
+         u.moveType = this.type;
+         for(unit in gameScreen.team.units)
+         {
+            if(Unit(gameScreen.team.units[unit]).selected)
+            {
+               if(this.intendedEntityType == -1 || this.intendedEntityType == gameScreen.team.units[unit].type)
+               {
+                  u.units.push(gameScreen.team.units[unit].id);
+               }
+            }
+         }
+         u.arg0 = this.toggleTargetState;
+         u.arg1 = 0;
+         u.arg4 = this.targetId;
+         if(gameScreen.userInterface.keyBoardState.isShift)
+         {
+            u.queued = true;
+         }
+         gameScreen.doMove(u,gameScreen.team.id);
       }
 
       override public function isToggled(entity:Entity) : Boolean

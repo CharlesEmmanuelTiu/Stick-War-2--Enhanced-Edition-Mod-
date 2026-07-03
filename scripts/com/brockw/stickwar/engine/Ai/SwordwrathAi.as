@@ -15,7 +15,7 @@ package com.brockw.stickwar.engine.Ai
       
       override public function update(game:StickWar) : void
       {
-         if(currentCommand.type == UnitCommand.SWORDWRATH_RAGE)
+           if(currentCommand.type == UnitCommand.SWORDWRATH_RAGE)
          {
             Swordwrath(unit).rage();
             restoreMove(game);

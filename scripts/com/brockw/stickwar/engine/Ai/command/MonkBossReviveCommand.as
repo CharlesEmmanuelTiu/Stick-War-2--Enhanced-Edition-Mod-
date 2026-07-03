@@ -50,7 +50,7 @@ package com.brockw.stickwar.engine.Ai.command
          var my:Number = gameScreen.game.battlefield.mouseY;
          for each(var corpse:Unit in gameScreen.team.deadUnits)
          {
-            if(corpse != null && Math.abs(corpse.px - mx) < 25 && Math.abs(corpse.py - my) < 25)
+            if(corpse != null && !corpse.forceTowerSpawnVisual && Math.abs(corpse.px - mx) < 25 && Math.abs(corpse.py - my) < 25)
             {
                corpse.filters = [new GlowFilter(0x00FF00, 0.8, 8, 8)];
                this._highlightedCorpse = corpse;

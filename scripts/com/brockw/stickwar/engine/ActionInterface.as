@@ -8,8 +8,9 @@ package com.brockw.stickwar.engine
    import com.brockw.stickwar.engine.units.Magikill;
    import com.brockw.stickwar.engine.units.Ninja;
    import com.brockw.stickwar.engine.units.Spearton;
-   import com.brockw.stickwar.engine.units.Unit;
-   import flash.display.*;
+    import com.brockw.stickwar.engine.units.Unit;
+    import com.brockw.stickwar.engine.Gold;
+    import flash.display.*;
    import flash.ui.Mouse;
    import flash.utils.Dictionary;
    
@@ -305,12 +306,12 @@ package com.brockw.stickwar.engine
                           var bx:Number = gameScreen.game.battlefield.mouseX;
                           var by:Number = gameScreen.game.battlefield.mouseY;
                           var bestDist:Number = 99999;
-                          for each(var corpse:Unit in gameScreen.team.deadUnits)
-                          {
-                             if(corpse != null)
-                             {
-                                var d:Number = Math.abs(corpse.px - bx) + Math.abs(corpse.py - by);
-                                if(d < 50 && d < bestDist)
+                           for each(var corpse:Unit in gameScreen.team.deadUnits)
+                           {
+                              if(corpse != null && !corpse.forceTowerSpawnVisual)
+                              {
+                                 var d:Number = Math.abs(corpse.px - bx) + Math.abs(corpse.py - by);
+                                 if(d < 50 && d < bestDist)
                                 {
                                    bestDist = d;
                                    this._currentMove.targetId = corpse.id;
@@ -340,8 +341,13 @@ package com.brockw.stickwar.engine
                        {
                           this._currentMove.targetId = -1;
                        }
-                     this.clicked = true;
-                     if(this.currentMove.mayCast(gameScreen,gameScreen.team))
+                      if(gameScreen.userInterface.tutorialActionsLocked && gameScreen.game.mouseOverUnit is Gold)
+                      {
+                         this.refresh();
+                         return;
+                      }
+                      this.clicked = true;
+                      if(this.currentMove.mayCast(gameScreen,gameScreen.team))
                      {
                         this._currentMove.prepareNetworkedMove(gameScreen);
                      }
@@ -386,11 +392,11 @@ package com.brockw.stickwar.engine
                      {
                         if(Magikill(this.currentEntity).autoCastMode == 0)
                         {
-                           gameScreen.game.team.updateButtonOver(gameScreen.game,"Auto Cast","Magikill autocasts all valid spells. Click to switch to Meteor Only.",0,0,0,0);
-                        }
-                        else if(Magikill(this.currentEntity).autoCastMode == 1)
-                        {
-                           gameScreen.game.team.updateButtonOver(gameScreen.game,"Meteor Only","Magikill only autocasts Meteor. Click to switch to Disabled Autocast.",0,0,0,0);
+                            gameScreen.game.team.updateButtonOver(gameScreen.game,"Auto Cast","Magikill autocasts all valid spells. Click to switch to Mana Save.",0,0,0,0);
+                         }
+                         else if(Magikill(this.currentEntity).autoCastMode == 1)
+                         {
+                            gameScreen.game.team.updateButtonOver(gameScreen.game,"Mana Save","Magikill saves mana by only auto-casting free abilities. Click to switch to Disabled Autocast.",0,0,0,0);
                         }
                         else
                         {
@@ -408,17 +414,28 @@ package com.brockw.stickwar.engine
                            gameScreen.game.team.updateButtonOver(gameScreen.game,"Manual Positioning","Archidons hold their ground unless you move them. Click to enable auto kite.",0,0,0,0);
                         }
                      }
-                     else if(this.currentActions[action] == UnitCommand.CURE && this.currentEntity is Ninja)
-                      {
-                         if(Ninja(this.currentEntity).isAutoCloakToggled)
-                         {
-                            gameScreen.game.team.updateButtonOver(gameScreen.game,"Auto Cloak","Shadowrath automatically cloaks when enemies come within engage range. Click to disable auto cloak.",0,0,0,0);
-                         }
-                         else
-                         {
-                            gameScreen.game.team.updateButtonOver(gameScreen.game,"Manual Cloak","Shadowrath only cloaks when you command it manually. Click to enable auto cloak.",0,0,0,0);
-                         }
-                      }
+                      else if(this.currentActions[action] == UnitCommand.CURE && this.currentEntity is Ninja)
+                       {
+                          if(Ninja(this.currentEntity).isBoss)
+                          {
+                             if(Ninja(this.currentEntity).isAutoCloakToggled)
+                             {
+                                gameScreen.game.team.updateButtonOver(gameScreen.game,"Auto Ability Cycle","Ninja boss automatically cycles abilities when enemies approach. Click to disable auto cycle.",0,0,0,0);
+                             }
+                             else
+                             {
+                                gameScreen.game.team.updateButtonOver(gameScreen.game,"Manual Ability Cycle","Ninja boss only uses abilities when commanded. Click to enable auto cycle.",0,0,0,0);
+                             }
+                          }
+                          else if(Ninja(this.currentEntity).isAutoCloakToggled)
+                          {
+                             gameScreen.game.team.updateButtonOver(gameScreen.game,"Auto Cloak","Shadowrath automatically cloaks when enemies come within engage range. Click to disable auto cloak.",0,0,0,0);
+                          }
+                          else
+                          {
+                             gameScreen.game.team.updateButtonOver(gameScreen.game,"Manual Cloak","Shadowrath only cloaks when you command it manually. Click to enable auto cloak.",0,0,0,0);
+                          }
+                       }
                          else
                      {
                         gameScreen.game.team.updateButtonOverXML(gameScreen.game,UnitCommand(this.actions[this.currentActions[action]]).xmlInfo);
@@ -430,15 +447,16 @@ package com.brockw.stickwar.engine
                      if(gameScreen.userInterface.keyBoardState.isDownForAction(UnitCommand(this.actions[this.currentActions[action]]).hotKey) || gameScreen.userInterface.mouseState.clicked && MovieClip(this.actionsToButtonMap[this.currentActions[action]]).hitTestPoint(stageMouseX,stageMouseY,false))
                      {
                         gameScreen.userInterface.mouseState.clicked = false;
-                         if(this.currentActions[action] == UnitCommand.CURE && this.currentEntity is Magikill)
-                         {
-                            UnitCommand(this.actions[this.currentActions[action]]).prepareNetworkedMove(gameScreen);
-                            if(this.actionsToButtonMap[this.currentActions[action]] != null)
-                            {
-                               MovieClip(this.actionsToButtonMap[this.currentActions[action]]).alpha = 0.2;
-                            }
-                            continue;
-                         }
+                          if(this.currentActions[action] == UnitCommand.CURE && this.currentEntity is Magikill)
+                          {
+                             CureCommand(this.actions[UnitCommand.CURE]).toggleTargetState = (Magikill(this.currentEntity).autoCastMode + 1) % 3;
+                             UnitCommand(this.actions[this.currentActions[action]]).prepareNetworkedMove(gameScreen);
+                             if(this.actionsToButtonMap[this.currentActions[action]] != null)
+                             {
+                                MovieClip(this.actionsToButtonMap[this.currentActions[action]]).alpha = 0.2;
+                             }
+                             continue;
+                          }
                          if((this.currentActions[action] == UnitCommand.ARCHER_FIRE || this.currentActions[action] == UnitCommand.ARCHER_BOSS_ARROW_STORM || this.currentActions[action] == UnitCommand.ARCHER_BOSS_EXPLOSION) && this.currentEntity is Archer)
                          {
                             if(Archer(this.currentEntity).hasBossSpecialArrowLoaded())
@@ -468,14 +486,27 @@ package com.brockw.stickwar.engine
                         {
                            gameScreen.userInterface.helpMessage.showMessage("Ability is on cooldown");
                         }
-                        else if(!UnitCommand(this.actions[this.currentActions[action]]).requiresMouseInput)
-                        {
-                           UnitCommand(this.actions[this.currentActions[action]]).prepareNetworkedMove(gameScreen);
-                           if(this.actionsToButtonMap[this.currentActions[action]] != null)
-                           {
-                              MovieClip(this.actionsToButtonMap[this.currentActions[action]]).alpha = 0.2;
-                           }
-                        }
+                         else if(!UnitCommand(this.actions[this.currentActions[action]]).requiresMouseInput)
+                         {
+                            var triggerType:int = this.currentActions[action];
+                            if(triggerType == UnitCommand.CURE && !(this.currentEntity is Magikill))
+                            {
+                               CureCommand(this.actions[UnitCommand.CURE]).toggleTargetState = CureCommand(this.actions[UnitCommand.CURE]).isToggled(this.currentEntity) ? 0 : 1;
+                            }
+                            else if(triggerType == UnitCommand.HEAL)
+                            {
+                               HealCommand(this.actions[UnitCommand.HEAL]).toggleTargetState = HealCommand(this.actions[UnitCommand.HEAL]).isToggled(this.currentEntity) ? 0 : 1;
+                            }
+                            else if(triggerType == UnitCommand.ARCHER_BOSS_AUTO_TOGGLE)
+                            {
+                               ArcherBossAutoToggleCommand(this.actions[UnitCommand.ARCHER_BOSS_AUTO_TOGGLE]).toggleTargetState = ArcherBossAutoToggleCommand(this.actions[UnitCommand.ARCHER_BOSS_AUTO_TOGGLE]).isToggled(this.currentEntity) ? 0 : 1;
+                            }
+                            UnitCommand(this.actions[triggerType]).prepareNetworkedMove(gameScreen);
+                            if(this.actionsToButtonMap[triggerType] != null)
+                            {
+                               MovieClip(this.actionsToButtonMap[triggerType]).alpha = 0.2;
+                            }
+                         }
                         else
                         {
                            this.refresh();
@@ -646,8 +677,10 @@ package com.brockw.stickwar.engine
               this.actions[new NinjaShadowCloneCommand(this._game).type] = new NinjaShadowCloneCommand(this._game);
               this.actions[new MonkBossReviveCommand(this._game).type] = new MonkBossReviveCommand(this._game);
                  this.actions[new MonkBossAutoReviveToggleCommand(this._game).type] = new MonkBossAutoReviveToggleCommand(this._game);
-               this.actions[new MagikillSummonCommand(this._game).type] = new MagikillSummonCommand(this._game);
-             }
+                this.actions[new MagikillSummonCommand(this._game).type] = new MagikillSummonCommand(this._game);
+                this.actions[new Nuke2Command(this._game).type] = new Nuke2Command(this._game);
+                this.actions[new LightningStunCommand(this._game).type] = new LightningStunCommand(this._game);
+              }
       
       public function get currentMove() : UnitCommand
       {

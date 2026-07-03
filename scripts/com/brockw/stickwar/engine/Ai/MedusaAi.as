@@ -14,11 +14,11 @@ package com.brockw.stickwar.engine.Ai
          isNonAttackingMage = true;
       }
       
-      override public function update(game:StickWar) : void
-      {
-         var u:Unit = null;
-         unit.isBusyForSpell = false;
-         if(currentCommand.type == UnitCommand.STONE)
+       override public function update(game:StickWar) : void
+       {
+          var u:Unit = null;
+          unit.isBusyForSpell = false;
+          if(currentCommand.type == UnitCommand.STONE)
          {
             if(currentCommand.isFinished(unit))
             {

@@ -79,10 +79,10 @@ package com.brockw.stickwar.engine.Ai
          this.bossAttackIntent = false;
       }
       
-      override public function update(game:StickWar) : void
-      {
-         var magikill:Magikill = Magikill(unit);
-         if(unit.shouldStartCampaignBossEscape())
+       override public function update(game:StickWar) : void
+       {
+          var magikill:Magikill = Magikill(unit);
+          if(unit.shouldStartCampaignBossEscape())
          {
             unit.startCampaignBossEscape();
          }
@@ -103,124 +103,137 @@ package com.brockw.stickwar.engine.Ai
          }
             if(magikill.isBoss)
             {
-               if(currentCommand.type == UnitCommand.CURE)
-               {
-                  Magikill(unit).autoCastMode = (Magikill(unit).autoCastMode + 1) % 3;
-                  restoreMove(game);
-                  baseUpdate(game);
-                  return;
-               }
-               if(currentCommand.type == UnitCommand.MAGIKILL_SUMMON)
-               {
-                  if(magikill.tryBossSummonGuards(game))
-                  {
-                     restoreMove(game);
-                  }
-                  baseUpdate(game);
-                  return;
-               }
-               if(currentCommand.type == UnitCommand.NUKE || currentCommand.type == UnitCommand.STUN || currentCommand.type == UnitCommand.POISON_DART)
-               {
-                  if(this.shouldRestoreAutoSpellCommand && !this.isAutoSpellTargetStillValid(game))
-                  {
-                     this.finishSpellCommand(game);
+                if(currentCommand.type == UnitCommand.CURE)
+                {
+                   Magikill(unit).autoCastMode = currentCommand.realX;
+                   restoreMove(game);
+                   baseUpdate(game);
+                   return;
+                }
+                 if(currentCommand.type == UnitCommand.MAGIKILL_SUMMON)
+                 {
+                    if(!magikill.canBossSummonAnyGuardType())
+                    {
+                       game.gameScreen.userInterface.helpMessage.showMessage("Max Minions reached");
+                       game.soundManager.playSoundFullVolume("UnitMakeFail");
+                       baseUpdate(game);
+                    }
+                    else if(magikill.tryBossSummonGuards(game))
+                    {
+                       unit.dx = 0;
+                       unit.dy = 0;
+                       unit.isBusyForSpell = true;
+                       nextMove(game);
+                    }
+                    return;
+                 }
+                if(currentCommand.type == UnitCommand.NUKE || currentCommand.type == UnitCommand.NUKE_2 || currentCommand.type == UnitCommand.STUN || currentCommand.type == UnitCommand.LIGHTNING_STUN || currentCommand.type == UnitCommand.POISON_DART)
+                {
+                   if(this.shouldRestoreAutoSpellCommand && !this.isAutoSpellTargetStillValid(game))
+                   {
+                      this.finishSpellCommand(game);
+                      return;
+                   }
+                   this.updateSpellCommandTargetPosition(game);
+                   if(!currentCommand.inRange(unit))
+                   {
+                      unit.mayWalkThrough = true;
+                      unit.isBusyForSpell = true;
+                      unit.walk((currentCommand.realX - unit.px) / 100,(currentCommand.realY - unit.py) / 100,(currentCommand.realX - unit.px) / 100);
+                   }
+                    else if(currentCommand.type == UnitCommand.NUKE || currentCommand.type == UnitCommand.NUKE_2)
+                    {
+                       Magikill(unit).nukeSpell(currentCommand.realX,currentCommand.realY);
+                       this.finishSpellCommand(game);
+                    }
+                      else if(currentCommand.type == UnitCommand.STUN || currentCommand.type == UnitCommand.LIGHTNING_STUN)
+                      {
+                         Magikill(unit).stunSpell(currentCommand.realX,currentCommand.realY);
+                         this.finishSpellCommand(game);
+                      }
+                     else if(currentCommand.type == UnitCommand.POISON_DART)
+                     {
+                        Magikill(unit).poisonDartSpell(PoisonDartCommand(currentCommand).realX,PoisonDartCommand(currentCommand).realY);
+                        this.finishSpellCommand(game);
+                     }
                      return;
                   }
-                  this.updateSpellCommandTargetPosition(game);
-                  if(!currentCommand.inRange(unit))
+                  if(unit.team.isAi)
+                 {
+                    this.updateBossGenericCasting(game,magikill);
+                    return;
+                 }
+                  this.shouldRestoreAutoSpellCommand = false;
+                  if(magikill.isAutoCastEnabled && this.commandQueue.isEmpty())
                   {
-                     unit.mayWalkThrough = true;
-                     unit.isBusyForSpell = true;
-                     unit.walk((currentCommand.realX - unit.px) / 100,(currentCommand.realY - unit.py) / 100,(currentCommand.realX - unit.px) / 100);
+                     this.tryAutoCast(game);
                   }
-                  else if(currentCommand.type == UnitCommand.NUKE)
+                  if(currentCommand.type == UnitCommand.NUKE || currentCommand.type == UnitCommand.NUKE_2 || currentCommand.type == UnitCommand.STUN || currentCommand.type == UnitCommand.LIGHTNING_STUN || currentCommand.type == UnitCommand.POISON_DART)
                   {
-                     Magikill(unit).nukeSpell(NukeCommand(currentCommand).realX,NukeCommand(currentCommand).realY);
-                     this.finishSpellCommand(game);
+                     return;
                   }
-                  else if(currentCommand.type == UnitCommand.STUN)
+                  if(!this.commandQueue.isEmpty())
                   {
-                     Magikill(unit).stunSpell(StunCommand(currentCommand).realX,StunCommand(currentCommand).realY);
-                     this.finishSpellCommand(game);
+                     nextMove(game);
                   }
-                  else if(currentCommand.type == UnitCommand.POISON_DART)
-                  {
-                     Magikill(unit).poisonDartSpell(PoisonDartCommand(currentCommand).realX,PoisonDartCommand(currentCommand).realY);
-                     this.finishSpellCommand(game);
-                  }
+                  baseUpdate(game);
                   return;
-               }
-               if(unit.team.isAi)
-               {
-                  this.updateBossGenericCasting(game,magikill);
-                  return;
-               }
-               if(magikill.isAutoCastEnabled)
-               {
-                  this.tryAutoCast(game);
-               }
-               if(currentCommand.type == UnitCommand.NUKE || currentCommand.type == UnitCommand.STUN || currentCommand.type == UnitCommand.POISON_DART)
-               {
-                  return;
-               }
-               baseUpdate(game);
-               return;
-            }
-          if(this.tryFinishInitialSpawnMove(game))
-         {
-            return;
-         }
-         if(currentCommand.type == UnitCommand.CURE)
-         {
-            Magikill(unit).autoCastMode = (Magikill(unit).autoCastMode + 1) % 3;
-            restoreMove(game);
-            baseUpdate(game);
-         }
-         else if(currentCommand.type == UnitCommand.NUKE || currentCommand.type == UnitCommand.STUN || currentCommand.type == UnitCommand.POISON_DART)
-         {
-            if(this.shouldRestoreAutoSpellCommand && !this.isAutoSpellTargetStillValid(game))
-            {
-               this.finishSpellCommand(game);
-               return;
-            }
-            this.updateSpellCommandTargetPosition(game);
-            if(!currentCommand.inRange(unit))
-            {
-               unit.mayWalkThrough = true;
-               unit.isBusyForSpell = true;
-               unit.walk((currentCommand.realX - unit.px) / 100,(currentCommand.realY - unit.py) / 100,(currentCommand.realX - unit.px) / 100);
-            }
-            else if(currentCommand.type == UnitCommand.NUKE)
-            {
-               Magikill(unit).nukeSpell(NukeCommand(currentCommand).realX,NukeCommand(currentCommand).realY);
-               this.finishSpellCommand(game);
-            }
-            else if(currentCommand.type == UnitCommand.STUN)
-            {
-               Magikill(unit).stunSpell(StunCommand(currentCommand).realX,StunCommand(currentCommand).realY);
-               this.finishSpellCommand(game);
-            }
-            else if(currentCommand.type == UnitCommand.POISON_DART)
-            {
-               Magikill(unit).poisonDartSpell(PoisonDartCommand(currentCommand).realX,PoisonDartCommand(currentCommand).realY);
-               this.finishSpellCommand(game);
-            }
-         }
-          else
+              }
+            if(this.tryFinishInitialSpawnMove(game))
           {
-             this.shouldRestoreAutoSpellCommand = false;
-             if(unit.team.isAi && magikill.allowAiAutoCast)
-             {
-                this.tryAiAutoCast(game,magikill);
-             }
-             else
-             {
-                this.tryAutoCast(game);
-             }
-             if(currentCommand.type == UnitCommand.NUKE || currentCommand.type == UnitCommand.STUN || currentCommand.type == UnitCommand.POISON_DART)
-             {
-                return;
-             }
+             return;
+          }
+           if(currentCommand.type == UnitCommand.CURE)
+           {
+              Magikill(unit).autoCastMode = currentCommand.realX;
+              restoreMove(game);
+              baseUpdate(game);
+           }
+           else if(currentCommand.type == UnitCommand.NUKE || currentCommand.type == UnitCommand.NUKE_2 || currentCommand.type == UnitCommand.STUN || currentCommand.type == UnitCommand.LIGHTNING_STUN || currentCommand.type == UnitCommand.POISON_DART)
+           {
+              if(this.shouldRestoreAutoSpellCommand && !this.isAutoSpellTargetStillValid(game))
+              {
+                 this.finishSpellCommand(game);
+                 return;
+              }
+              this.updateSpellCommandTargetPosition(game);
+              if(!currentCommand.inRange(unit))
+              {
+                 unit.mayWalkThrough = true;
+                 unit.isBusyForSpell = true;
+                 unit.walk((currentCommand.realX - unit.px) / 100,(currentCommand.realY - unit.py) / 100,(currentCommand.realX - unit.px) / 100);
+              }
+              else if(currentCommand.type == UnitCommand.NUKE || currentCommand.type == UnitCommand.NUKE_2)
+              {
+                 Magikill(unit).nukeSpell(currentCommand.realX,currentCommand.realY);
+                 this.finishSpellCommand(game);
+              }
+                else if(currentCommand.type == UnitCommand.STUN || currentCommand.type == UnitCommand.LIGHTNING_STUN)
+                   {
+                      Magikill(unit).stunSpell(currentCommand.realX,currentCommand.realY);
+                      this.finishSpellCommand(game);
+                   }
+               else if(currentCommand.type == UnitCommand.POISON_DART)
+               {
+                  Magikill(unit).poisonDartSpell(PoisonDartCommand(currentCommand).realX,PoisonDartCommand(currentCommand).realY);
+                  this.finishSpellCommand(game);
+               }
+           }
+            else
+           {
+              this.shouldRestoreAutoSpellCommand = false;
+              if(unit.team.isAi && magikill.allowAiAutoCast)
+              {
+                 this.tryAiAutoCast(game,magikill);
+              }
+              else if(this.commandQueue.isEmpty())
+              {
+                 this.tryAutoCast(game);
+              }
+               if(currentCommand.type == UnitCommand.NUKE || currentCommand.type == UnitCommand.NUKE_2 || currentCommand.type == UnitCommand.STUN || currentCommand.type == UnitCommand.LIGHTNING_STUN || currentCommand.type == UnitCommand.POISON_DART)
+               {
+                  return;
+              }
              baseUpdate(game);
           }
       }
@@ -632,38 +645,54 @@ package com.brockw.stickwar.engine.Ai
           {
              return;
           }
-          magikill = Magikill(unit);
-          if(magikill.isAutoCastEnabled && magikill.isBoss && magikill.summonCooldown() == 0 && magikill.canBossSummonAnyGuardType() && (!magikill.isSummonUpgradeActive() || magikill.team.mana >= 70))
-          {
-             magikill.tryBossSummonGuards(game);
-          }
-           defendMode = this.isDefendMode();
+           magikill = Magikill(unit);
+            defendMode = this.isDefendMode();
            if(!defendMode && currentCommand.type == UnitCommand.MOVE && currentCommand.targetId == -1)
            {
               defendMode = true;
            }
-          if(!defendMode && !this.isAttackMode(game))
-         {
-            return;
-         }
-          if(!magikill.isAutoCastEnabled)
-         {
-            return;
-         }
-         if(defendMode)
-         {
-            defendTarget = this.getNearestEnemyTarget(this.nukeCommand,false);
-         }
-         if(magikill.isMeteorOnlyToggled)
-         {
-            this.tryStartAutoSpell(game,this.nukeCommand,magikill.nukeCooldown(),this.getAutoCastTargetForSpell(game,this.nukeCommand,defendMode,defendTarget));
-            return;
-         }
-         directTarget = this.getDirectAutoCastTarget(game);
-         nukeReady = this.isSpellReadyForAutoCast(game,this.nukeCommand,magikill.nukeCooldown());
-         stunReady = unit.team.tech.isResearched(Tech.MAGIKILL_WALL) && this.isSpellReadyForAutoCast(game,this.stunCommand,magikill.stunCooldown());
-         poisonReady = unit.team.tech.isResearched(Tech.MAGIKILL_POISON) && this.isSpellReadyForAutoCast(game,this.poisonDartCommand,magikill.poisonDartCooldown());
-         if(directTarget != null)
+           if(!defendMode && !this.isAttackMode(game))
+          {
+             return;
+          }
+            if(defendMode && unit.isFeetMoving())
+           {
+              return;
+           }
+             if(!magikill.isAutoCastEnabled)
+           {
+              return;
+           }
+            if(magikill.isBoss && magikill.summonCooldown() == 0 && magikill.canBossSummonAnyGuardType() && (!magikill.isSummonUpgradeActive() || magikill.team.mana >= 70))
+           {
+              magikill.tryBossSummonGuards(game);
+           }
+            nukeReady = this.isSpellReadyForAutoCast(game,this.nukeCommand,magikill.nukeCooldown());
+           stunReady = unit.team.tech.isResearched(Tech.MAGIKILL_WALL) && this.isSpellReadyForAutoCast(game,this.stunCommand,magikill.stunCooldown());
+           poisonReady = unit.team.tech.isResearched(Tech.MAGIKILL_POISON) && this.isSpellReadyForAutoCast(game,this.poisonDartCommand,magikill.poisonDartCooldown());
+          if(magikill.isMeteorOnlyToggled)
+          {
+             if(!nukeReady)
+             {
+                return;
+             }
+             if(defendMode)
+             {
+                defendTarget = this.getNearestEnemyTarget(this.nukeCommand,false);
+             }
+             this.tryStartAutoSpell(game,this.nukeCommand,magikill.nukeCooldown(),this.getAutoCastTargetForSpell(game,this.nukeCommand,defendMode,defendTarget));
+             return;
+          }
+           if(!nukeReady && !stunReady && !poisonReady)
+          {
+             return;
+          }
+          if(defendMode)
+          {
+             defendTarget = this.getNearestEnemyTarget(this.nukeCommand,false);
+          }
+          directTarget = this.getDirectAutoCastTarget(game);
+          if(directTarget != null)
          {
             sharedTarget = directTarget;
          }
@@ -934,10 +963,10 @@ package com.brockw.stickwar.engine.Ai
          {
             return unit.team.mana >= int(game.xml.xml.Order.Units.magikill.nuke.mana);
          }
-         if(command.type == UnitCommand.STUN)
-         {
-            return unit.team.mana >= int(game.xml.xml.Order.Units.magikill.electricWall.mana);
-         }
+          if(command.type == UnitCommand.STUN || command.type == UnitCommand.LIGHTNING_STUN)
+          {
+             return unit.team.mana >= int(game.xml.xml.Order.Units.magikill.electricWall.mana);
+          }
          if(command.type == UnitCommand.POISON_DART)
          {
             return unit.team.mana >= int(game.xml.xml.Order.Units.magikill.poisonSpray.mana);

@@ -79,6 +79,8 @@ package com.brockw.stickwar.engine.units
 
       private var _isAutoBraceToggled:Boolean;
 
+      public var bossNormalAttackJustFinished:Boolean;
+
       private var _lastAnimLabel:String;
 
       private static var bossGoldTint:ColorTransform;
@@ -159,7 +161,8 @@ package com.brockw.stickwar.engine.units
          this.bossBraceDelayFrames = 0;
          this.bossShieldSlamActive = false;
          this.bossCommandedShieldBash = false;
-         this.bossLastNormalAttackFrame = -999999;
+          this.bossLastNormalAttackFrame = -999999;
+          this.bossNormalAttackJustFinished = false;
           this.bossShieldSlamStunTime = game.xml.xml.Chaos.Units.knight.charge.stun;
           this.bossAbilityCooldownMax = game.xml.xml.Order.Units.spearton.brace.cooldown;
           this.bossBraceRadius = game.xml.xml.Order.Units.spearton.brace.radius;
@@ -278,9 +281,31 @@ package com.brockw.stickwar.engine.units
                {
                   team.game.soundManager.playSound("swordwrathSwing1",px,py);
                }
-               _mc.gotoAndStop("shieldBash");
-               _mc.mc.nextFrame();
-               if(_mc.mc.currentFrame == 12)
+    _mc.gotoAndStop("shieldBash");
+    _mc.mc.nextFrame();
+    if(this.isBoss)
+    {
+        Spearton.setItem(_speartonMc(mc),BOSS_WEAPON_SKIN,"",BOSS_MISC_SKIN);
+        if(bossGoldTint == null)
+        {
+            bossGoldTint = new ColorTransform();
+            bossGoldTint.redMultiplier = 1.2;
+            bossGoldTint.greenMultiplier = 0.9;
+            bossGoldTint.blueMultiplier = 0.1;
+            bossGoldTint.redOffset = 30;
+            bossGoldTint.greenOffset = 15;
+            bossGoldTint.blueOffset = 0;
+        }
+        if(Boolean(_speartonMc(mc).mc.helm))
+        {
+            var helm:MovieClip = MovieClip(_speartonMc(mc).mc.helm);
+            for(var i:int = 0; i < helm.numChildren; i++)
+            {
+                helm.getChildAt(i).transform.colorTransform = bossGoldTint;
+            }
+        }
+    }
+    if(_mc.mc.currentFrame == 12)
                {
                   hit = this.checkForBlockHit();
                   if(this.bossShieldSlamActive)
@@ -348,10 +373,14 @@ package com.brockw.stickwar.engine.units
                {
                   hasHit = this.checkForHit();
                }
-               if(MovieClip(_mc.mc).totalFrames == MovieClip(_mc.mc).currentFrame)
-               {
-                  _state = S_RUN;
-               }
+                if(MovieClip(_mc.mc).totalFrames == MovieClip(_mc.mc).currentFrame)
+                {
+                   _state = S_RUN;
+                   if(this.isBoss)
+                   {
+                      this.bossNormalAttackJustFinished = true;
+                   }
+                }
             }
          }
          else if(isDead == false)
@@ -597,9 +626,20 @@ package com.brockw.stickwar.engine.units
            this._damageToArmour *= BOSS_DAMAGE_MULTIPLIER;
            this._damageToNotArmour *= BOSS_DAMAGE_MULTIPLIER;
             this._isAutoBraceToggled = true;
-         }
+          }
 
-      public function tryBossBraceShieldSlam() : void
+        public function releaseFromBossPool() : void
+        {
+           this._isBoss = false;
+           this._isAutoBraceToggled = false;
+           this.forcedWeaponSkin = "";
+           this.forcedArmorSkin = "";
+           this.forcedMiscSkin = "";
+           Spearton.setItem(_speartonMc(mc),"","","");
+           this._lastAnimLabel = "";
+        }
+
+       public function tryBossBraceShieldSlam() : void
       {
          var ally:Spearton = null;
          if(!this.isBoss || this.hasBossAbilitySpawnLock() || this.bossAbilityCooldownFrames > 0 || this.bossBraceDelayFrames > 0 || this.isShieldBashing)

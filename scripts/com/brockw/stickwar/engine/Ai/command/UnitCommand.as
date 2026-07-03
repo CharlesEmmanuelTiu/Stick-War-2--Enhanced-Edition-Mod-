@@ -115,6 +115,10 @@ package com.brockw.stickwar.engine.Ai.command
 
       public static const MAGIKILL_SUMMON:int = 59;
 
+      public static const NUKE_2:int = 60;
+
+      public static const LIGHTNING_STUN:int = 61;
+
       public static const actualButtonBitmap:* = new Bitmap(new CommandMove());
       
       protected var game:StickWar;
@@ -144,6 +148,8 @@ package com.brockw.stickwar.engine.Ai.command
       private var _isToggle:Boolean;
       
       private var _cursor:MovieClip;
+      
+      public var fromStance:Boolean;
       
       protected var _hasCoolDown:Boolean;
       

@@ -1,4 +1,4 @@
-package com.brockw.stickwar.campaign
+﻿package com.brockw.stickwar.campaign
 {
    import com.brockw.*;
    import com.brockw.game.*;
@@ -7,7 +7,8 @@ package com.brockw.stickwar.campaign
    import com.brockw.simulationSync.SimulationSyncronizer;
    import com.brockw.stickwar.BaseMain;
    import com.brockw.stickwar.GameScreen;
-   import com.brockw.stickwar.campaign.controllers.CampaignController;
+    import com.brockw.stickwar.campaign.Level;
+    import com.brockw.stickwar.campaign.controllers.CampaignController;
    import com.brockw.stickwar.engine.Ai.MinerAi;
    import com.brockw.stickwar.engine.Gold;
    import com.brockw.stickwar.engine.Ore;
@@ -21,10 +22,12 @@ package com.brockw.stickwar.campaign
    import com.brockw.stickwar.engine.units.*;
    import com.brockw.stickwar.singleplayer.*;
    import com.brockw.stickwar.stickwar2;
-   import com.smartfoxserver.v2.requests.ExtensionRequest;
-   import flash.display.*;
-   import flash.events.*;
-   import flash.utils.getTimer;
+    import com.smartfoxserver.v2.requests.ExtensionRequest;
+    import flash.display.*;
+    import flash.events.*;
+    import flash.geom.Point;
+     import flash.utils.Dictionary;
+     import flash.utils.getTimer;
    
    public class CampaignGameScreen extends GameScreen
    {
@@ -90,6 +93,16 @@ package com.brockw.stickwar.campaign
       private var campaignReinforcementManager:CampaignReinforcementManager;
 
       private var campaignDebugTools:CampaignDebugTools;
+
+      private var _bossGameTipArrow:tutorialArrow;
+
+      private var _bossGameTipMessageBox:inGameMessageBoxMc;
+
+      private var _bossGameTipState:int;
+
+      private var _bossGameTipTimer:int;
+
+      private var _bossGameTipDismissTimer:int;
 
       private var debugModeEnabled:Boolean;
 
@@ -187,30 +200,43 @@ package com.brockw.stickwar.campaign
          {
             damageModifier = level.normalDamageModifier;
          }
-          if(Boolean(level.player.unitsAvailable[Unit.U_NINJA]))
+           if(Boolean(level.player.unitsAvailable[Unit.U_NINJA]))
+           {
+              upgrade = CampaignUpgrade(main.campaign.upgradeMap["Cloak_BASIC"]);
+              upgrade.upgraded = true;
+               main.campaign.techAllowed[Tech.CLOAK] = 1;
+             }
+            game.initTeams(Team.getIdFromRaceName(level.player.race),Team.getIdFromRaceName(level.oponent.race),level.player.statueHealth,level.oponent.statueHealth,main.campaign.techAllowed,null,1,level.insaneModifier,1,healthModifier,1,damageModifier);
+          team = game.teamA;
+          game.team = team;
+          game.teamA.id = a;
+          game.teamB.id = b;
+           var massiveBattleCompleted:Boolean = false;
+           for each(var mbLevel:Level in main.campaign.levels)
+           {
+              if(mbLevel.title == "Massive Battle" && mbLevel.bestTime >= 0)
+              {
+                 massiveBattleCompleted = true;
+                 break;
+              }
+           }
+           game.teamA.hideBossTechs = !massiveBattleCompleted;
+          var copy:Dictionary = new Dictionary();
+          for(var key:* in level.player.unitsAvailable) { copy[key] = level.player.unitsAvailable[key]; }
+           game.teamA.unitsAvailable = copy;
+           if(main.campaign.isGameFinished())
+           {
+              this.unlockAllPlayerOrderUnits();
+           }
+          copy = new Dictionary();
+          for(key in level.oponent.unitsAvailable) { copy[key] = level.oponent.unitsAvailable[key]; }
+           game.teamB.unitsAvailable = copy;
+          if(level.title == "Ambush: Undead Horde")
           {
-             upgrade = CampaignUpgrade(main.campaign.upgradeMap["Cloak_BASIC"]);
-             upgrade.upgraded = true;
-              main.campaign.techAllowed[Tech.CLOAK] = 1;
-               main.campaign.techAllowed[Tech.NINJA_CLOAK3] = 1;
-               main.campaign.techAllowed[Tech.NINJA_SHADOW_CLONE] = 1;
-            }
-            main.campaign.techAllowed[Tech.ARCHER_BOSS_ARROW_STORM] = 1;
-            main.campaign.techAllowed[Tech.ARCHER_BOSS_EXPLOSION_ARROW] = 1;
-            main.campaign.techAllowed[Tech.MONK_BOSS_REVIVE] = 1;
-            main.campaign.techAllowed[Tech.MAGIKILL_SUMMON_UPGRADE] = 1;
-           game.initTeams(Team.getIdFromRaceName(level.player.race),Team.getIdFromRaceName(level.oponent.race),level.player.statueHealth,level.oponent.statueHealth,main.campaign.techAllowed,null,1,level.insaneModifier,1,healthModifier,1,damageModifier);
-         team = game.teamA;
-         game.team = team;
-         game.teamA.id = a;
-         game.teamB.id = b;
-         game.teamA.unitsAvailable = level.player.unitsAvailable;
-         if(main.campaign.isGameFinished())
-         {
-            this.unlockAllPlayerOrderUnits();
-         }
-         game.teamB.unitsAvailable = level.oponent.unitsAvailable;
-         game.teamA.name = a;
+             delete game.teamB.unitsAvailable[Unit.U_MINER];
+             delete game.teamB.unitsAvailable[Unit.U_CHAOS_MINER];
+          }
+          game.teamA.name = a;
          game.teamB.name = b;
          this.team.enemyTeam.isEnemy = true;
          this.team.enemyTeam.isAi = true;
@@ -306,8 +332,15 @@ package com.brockw.stickwar.campaign
          {
             game.teamA.tech.isResearchedMap[Tech.CASTLE_ARCHER_4] = 1;
          }
-         userInterface.init(game.team);
-         if(team.enemyTeam.type == Team.T_GOOD)
+          userInterface.init(game.team);
+          if(!main.campaign.bossGameTipSeen && team.isAnyBossUnlocked())
+          {
+             this._bossGameTipState = 1;
+             this._bossGameTipTimer = 30;
+             this._bossGameTipDismissTimer = 0;
+             main.campaign.bossGameTipSeen = true;
+          }
+          if(team.enemyTeam.type == Team.T_GOOD)
          {
             this.enemyTeamAi = new EnemyGoodTeamAi(team.enemyTeam,main,game);
          }
@@ -384,14 +417,47 @@ package com.brockw.stickwar.campaign
          }
          this.updateShadowrathLevelDisguises();
          super.update(evt,timeDiff);
-         if(this.campaignBossMessages != null)
-         {
-            this.campaignBossMessages.update();
-         }
-         if(this.campaignDebugTools != null)
-         {
-            this.campaignDebugTools.update();
-         }
+          if(this.campaignBossMessages != null)
+          {
+             this.campaignBossMessages.update();
+          }
+          if(this._bossGameTipState == 1)
+          {
+             --this._bossGameTipTimer;
+             if(this._bossGameTipTimer <= 0)
+             {
+                this.createBossGameTip();
+                this._bossGameTipState = 2;
+             }
+          }
+          else if(this._bossGameTipState == 2)
+          {
+             if(this._bossGameTipArrow != null)
+             {
+                if(this._bossGameTipArrow.currentFrame == this._bossGameTipArrow.totalFrames)
+                {
+                   this._bossGameTipArrow.gotoAndPlay(1);
+                }
+                else
+                {
+                   this._bossGameTipArrow.nextFrame();
+                }
+             }
+             if(this._bossGameTipMessageBox != null)
+             {
+                var targetX:Number = game.stage.stageWidth / 2;
+                this._bossGameTipMessageBox.x += (targetX - this._bossGameTipMessageBox.x) * 0.4;
+             }
+             ++this._bossGameTipDismissTimer;
+             if(this._bossGameTipDismissTimer >= 300)
+             {
+                this.cleanupBossGameTip();
+             }
+          }
+          if(this.campaignDebugTools != null)
+          {
+             this.campaignDebugTools.update();
+          }
       }
       
       override public function leave() : void
@@ -499,9 +565,53 @@ package com.brockw.stickwar.campaign
          ++simulation.movesInTurn;
       }
       
-      override public function cleanUp() : void
-      {
-         trace("Do the cleanup");
+       private function createBossGameTip() : void
+       {
+          var btn:* = this.userInterface.hud.hud.bossToggle;
+          if(Boolean(btn))
+          {
+             var localPos:Point = new Point(btn.width / 2, 0);
+             var globalPos:Point = btn.localToGlobal(localPos);
+             this._bossGameTipArrow = new tutorialArrow();
+             this._bossGameTipArrow.x = globalPos.x;
+             this._bossGameTipArrow.y = globalPos.y - 40;
+             addChild(this._bossGameTipArrow);
+          }
+          this._bossGameTipMessageBox = new inGameMessageBoxMc();
+          this._bossGameTipMessageBox.text.text = "Click here or press 'B' keybind to switch from a set of normal units to boss units";
+          this._bossGameTipMessageBox.step.text = "";
+          this._bossGameTipMessageBox.tick.visible = false;
+          this._bossGameTipMessageBox.scaleX = 1.3;
+          this._bossGameTipMessageBox.scaleY = 1.3;
+          this._bossGameTipMessageBox.x = game.stage.stageWidth + this._bossGameTipMessageBox.width;
+          this._bossGameTipMessageBox.y = game.stage.stageHeight / 4 - 75;
+          addChild(this._bossGameTipMessageBox);
+       }
+
+       private function cleanupBossGameTip() : void
+       {
+          this._bossGameTipState = 0;
+          if(this._bossGameTipArrow != null)
+          {
+             if(contains(this._bossGameTipArrow))
+             {
+                removeChild(this._bossGameTipArrow);
+             }
+             this._bossGameTipArrow = null;
+          }
+          if(this._bossGameTipMessageBox != null)
+          {
+             if(contains(this._bossGameTipMessageBox))
+             {
+                removeChild(this._bossGameTipMessageBox);
+             }
+             this._bossGameTipMessageBox = null;
+          }
+       }
+
+       override public function cleanUp() : void
+       {
+          trace("Do the cleanup");
          this.enemyTeamAi = null;
          this.controller = null;
          if(this.campaignPrewarmManager != null)
@@ -510,11 +620,12 @@ package com.brockw.stickwar.campaign
          }
          this.campaignMusicManager = null;
          this.campaignPrewarmManager = null;
-         if(this.campaignBossMessages != null)
-         {
-            this.campaignBossMessages.cleanUp();
-         }
-         this.campaignBossMessages = null;
+          if(this.campaignBossMessages != null)
+          {
+             this.campaignBossMessages.cleanUp();
+          }
+          this.cleanupBossGameTip();
+          this.campaignBossMessages = null;
          if(this.campaignBossSpawner != null)
          {
             this.campaignBossSpawner.cleanUp();
@@ -2172,3 +2283,6 @@ package com.brockw.stickwar.campaign
       }
    }
 }
+
+
+

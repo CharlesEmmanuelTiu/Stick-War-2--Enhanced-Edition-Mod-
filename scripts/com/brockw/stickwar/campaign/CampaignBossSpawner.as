@@ -139,6 +139,8 @@ package com.brockw.stickwar.campaign
          this.game.teamB.tech.isResearchedMap[Tech.CASTLE_ARCHER_2] = true;
           this.game.teamB.tech.isResearchedMap[Tech.WINGIDON_SPEED] = true;
           this.game.teamB.tech.isResearchedMap[Tech.MAGIKILL_SUMMON_UPGRADE] = true;
+          this.game.teamB.tech.isResearchedMap[Tech.MAGIKILL_NUKE_2] = true;
+          this.game.teamB.tech.isResearchedMap[Tech.MAGIKILL_LIGHTNING_STUN] = true;
        }
       
       public function grantFactionBossResearch(title:String) : void

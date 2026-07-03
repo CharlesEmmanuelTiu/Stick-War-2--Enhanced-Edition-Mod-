@@ -16,10 +16,10 @@ package com.brockw.stickwar.engine.Ai
          unit = s;
       }
       
-      override public function update(game:StickWar) : void
-      {
-         checkNextMove(game);
-         if(Wingidon(unit).isBoss)
+       override public function update(game:StickWar) : void
+       {
+          checkNextMove(game);
+          if(Wingidon(unit).isBoss)
          {
             Wingidon(unit).tryBossAbilities(game);
          }

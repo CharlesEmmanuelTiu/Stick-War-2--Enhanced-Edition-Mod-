@@ -383,14 +383,14 @@ package com.brockw.stickwar.engine.units
          {
             a.setAction(1,0,UnitCommand.CURE);
          }
-         if(this.isBoss && this._isPlayerBoss)
-         {
-             if(team.tech.isResearched(Tech.MONK_BOSS_REVIVE))
-             {
-                a.setAction(2,0,UnitCommand.MONK_BOSS_REVIVE);
-                a.setAction(1,1,UnitCommand.MONK_BOSS_AUTO_REVIVE_TOGGLE);
-             }
-         }
+          if(this.isBoss && this._isPlayerBoss)
+          {
+              if(team.tech.isResearched(Tech.MONK_BOSS_REVIVE) && (team.techAllowed == null || Tech.BOSS_MONK_UNLOCK in team.techAllowed))
+              {
+                 a.setAction(2,0,UnitCommand.MONK_BOSS_REVIVE);
+                 a.setAction(1,1,UnitCommand.MONK_BOSS_AUTO_REVIVE_TOGGLE);
+              }
+          }
       }
       
       override public function attack() : void
@@ -579,9 +579,8 @@ package com.brockw.stickwar.engine.units
          this.isBossUnit = true;
          this.hasDefaultLoadout = true;
          this.bossAbilitySpawnLockFrames = 30 * 2;
-         this.healAmount *= 1.2;
-         this.healDuration *= 0.75;
-         this.enableCampaignBossEscape();
+          this.healAmount *= 1.2;
+          this.enableCampaignBossEscape();
          if(this.team != null && !this.team.isAi)
          {
             this._isPlayerBoss = true;
@@ -749,7 +748,7 @@ package com.brockw.stickwar.engine.units
          var desperationRevive:Boolean = this.shouldUseDesperationRevive();
          for each(corpse in deadUnits)
          {
-            if(corpse == null || corpse.isBossSummoned || Math.abs(corpse.px - this.px) > BOSS_REVIVE_RANGE || corpse.isBossUnit && corpse.type != Unit.U_MAGIKILL)
+            if(corpse == null || corpse.isBossSummoned || corpse.forceTowerSpawnVisual || Math.abs(corpse.px - this.px) > BOSS_REVIVE_RANGE || corpse.isBossUnit && corpse.type != Unit.U_MAGIKILL)
             {
                continue;
             }
@@ -895,18 +894,22 @@ package com.brockw.stickwar.engine.units
 
       public function canPlayerBossReviveUnit(target:Unit) : Boolean
       {
-         if(target == null || target.isBossSummoned)
-         {
-            return false;
-         }
-         if(target.isBossUnit)
-         {
-            if(target.type == Unit.U_MAGIKILL)
-            {
-               return true;
-            }
-            return false;
-         }
+if(target == null || target.isBossSummoned || target.forceTowerSpawnVisual)
+          {
+             return false;
+          }
+          if(target.isBossUnit)
+          {
+             if(target.type == Unit.U_MAGIKILL && this.team != null && this.team.countAlivePlayerBosses() + this.team.countQueuedPlayerBosses() >= 3)
+             {
+                return false;
+             }
+             if(target.type == Unit.U_MAGIKILL)
+             {
+                return true;
+             }
+             return false;
+          }
          return true;
       }
 
@@ -973,10 +976,10 @@ package com.brockw.stickwar.engine.units
 
       public function getAutoRevivePriority(corpse:Unit) : int
       {
-         if(corpse == null || corpse.isBossSummoned)
-         {
-            return -1;
-         }
+if(corpse == null || corpse.isBossSummoned || corpse.forceTowerSpawnVisual)
+          {
+             return -1;
+          }
          if(corpse.isBossUnit && corpse.type == Unit.U_MAGIKILL)
          {
             return 1000;
@@ -1004,12 +1007,16 @@ package com.brockw.stickwar.engine.units
          }
       }
 
-      public function playerBossCheckAutoRevive(game:StickWar) : void
-      {
-         if(!this._isPlayerBoss || !this._isAutoReviveToggled || !this.canBossReviveNow())
-         {
-            return;
-         }
+       public function playerBossCheckAutoRevive(game:StickWar) : void
+       {
+          if(!this._isPlayerBoss || !this._isAutoReviveToggled || !this.canBossReviveNow())
+          {
+             return;
+          }
+          if(team.techAllowed != null && !(Tech.BOSS_MONK_UNLOCK in team.techAllowed))
+          {
+             return;
+          }
          if(this.autoReviveScanCooldown > 0)
          {
             return;

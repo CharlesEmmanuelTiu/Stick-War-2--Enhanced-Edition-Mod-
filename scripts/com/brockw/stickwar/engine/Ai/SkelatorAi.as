@@ -19,9 +19,9 @@ package com.brockw.stickwar.engine.Ai
          isNonAttackingMage = true;
       }
       
-      override public function update(game:StickWar) : void
-      {
-         var targetId:int = 0;
+       override public function update(game:StickWar) : void
+       {
+          var targetId:int = 0;
          var targ:Entity = null;
          unit.isBusyForSpell = false;
          if(Skelator(unit).isBoss && currentCommand.type != UnitCommand.FIST_ATTACK && currentCommand.type != UnitCommand.REAPER)

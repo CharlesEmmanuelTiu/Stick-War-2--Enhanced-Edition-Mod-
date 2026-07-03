@@ -105,7 +105,8 @@ package com.brockw.stickwar.engine
       
       private var wallHitPoint:Point;
       
-      public var pausedGameMc:gamePausedDisplay;
+       public var pausedGameMc:gamePausedDisplay;
+       public var ignoreHomeXTargeting:Boolean;
       
       private var _showGameOverAnimation:Boolean;
       

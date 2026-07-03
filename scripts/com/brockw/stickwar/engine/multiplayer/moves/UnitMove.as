@@ -33,6 +33,8 @@ package com.brockw.stickwar.engine.multiplayer.moves
       
       public var queued:Boolean = false;
       
+      public var fromStance:Boolean;
+      
       private var game:StickWar;
       
       public function UnitMove()
@@ -235,11 +237,15 @@ package com.brockw.stickwar.engine.multiplayer.moves
                   actualHeight = height;
                   g = StickWar(game);
                   goalX = -Unit(b.units[this._units[i]]).team.direction * row * 8 + -col * ROW_OFFSET * Unit(b.units[this._units[i]]).team.direction + frontX;
-                  if(goalX < g.teamA.homeX || goalX > g.teamB.homeX || b.units[this._units[i]].px < g.teamA.homeX || b.units[this._units[i]].px > g.teamB.homeX)
-                  {
-                     actualHeight /= 3;
-                  }
-                  goalY = (height - actualHeight) / 2 + actualHeight / (2 * MAX_PER_COLUMN) + row * actualHeight / MAX_PER_COLUMN;
+                    if(this.arg2 > 0)
+                    {
+                       actualHeight = this.arg2;
+                    }
+                    else if(!g.teamA.isCenterBase && (goalX < g.teamA.homeX || goalX > g.teamB.homeX || b.units[this._units[i]].px < g.teamA.homeX || b.units[this._units[i]].px > g.teamB.homeX))
+                    {
+                       actualHeight /= 3;
+                    }
+                   goalY = (height - actualHeight) / 2 + actualHeight / (2 * MAX_PER_COLUMN) + row * actualHeight / MAX_PER_COLUMN;
                   if(this._units.length == 1)
                   {
                      goalY = yMousePosition;
@@ -247,14 +253,12 @@ package com.brockw.stickwar.engine.multiplayer.moves
                   goalY = Math.min((height - actualHeight) / 2 + actualHeight,Math.max((height - actualHeight) / 2,goalY));
                   if(!(b.units[this._units[i]] is Unit && (Unit(b.units[this._units[i]]).isTowerSpawned || Unit(b.units[this._units[i]]).isBossMovementLocked)))
                   {
+                     var cmd:UnitCommand = StickWar(game).commandFactory.createCommand(b,this.moveType,goalX,goalY,this.arg0,this.arg1,this.arg2,this.arg3,this.arg4,this._units.length > 1 ? true : false);
+                     cmd.fromStance = this.fromStance;
                      if(this.queued)
-                     {
-                        Unit(b.units[this._units[i]]).ai.appendCommand(StickWar(game),StickWar(game).commandFactory.createCommand(b,this.moveType,goalX,goalY,this.arg0,this.arg1,this.arg2,this.arg3,this.arg4,this._units.length > 1 ? true : false));
-                     }
+                        Unit(b.units[this._units[i]]).ai.appendCommand(StickWar(game),cmd);
                      else
-                     {
-                        Unit(b.units[this._units[i]]).ai.setCommand(StickWar(game),StickWar(game).commandFactory.createCommand(b,this.moveType,goalX,goalY,this.arg0,this.arg1,this.arg2,this.arg3,this.arg4,this._units.length > 1 ? true : false));
-                     }
+                        Unit(b.units[this._units[i]]).ai.setCommand(StickWar(game),cmd);
                   }
                }
             }
@@ -267,14 +271,12 @@ package com.brockw.stickwar.engine.multiplayer.moves
                {
                   if(!(b.units[this._units[unit]] is Unit && (Unit(b.units[this._units[unit]]).isTowerSpawned || Unit(b.units[this._units[unit]]).isBossMovementLocked)))
                   {
+                     var cmd:UnitCommand = StickWar(game).commandFactory.createCommand(b,this.moveType,goalX,goalY,this.arg0,this.arg1,this.arg2,this.arg3,this.arg4);
+                     cmd.fromStance = this.fromStance;
                      if(this.queued)
-                     {
-                        Unit(b.units[this._units[unit]]).ai.appendCommand(StickWar(game),StickWar(game).commandFactory.createCommand(b,this.moveType,goalX,goalY,this.arg0,this.arg1,this.arg2,this.arg3,this.arg4));
-                     }
+                        Unit(b.units[this._units[unit]]).ai.appendCommand(StickWar(game),cmd);
                      else
-                     {
-                        Unit(b.units[this._units[unit]]).ai.setCommand(StickWar(game),StickWar(game).commandFactory.createCommand(b,this.moveType,goalX,goalY,this.arg0,this.arg1,this.arg2,this.arg3,this.arg4));
-                     }
+                        Unit(b.units[this._units[unit]]).ai.setCommand(StickWar(game),cmd);
                   }
                }
             }

@@ -1,4 +1,4 @@
-package com.brockw.stickwar.campaign
+﻿package com.brockw.stickwar.campaign
 {
    import flash.text.TextField;
    import flash.text.TextFormat;
@@ -24,19 +24,24 @@ package com.brockw.stickwar.campaign
       
       private var debugAbilityToastText:String;
       
-      private var debugAbilityToastUntilFrame:int;
-      
-      public function CampaignDebugTools(screen:CampaignGameScreen)
-      {
-         super();
-         this.screen = screen;
-         this.debugModeEnabled = false;
-         this.debugSpawnSet = DEBUG_SET_ORDER;
-         this.debugOverlay = null;
-         this.debugAbilityToast = null;
-         this.debugAbilityToastText = "";
-         this.debugAbilityToastUntilFrame = 0;
-      }
+       private var debugAbilityToastUntilFrame:int;
+       
+       private var debugSideInfo:TextField;
+
+       
+       public function CampaignDebugTools(screen:CampaignGameScreen)
+       {
+          super();
+          this.screen = screen;
+          this.debugModeEnabled = false;
+          this.debugSpawnSet = DEBUG_SET_ORDER;
+          this.debugOverlay = null;
+          this.debugAbilityToast = null;
+          this.debugAbilityToastText = "";
+          this.debugAbilityToastUntilFrame = 0;
+          this.debugSideInfo = null;
+
+       }
       
       public function handleHotkeys() : void
       {
@@ -220,10 +225,24 @@ package com.brockw.stickwar.campaign
          }
       }
       
-      public function update() : void
-      {
-         this.updateToast();
-      }
+       public function update() : void
+       {
+          this.updateToast();
+          if(this.debugModeEnabled && this.screen != null && this.screen.userInterface != null && this.screen.userInterface.mouseState != null && this.screen.userInterface.mouseState.clicked)
+          {
+             var u:Unit = this.screen.game.mouseOverUnit;
+             if(u != null && u.team == this.screen.team)
+             {
+                this.ensureSideInfoField();
+                var sideName:String = u.assignedSide == 0 ? "Neutral" : (u.assignedSide == -1 ? "Left" : "Right");
+                this.debugSideInfo.text = this.getUnitTypeName(u.type) + ": " + sideName;
+             }
+             else if(this.debugSideInfo != null)
+             {
+                this.debugSideInfo.text = "";
+             }
+          }
+       }
       
       public function showToast(message:String) : void
       {
@@ -237,14 +256,16 @@ package com.brockw.stickwar.campaign
       }
       
       public function cleanUp() : void
-      {
-         this.removeOverlay();
-         this.screen = null;
-         this.debugModeEnabled = false;
-         this.debugSpawnSet = DEBUG_SET_ORDER;
-         this.debugAbilityToastText = "";
-         this.debugAbilityToastUntilFrame = 0;
-      }
+       {
+          this.removeOverlay();
+          this.screen = null;
+          this.debugModeEnabled = false;
+          this.debugSpawnSet = DEBUG_SET_ORDER;
+          this.debugAbilityToastText = "";
+          this.debugAbilityToastUntilFrame = 0;
+          this.debugSideInfo = null;
+
+       }
       
       private function showEnabledLabel() : void
       {
@@ -327,16 +348,87 @@ package com.brockw.stickwar.campaign
          this.screen.addChild(this.debugAbilityToast);
       }
       
-      private function removeOverlay() : void
-      {
-         if(this.screen != null && this.debugOverlay != null && this.screen.contains(this.debugOverlay))
-         {
-            this.screen.removeChild(this.debugOverlay);
-         }
-         if(this.screen != null && this.debugAbilityToast != null && this.screen.contains(this.debugAbilityToast))
-         {
-            this.screen.removeChild(this.debugAbilityToast);
-         }
-      }
-   }
+       private function removeOverlay() : void
+       {
+          if(this.screen != null && this.debugOverlay != null && this.screen.contains(this.debugOverlay))
+          {
+             this.screen.removeChild(this.debugOverlay);
+          }
+          if(this.screen != null && this.debugAbilityToast != null && this.screen.contains(this.debugAbilityToast))
+          {
+             this.screen.removeChild(this.debugAbilityToast);
+          }
+          if(this.screen != null && this.debugSideInfo != null && this.screen.contains(this.debugSideInfo))
+          {
+             this.screen.removeChild(this.debugSideInfo);
+          }
+       }
+       
+       private function ensureSideInfoField() : void
+       {
+          var format:TextFormat = null;
+          if(this.screen == null)
+          {
+             return;
+          }
+          if(this.debugSideInfo != null)
+          {
+             if(!this.screen.contains(this.debugSideInfo))
+             {
+                this.screen.addChild(this.debugSideInfo);
+             }
+             return;
+          }
+          this.debugSideInfo = new TextField();
+          format = new TextFormat("_typewriter",12,16776960,true);
+          this.debugSideInfo.defaultTextFormat = format;
+          this.debugSideInfo.selectable = false;
+          this.debugSideInfo.mouseEnabled = false;
+          this.debugSideInfo.multiline = false;
+          this.debugSideInfo.wordWrap = false;
+          this.debugSideInfo.background = true;
+          this.debugSideInfo.backgroundColor = 0;
+          this.debugSideInfo.border = true;
+          this.debugSideInfo.borderColor = 16776960;
+          this.debugSideInfo.width = 150;
+          this.debugSideInfo.height = 20;
+          this.debugSideInfo.x = 8;
+          this.debugSideInfo.y = 31;
+          this.debugSideInfo.text = "";
+          this.screen.addChild(this.debugSideInfo);
+       }
+       
+       private function getUnitTypeName(type:int) : String
+       {
+          switch(type)
+          {
+             case Unit.U_MINER: return "Miner";
+             case Unit.U_MAGIKILL: return "Magikill";
+             case Unit.U_MONK: return "Monk";
+             case Unit.U_ARCHER: return "Archer";
+             case Unit.U_FLYING_CROSSBOWMAN: return "FlyingCrossbow";
+             case Unit.U_NINJA: return "Ninja";
+             case Unit.U_SWORDWRATH: return "Swordwrath";
+             case Unit.U_SPEARTON: return "Spearton";
+             case Unit.U_ENSLAVED_GIANT: return "EnslavedGiant";
+             case Unit.U_DEAD: return "Dead";
+             case Unit.U_WINGIDON: return "Wingidon";
+             case Unit.U_DASHNITE: return "Dashnite";
+             case Unit.U_CHAOS_MINER: return "ChaosMiner";
+             case Unit.U_BOMBER: return "Bomber";
+             case Unit.U_SKELATOR: return "Skelator";
+             case Unit.U_CAT: return "Cat";
+             case Unit.U_KNIGHT: return "Knight";
+             case Unit.U_MEDUSA: return "Medusa";
+             case Unit.U_GIANT: return "ChaosGiant";
+             default: return "Type" + type;
+          }
+       }
+    }
 }
+
+
+
+
+
+

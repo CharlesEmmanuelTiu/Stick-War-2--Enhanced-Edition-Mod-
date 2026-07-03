@@ -14,9 +14,10 @@ package com.brockw.stickwar.engine
    import com.brockw.stickwar.engine.units.*;
    import com.smartfoxserver.v2.entities.data.*;
    import com.smartfoxserver.v2.requests.*;
-   import flash.display.*;
-   import flash.events.*;
+import flash.display.*;
+import flash.events.*;
     import flash.geom.Point;
+    import flash.text.TextField;
      import flash.ui.Keyboard;
     import flash.utils.Timer;
     import flash.utils.getTimer;
@@ -80,9 +81,13 @@ package com.brockw.stickwar.engine
       
       public var lastSentScreenPosition:int;
       
-      public var isGlobalsEnabled:Boolean = true;
-      
-      public var isMouseEdgeScrolling:Boolean = false;
+       public var isGlobalsEnabled:Boolean = true;
+       
+       public var cameraLocked:Boolean = false;
+       
+       public var tutorialActionsLocked:Boolean = false;
+       
+       public var isMouseEdgeScrolling:Boolean = false;
       
       private var mouseEdgeScrollGraceFrames:int = 0;
       
@@ -95,6 +100,10 @@ package com.brockw.stickwar.engine
       private var mouseOverFrames:int;
       
       private var lastButton:SimpleButton;
+
+      private var isMinionSelectMode:Boolean;
+
+      private var minionModeText:TextField;
       
       public function UserInterface(main:BaseMain, gameScreen:GameScreen)
       {
@@ -142,8 +151,17 @@ package com.brockw.stickwar.engine
          addChild(this._actionInterface);
          this._actionInterface.mouseEnabled = false;
          this._actionInterface.mouseChildren = false;
-         addChild(this._hud);
-         this._chat = new Chat(this.gameScreen);
+          addChild(this._hud);
+          this.isMinionSelectMode = false;
+          this.minionModeText = new TextField();
+          this.minionModeText.textColor = 0x00FF00;
+          this.minionModeText.text = "[Minion Mode]";
+          this.minionModeText.x = 200;
+          this.minionModeText.y = 5;
+          this.minionModeText.visible = false;
+          this.minionModeText.selectable = false;
+          addChild(this.minionModeText);
+          this._chat = new Chat(this.gameScreen);
          ++this.main.loadingFraction;
          addChild(this._chat);
          this.gameScreen.addChild(this.pauseMenu);
@@ -208,12 +226,20 @@ package com.brockw.stickwar.engine
                 this.hud.hud.fastForward.visible = false;
              }
           }
-           if(Boolean(this.hud.hud.bossToggle))
-           {
-              this.hud.hud.bossToggle.addEventListener(MouseEvent.CLICK,this.bossToggleClick);
-              MovieClip(this.hud.hud.bossToggle).buttonMode = true;
-              MovieClip(this.hud.hud.bossToggle).useHandCursor = true;
-           }
+            if(Boolean(this.hud.hud.bossToggle))
+            {
+               if(this.team.techAllowed == null || this.team.isAnyBossUnlocked())
+               {
+                  this.hud.hud.bossToggle.visible = true;
+                  this.hud.hud.bossToggle.addEventListener(MouseEvent.CLICK,this.bossToggleClick);
+                  MovieClip(this.hud.hud.bossToggle).buttonMode = true;
+                  MovieClip(this.hud.hud.bossToggle).useHandCursor = true;
+               }
+               else
+               {
+                  this.hud.hud.bossToggle.visible = false;
+               }
+            }
        }
        
        private function exitButton(evt:Event) : void
@@ -299,16 +325,32 @@ package com.brockw.stickwar.engine
       {
       }
       
-      public function garrisonMinerButton(evt:MouseEvent) : void
-      {
-         if(!this.isGlobalsEnabled)
-         {
-            return;
-         }
-         var m:GlobalMove = new GlobalMove();
-         m.globalMoveType = Team.G_GARRISON_MINER;
-         this.gameScreen.doMove(m,this.team.id);
-         if(this.team.type == Team.T_GOOD)
+       public function garrisonMinerButton(evt:MouseEvent) : void
+       {
+          if(!this.isGlobalsEnabled)
+          {
+             return;
+          }
+           var m:GlobalMove = new GlobalMove();
+           m.globalMoveType = Team.G_GARRISON_MINER;
+           if(this.team.isCenterBase)
+           {
+              var viewLeft:Number = this.gameScreen.game.screenX;
+              var viewRight:Number = viewLeft + this.gameScreen.game.stage.stageWidth;
+              var centerX:Number = this.gameScreen.game.map.width / 2;
+              for each(var miner:Unit in this.team.units)
+                 if(miner.type == this.team.getMinerType())
+                    miner.assignedSide = miner.px < centerX ? -1 : 1;
+              var statueVisible:Boolean = centerX >= viewLeft && centerX <= viewRight;
+              if(!statueVisible)
+              {
+                 m.filterSide = (viewLeft + viewRight) / 2 < centerX ? -1 : 1;
+                 if((viewLeft + viewRight) / 2 < centerX)
+                    m.globalMoveType = Team.G_UNGARRISON_MINER;
+              }
+           }
+           this.gameScreen.doMove(m,this.team.id);
+          if(this.team.type == Team.T_GOOD)
          {
             this.gameScreen.game.soundManager.playSoundFullVolume("manthefortSoundOrder");
          }
@@ -318,16 +360,32 @@ package com.brockw.stickwar.engine
          }
       }
       
-      public function unGarrisonMinerButton(evt:MouseEvent) : void
-      {
-         if(!this.isGlobalsEnabled)
-         {
-            return;
-         }
-         var m:GlobalMove = new GlobalMove();
-         m.globalMoveType = Team.G_UNGARRISON_MINER;
-         this.gameScreen.doMove(m,this.team.id);
-         if(this.team.type == Team.T_GOOD)
+       public function unGarrisonMinerButton(evt:MouseEvent) : void
+       {
+          if(!this.isGlobalsEnabled)
+          {
+             return;
+          }
+           var m:GlobalMove = new GlobalMove();
+           m.globalMoveType = Team.G_UNGARRISON_MINER;
+           if(this.team.isCenterBase)
+           {
+              var viewLeft:Number = this.gameScreen.game.screenX;
+              var viewRight:Number = viewLeft + this.gameScreen.game.stage.stageWidth;
+              var centerX:Number = this.gameScreen.game.map.width / 2;
+              for each(var miner:Unit in this.team.units)
+                 if(miner.type == this.team.getMinerType())
+                    miner.assignedSide = miner.px < centerX ? -1 : 1;
+              var statueVisible:Boolean = centerX >= viewLeft && centerX <= viewRight;
+              if(!statueVisible)
+              {
+                 m.filterSide = (viewLeft + viewRight) / 2 < centerX ? -1 : 1;
+                 if((viewLeft + viewRight) / 2 < centerX)
+                    m.globalMoveType = Team.G_GARRISON_MINER;
+              }
+           }
+           this.gameScreen.doMove(m,this.team.id);
+          if(this.team.type == Team.T_GOOD)
          {
             this.gameScreen.game.soundManager.playSoundFullVolume("defendSoundOrder");
          }
@@ -337,24 +395,39 @@ package com.brockw.stickwar.engine
          }
       }
       
-      public function garrisonButton(evt:MouseEvent) : void
-      {
-         if(!this.isGlobalsEnabled)
-         {
-            return;
-         }
-         var m:GlobalMove = new GlobalMove();
-         m.globalMoveType = Team.G_GARRISON;
-         this.gameScreen.doMove(m,this.team.id);
-         if(this.team.type == Team.T_GOOD)
-         {
-            this.gameScreen.game.soundManager.playSoundFullVolume("manthefortSoundOrder");
-         }
-         else
-         {
-            this.gameScreen.game.soundManager.playSoundFullVolume("manthefortSoundChaos");
-         }
-      }
+       public function garrisonButton(evt:MouseEvent) : void
+       {
+          if(!this.isGlobalsEnabled)
+          {
+             return;
+          }
+          var m:GlobalMove = new GlobalMove();
+          m.globalMoveType = Team.G_GARRISON;
+          if(this.team.isCenterBase)
+          {
+             var viewLeft:Number = this.gameScreen.game.screenX;
+             var viewRight:Number = viewLeft + this.gameScreen.game.stage.stageWidth;
+             var centerX:Number = this.gameScreen.game.map.width / 2;
+             var statueVisible:Boolean = centerX >= viewLeft && centerX <= viewRight;
+             if(!statueVisible && (viewLeft + viewRight) / 2 < centerX)
+                m.globalMoveType = Team.G_ATTACK;
+          }
+          this.gameScreen.doMove(m,this.team.id);
+          if(m.globalMoveType == Team.G_GARRISON)
+          {
+             if(this.team.type == Team.T_GOOD)
+                this.gameScreen.game.soundManager.playSoundFullVolume("manthefortSoundOrder");
+             else
+                this.gameScreen.game.soundManager.playSoundFullVolume("manthefortSoundChaos");
+          }
+          else
+          {
+             if(this.team.type == Team.T_GOOD)
+                this.gameScreen.game.soundManager.playSoundFullVolume("attackSoundOrder");
+             else
+                this.gameScreen.game.soundManager.playSoundFullVolume("attackSoundChaos");
+          }
+       }
       
       public function defendButton(evt:MouseEvent) : void
       {
@@ -375,35 +448,59 @@ package com.brockw.stickwar.engine
          }
       }
       
-      public function attackButton(evt:MouseEvent) : void
-      {
-         if(!this.isGlobalsEnabled)
-         {
-            return;
-         }
-         var m:GlobalMove = new GlobalMove();
-         m.globalMoveType = Team.G_ATTACK;
-         this.gameScreen.doMove(m,this.team.id);
-         if(this.team.type == Team.T_GOOD)
-         {
-            this.gameScreen.game.soundManager.playSoundFullVolume("attackSoundOrder");
-         }
-         else
-         {
-            this.gameScreen.game.soundManager.playSoundFullVolume("attackSoundChaos");
-         }
-      }
+       public function attackButton(evt:MouseEvent) : void
+       {
+          if(!this.isGlobalsEnabled)
+          {
+             return;
+          }
+          var m:GlobalMove = new GlobalMove();
+          m.globalMoveType = Team.G_ATTACK;
+          if(this.team.isCenterBase)
+          {
+             var viewLeft:Number = this.gameScreen.game.screenX;
+             var viewRight:Number = viewLeft + this.gameScreen.game.stage.stageWidth;
+             var centerX:Number = this.gameScreen.game.map.width / 2;
+             var statueVisible:Boolean = centerX >= viewLeft && centerX <= viewRight;
+             if(!statueVisible && (viewLeft + viewRight) / 2 < centerX)
+                m.globalMoveType = Team.G_GARRISON;
+          }
+          this.gameScreen.doMove(m,this.team.id);
+          if(m.globalMoveType == Team.G_GARRISON)
+          {
+             if(this.team.type == Team.T_GOOD)
+                this.gameScreen.game.soundManager.playSoundFullVolume("manthefortSoundOrder");
+             else
+                this.gameScreen.game.soundManager.playSoundFullVolume("manthefortSoundChaos");
+          }
+          else
+          {
+             if(this.team.type == Team.T_GOOD)
+                this.gameScreen.game.soundManager.playSoundFullVolume("attackSoundOrder");
+             else
+                this.gameScreen.game.soundManager.playSoundFullVolume("attackSoundChaos");
+          }
+       }
 
-      private function performGlobalMove(globalMoveType:int) : void
-      {
-         var m:GlobalMove = null;
-         if(!this.isGlobalsEnabled)
-         {
-            return;
-         }
-         m = new GlobalMove();
-         m.globalMoveType = globalMoveType;
-         this.gameScreen.doMove(m,this.team.id);
+       private function performGlobalMove(globalMoveType:int) : void
+       {
+          var m:GlobalMove = null;
+          if(!this.isGlobalsEnabled)
+          {
+             return;
+          }
+          if(this.team.isCenterBase && (globalMoveType == Team.G_GARRISON || globalMoveType == Team.G_ATTACK))
+          {
+             var viewLeft:Number = this.gameScreen.game.screenX;
+             var viewRight:Number = viewLeft + this.gameScreen.game.stage.stageWidth;
+             var centerX:Number = this.gameScreen.game.map.width / 2;
+             var statueVisible:Boolean = centerX >= viewLeft && centerX <= viewRight;
+             if(!statueVisible && (viewLeft + viewRight) / 2 < centerX)
+                globalMoveType = globalMoveType == Team.G_GARRISON ? Team.G_ATTACK : Team.G_GARRISON;
+          }
+          m = new GlobalMove();
+          m.globalMoveType = globalMoveType;
+          this.gameScreen.doMove(m,this.team.id);
          if(globalMoveType == Team.G_GARRISON)
          {
             this.gameScreen.game.soundManager.playSoundFullVolume(this.team.type == Team.T_GOOD ? "manthefortSoundOrder" : "manthefortSoundChaos");
@@ -418,9 +515,10 @@ package com.brockw.stickwar.engine
          }
       }
       
-      private function tryToSelectABuilding() : void
-      {
-         var i:String = null;
+       private function tryToSelectABuilding() : void
+       {
+          if(this.tutorialActionsLocked) return;
+          var i:String = null;
          var b:Building = null;
          for(i in this.team.buildings)
          {
@@ -491,8 +589,9 @@ package com.brockw.stickwar.engine
          var dposY:Number = NaN;
          var wall:Wall = null;
          var candidate:Entity = null;
-         var type:int = 0;
-         var unit:String = null;
+          var type:int = 0;
+          var clickedSide:int = 0;
+          var unit:String = null;
          var x:int = 0;
          var y:int = 0;
          if(!(this.gameScreen is MultiplayerGameScreen))
@@ -642,7 +741,7 @@ package com.brockw.stickwar.engine
          {
             this.clickFastForward(null);
          }
-         if(this.keyBoardState.isPressed(66) && Boolean(this.hud.hud.bossToggle))
+          if(this.keyBoardState.isPressed(66) && Boolean(this.hud.hud.bossToggle) && this.hud.hud.bossToggle.visible)
          {
             var bossToggleNewState:Boolean = this.team.toggleBossMode();
             this.hud.hud.bossToggle.gotoAndStop(bossToggleNewState ? 2 : 1);
@@ -668,24 +767,56 @@ package com.brockw.stickwar.engine
          {
             this.selectedUnits.nextSelectedUnitType();
          }
-         if(this.keyBoardState.isPressed(32))
-         {
-            this.selectedUnits.clear();
-            for each(u in this.team.units)
-            {
-               if(!u.isTowerSpawned && !u.isConfused() && u.type != Unit.U_MINER && u.type != Unit.U_CHAOS_MINER && !u.isDead && u.isGarrisoned == false && u.type != Unit.U_CHAOS_TOWER)
-               {
-                  this.selectedUnits.add(u);
-                  u.selected = true;
-               }
-            }
-            if(getTimer() - this.spacePressTimer < 400 && this.team.forwardUnitNotSpawn != null)
-            {
-               this.gameScreen.game.targetScreenX = this.team.forwardUnitNotSpawn.px - this.gameScreen.game.map.screenWidth / 2;
-               this.isSlowCamera = false;
-            }
-            this.spacePressTimer = getTimer();
-         }
+          if(this.keyBoardState.isPressed(32))
+          {
+             this.selectedUnits.clear();
+             if(this.isMinionSelectMode)
+             {
+                for each(var magikillUnit:Unit in this.team.units)
+                {
+                   if(magikillUnit is Magikill && Magikill(magikillUnit).isBoss)
+                   {
+                      var minions:Array = Magikill(magikillUnit).getLivingBossSummonedUnits();
+                      for each(var minion:Unit in minions)
+                      {
+                         this.selectedUnits.add(minion);
+                         minion.selected = true;
+                      }
+                   }
+                }
+             }
+              else
+              {
+                 for each(u in this.team.units)
+                 {
+                     if(!u.isTowerSpawned && !u.isConfused() && u.type != Unit.U_MINER && u.type != Unit.U_CHAOS_MINER && !u.isDead && u.isGarrisoned == false && u.type != Unit.U_CHAOS_TOWER && u.assignedSide != 0)
+                    {
+                        if(this.team.isCenterBase && u.assignedSide != 0)
+                         {
+                            var viewCenter:Number = this.gameScreen.game.screenX + this.gameScreen.game.stage.stageWidth / 2;
+                            var centerX:Number = this.gameScreen.game.map.width / 2;
+                            var statueVisible:Boolean = centerX >= this.gameScreen.game.screenX && centerX <= this.gameScreen.game.screenX + this.gameScreen.game.stage.stageWidth;
+                            if(!statueVisible)
+                            {
+                               var cameraIsLeft:Boolean = viewCenter < centerX;
+                               if((cameraIsLeft && u.assignedSide != -1) || (!cameraIsLeft && u.assignedSide != 1))
+                               {
+                                  continue;
+                               }
+                            }
+                         }
+                       this.selectedUnits.add(u);
+                       u.selected = true;
+                    }
+                 }
+              }
+              if(!this.cameraLocked && getTimer() - this.spacePressTimer < 400 && this.team.forwardUnitNotSpawn != null)
+              {
+                 this.gameScreen.game.targetScreenX = this.team.forwardUnitNotSpawn.px - this.gameScreen.game.map.screenWidth / 2;
+                 this.isSlowCamera = false;
+              }
+              this.spacePressTimer = getTimer();
+          }
          if(this.keyBoardState.isPressed(71))
          {
             this.tryUngarrisonSelectedUnits();
@@ -698,16 +829,16 @@ package com.brockw.stickwar.engine
          {
             this.selectAllGarrisonedUnits();
          }
-         if(this.keyBoardState.isDown(67))
-         {
-            this.gameScreen.game.targetScreenX += this.SCROLL_SPEED * 1;
-            this.isSlowCamera = false;
-         }
-         if(this.keyBoardState.isDown(90))
-         {
-            this.gameScreen.game.targetScreenX -= this.SCROLL_SPEED * 1;
-            this.isSlowCamera = false;
-         }
+          if(!this.cameraLocked && this.keyBoardState.isDown(67))
+          {
+             this.gameScreen.game.targetScreenX += this.SCROLL_SPEED * 1;
+             this.isSlowCamera = false;
+          }
+          if(!this.cameraLocked && this.keyBoardState.isDown(90))
+          {
+             this.gameScreen.game.targetScreenX -= this.SCROLL_SPEED * 1;
+             this.isSlowCamera = false;
+          }
          if(this.gameScreen.game.showGameOverAnimation)
          {
             this.gameScreen.game.fogOfWar.isFogOn = false;
@@ -763,29 +894,34 @@ package com.brockw.stickwar.engine
          {
             this.team.detectedUserInput(this);
          }
-         if(this.keyBoardState.isPressed(74))
-         {
-            this.selectPoisonedUnits();
-            this.jumpToPoisonedUnitIfDoublePressed();
-            this.poisonedPressTimer = getTimer();
-         }
-         this.isMouseEdgeScrolling = false;
-         if(this.mouseState.mouseIn && this.stage.mouseY < this.gameScreen.game.battlefield.y + 240)
-         {
-            mouseWidth = 120;
-            if(this.stage.mouseX < mouseWidth)
-            {
-               this.gameScreen.game.targetScreenX -= this.SCROLL_SPEED * (mouseWidth - stage.mouseX) / mouseWidth;
-               this.isSlowCamera = false;
-               this.isMouseEdgeScrolling = true;
-            }
-            if(this.stage.mouseX > this.gameScreen.game.map.screenWidth - mouseWidth)
-            {
-               this.gameScreen.game.targetScreenX -= this.SCROLL_SPEED * (this.gameScreen.game.map.screenWidth - mouseWidth - stage.mouseX) / mouseWidth;
-               this.isSlowCamera = false;
-               this.isMouseEdgeScrolling = true;
-            }
-         }
+           if(this.keyBoardState.isPressed(74))
+           {
+              this.selectPoisonedUnits();
+              if(!this.cameraLocked) this.jumpToPoisonedUnitIfDoublePressed();
+              this.poisonedPressTimer = getTimer();
+           }
+          if(this.keyBoardState.isPressed(77))
+          {
+             this.isMinionSelectMode = !this.isMinionSelectMode;
+             this.minionModeText.visible = this.isMinionSelectMode;
+          }
+           this.isMouseEdgeScrolling = false;
+          if(!this.cameraLocked && this.mouseState.mouseIn && this.stage.mouseY < this.gameScreen.game.battlefield.y + 240)
+          {
+             mouseWidth = 120;
+             if(this.stage.mouseX < mouseWidth)
+             {
+                this.gameScreen.game.targetScreenX -= this.SCROLL_SPEED * (mouseWidth - stage.mouseX) / mouseWidth;
+                this.isSlowCamera = false;
+                this.isMouseEdgeScrolling = true;
+             }
+             if(this.stage.mouseX > this.gameScreen.game.map.screenWidth - mouseWidth)
+             {
+                this.gameScreen.game.targetScreenX -= this.SCROLL_SPEED * (this.gameScreen.game.map.screenWidth - mouseWidth - stage.mouseX) / mouseWidth;
+                this.isSlowCamera = false;
+                this.isMouseEdgeScrolling = true;
+             }
+          }
          if(this.isMouseEdgeScrolling)
          {
             this.mouseEdgeScrollGraceFrames = 10;
@@ -795,19 +931,19 @@ package com.brockw.stickwar.engine
             --this.mouseEdgeScrollGraceFrames;
             this.isMouseEdgeScrolling = true;
          }
-         if(this.mouseState.mouseDown)
-         {
-            posX = this.hud.hud.map.mouseX / this.hud.hud.map.width;
-            posY = this.hud.hud.map.mouseY / this.hud.hud.map.height;
-            p = this.hud.hud.map.globalToLocal(new Point(this.mouseState.mouseDownX,this.mouseState.mouseDownY));
-            dposX = p.x / this.hud.hud.map.width;
-            dposY = p.y / this.hud.hud.map.height;
-            if(posX >= 0 && posX <= 1 && posY >= 0 && posY <= 1 && dposX >= 0 && dposX <= 1 && dposY >= 0 && dposY <= 1 && !(dposX > 0.95 && dposY < 0.54))
-            {
-               this.gameScreen.game.targetScreenX = posX * this.gameScreen.game.map.width - this.gameScreen.game.map.screenWidth / 2;
-               this.isSlowCamera = false;
-            }
-         }
+          if(!this.cameraLocked && this.mouseState.mouseDown)
+          {
+             posX = this.hud.hud.map.mouseX / this.hud.hud.map.width;
+             posY = this.hud.hud.map.mouseY / this.hud.hud.map.height;
+             p = this.hud.hud.map.globalToLocal(new Point(this.mouseState.mouseDownX,this.mouseState.mouseDownY));
+             dposX = p.x / this.hud.hud.map.width;
+             dposY = p.y / this.hud.hud.map.height;
+             if(posX >= 0 && posX <= 1 && posY >= 0 && posY <= 1 && dposX >= 0 && dposX <= 1 && dposY >= 0 && dposY <= 1 && !(dposX > 0.95 && dposY < 0.54))
+             {
+                this.gameScreen.game.targetScreenX = posX * this.gameScreen.game.map.width - this.gameScreen.game.map.screenWidth / 2;
+                this.isSlowCamera = false;
+             }
+          }
          if(!this.actionInterface.isInCommand() && this.stage.mouseY <= 700 - 125)
          {
             if(!this.isMouseEdgeScrolling || this.mouseState.clicked || this.mouseState.mouseDown)
@@ -846,35 +982,71 @@ package com.brockw.stickwar.engine
                   this.selectedUnits.add(Unit(candidate));
                }
             }
-            if(this.mouseState.doubleClicked)
-            {
-               if(!this.keyBoardState.isShift)
-               {
-                  this.selectedUnits.clear();
-               }
-               type = -1;
-               if(this.gameScreen.game.mouseOverUnit != null && this.gameScreen.game.mouseOverUnit is Unit && Unit(this.gameScreen.game.mouseOverUnit).team == this.team && !Unit(this.gameScreen.game.mouseOverUnit).isConfused() && !Unit(this.gameScreen.game.mouseOverUnit).isBossSummoned)
-               {
-                  type = this.gameScreen.game.mouseOverUnit.type;
-               }
-               for(unit in this.team.units)
-               {
-                  x = this.team.units[unit].x - this.gameScreen.game.screenX;
-                  y = this.team.units[unit].y + this.gameScreen.game.battlefield.y;
-                  if(!Unit(this.team.units[unit]).isConfused() && !Unit(this.team.units[unit]).isBossSummoned && (Unit(this.team.units[unit]).type == type || Unit(this.team.units[unit]).selected && this.keyBoardState.isShift))
-                  {
-                     Unit(this.team.units[unit]).selected = true;
-                  }
-                  else
-                  {
-                     Unit(this.team.units[unit]).selected = false;
-                  }
-                  if(Unit(this.team.units[unit]).selected)
-                  {
-                     this.selectedUnits.add(Unit(this.team.units[unit]));
-                  }
-               }
-            }
+             if(this.mouseState.doubleClicked)
+             {
+                if(!this.keyBoardState.isShift)
+                {
+                   this.selectedUnits.clear();
+                }
+                type = -1;
+                if(this.gameScreen.game.mouseOverUnit != null && this.gameScreen.game.mouseOverUnit is Unit && Unit(this.gameScreen.game.mouseOverUnit).team == this.team && !Unit(this.gameScreen.game.mouseOverUnit).isConfused() && !Unit(this.gameScreen.game.mouseOverUnit).isBossSummoned)
+                {
+                    type = this.gameScreen.game.mouseOverUnit.type;
+                    clickedSide = Unit(this.gameScreen.game.mouseOverUnit).assignedSide;
+                 }
+                 if(this.isMinionSelectMode && type != -1)
+                {
+                   for each(var magikillUnit:Unit in this.team.units)
+                   {
+                      if(magikillUnit is Magikill && Magikill(magikillUnit).isBoss)
+                      {
+                         var minions:Array = Magikill(magikillUnit).getLivingBossSummonedUnits();
+                         for each(var minion:Unit in minions)
+                         {
+                            if(minion.type == type || (minion.selected && this.keyBoardState.isShift))
+                            {
+                               minion.selected = true;
+                               this.selectedUnits.add(minion);
+                            }
+                         }
+                      }
+                   }
+                }
+                 else
+                 {
+                    for(unit in this.team.units)
+                    {
+                       x = this.team.units[unit].x - this.gameScreen.game.screenX;
+                       y = this.team.units[unit].y + this.gameScreen.game.battlefield.y;
+                       if(!Unit(this.team.units[unit]).isConfused() && !Unit(this.team.units[unit]).isBossSummoned && (Unit(this.team.units[unit]).type == type || Unit(this.team.units[unit]).selected && this.keyBoardState.isShift))
+                       {
+                             if(this.team.isCenterBase)
+                             {
+                                if(Unit(this.team.units[unit]).assignedSide == clickedSide)
+                                {
+                                   Unit(this.team.units[unit]).selected = true;
+                                }
+                                else
+                                {
+                                   Unit(this.team.units[unit]).selected = false;
+                                }
+                             }
+                            else
+                            {
+                               Unit(this.team.units[unit]).selected = true;
+                            }
+                       }
+                       else
+                       {
+                          Unit(this.team.units[unit]).selected = false;
+                       }
+                       if(Unit(this.team.units[unit]).selected)
+                       {
+                          this.selectedUnits.add(Unit(this.team.units[unit]));
+                       }
+                    }
+                 }
+             }
          }
          this.box.update(this.gameScreen.game.battlefield.mouseX,this.gameScreen.game.battlefield.mouseY);
          if(this.box.isOn)
@@ -930,6 +1102,20 @@ package com.brockw.stickwar.engine
          {
             if(this.isSelectablePoisonedUnit(poisoned))
             {
+                 if(this.team.isCenterBase && poisoned.assignedSide != 0)
+                 {
+                    var viewCenter:Number = this.gameScreen.game.screenX + this.gameScreen.game.stage.stageWidth / 2;
+                    var centerX:Number = this.gameScreen.game.map.width / 2;
+                    var statueVisible:Boolean = centerX >= this.gameScreen.game.screenX && centerX <= this.gameScreen.game.screenX + this.gameScreen.game.stage.stageWidth;
+                    if(!statueVisible)
+                    {
+                       var cameraIsLeft:Boolean = viewCenter < centerX;
+                       if((cameraIsLeft && poisoned.assignedSide != -1) || (!cameraIsLeft && poisoned.assignedSide != 1))
+                       {
+                          continue;
+                       }
+                    }
+                 }
                this.selectedUnits.add(poisoned);
                poisoned.selected = true;
             }
@@ -959,7 +1145,9 @@ package com.brockw.stickwar.engine
          return poisoned != null && !poisoned.isDead && !poisoned.isConfused() && poisoned.isPoisoned() && poisoned.team == this.team && !poisoned.isGarrisoned && poisoned.ai != null && poisoned.ai.currentCommand != null && poisoned.ai.currentCommand.type != UnitCommand.GARRISON;
       }
 
-      private function tryUngarrisonSelectedUnits() : void
+
+
+       private function tryUngarrisonSelectedUnits() : void
       {
          var selected:Unit = null;
          var move:UnitMove = null;

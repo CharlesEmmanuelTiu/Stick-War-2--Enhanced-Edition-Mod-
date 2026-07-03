@@ -1,6 +1,5 @@
-package com.brockw.stickwar.campaign.controllers
+﻿package com.brockw.stickwar.campaign.controllers
 {
-import com.brockw.stickwar.singleplayer.EnemyTeamAi;
    import com.brockw.stickwar.campaign.Campaign;
    import com.brockw.stickwar.campaign.CampaignGameScreen;
    import com.brockw.stickwar.campaign.InGameMessage;
@@ -17,6 +16,7 @@ import com.brockw.stickwar.singleplayer.EnemyTeamAi;
    import com.brockw.stickwar.engine.units.Magikill;
    import com.brockw.stickwar.engine.units.Monk;
    import com.brockw.stickwar.engine.units.Ninja;
+   import com.brockw.stickwar.engine.units.Skelator;
    import com.brockw.stickwar.engine.units.Spearton;
    import com.brockw.stickwar.engine.units.Swordwrath;
    import com.brockw.stickwar.engine.units.Unit;
@@ -46,7 +46,7 @@ import com.brockw.stickwar.singleplayer.EnemyTeamAi;
 
       private static const START_MESSAGE_DELAY_FRAMES:int = 45;
 
-      private static const START_MESSAGE_VISIBLE_FRAMES:int = 30 * 8;
+      private static const START_MESSAGE_VISIBLE_FRAMES:int = 30 * 4;
 
       private static const COMPLETE_DELAY_FRAMES:int = 30 * 3;
 
@@ -102,25 +102,40 @@ import com.brockw.stickwar.singleplayer.EnemyTeamAi;
 
       private static const STALK_WAVE_SHADOWRATHS_INSANE:Array = [0,4,0,2,7];
 
-      private static const REBEL_OPENING_DELAY_FRAMES:int = 30 * 4;
+      private static const REBEL_OPENING_DELAY_FRAMES:int = 30 * 2;
 
-      private static const REBEL_CAMERA_DELAY_FRAMES:int = 15;
-      
-      private static const REBEL_OPENING_HOLD_FRAMES:int = 30 * 5;
+      private static const REBEL_OPENING_HOLD_FRAMES:int = 30 * 4;
 
-      private static const REBEL_WAVE_FRAME:int = 4000;
+      private static const REBEL_WAVE_FRAME:int = 3600;
 
-      private static const REBEL_ENDING_HOLD_FRAMES:int = 30 * 8;
+      private static const REBEL_ENDING_HOLD_FRAMES:int = 30 * 5;
 
-      private static const REBEL_END_MESSAGE_FRAMES:int = 30 * 4;
+      private static const REBEL_END_COMPLETE_DELAY_FRAMES:int = 30 * 2;
 
-      private static const REBEL_WAVE_ENDING_TIMEOUT_FRAMES:int = 30 * 90;
+      private static const REBEL_WAVE_NORMAL:Array = [Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_NINJA,Unit.U_SWORDWRATH,Unit.U_MONK];
 
-      private static const REBEL_WAVE_NORMAL:Array = [Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_NINJA,Unit.U_SWORDWRATH,Unit.U_SWORDWRATH,Unit.U_MAGIKILL,Unit.U_MONK];
+      private static const REBEL_WAVE_HARD:Array = [Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_NINJA,Unit.U_NINJA,Unit.U_SWORDWRATH,Unit.U_SWORDWRATH,Unit.U_MAGIKILL,Unit.U_MONK];
 
-      private static const REBEL_WAVE_HARD:Array = [Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_NINJA,Unit.U_SWORDWRATH,Unit.U_SWORDWRATH,Unit.U_SWORDWRATH,Unit.U_MAGIKILL,Unit.U_MONK];
+      private static const REBEL_WAVE_INSANE:Array = [Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_NINJA,Unit.U_NINJA,Unit.U_SWORDWRATH,Unit.U_SWORDWRATH,Unit.U_MAGIKILL,Unit.U_MONK];
 
-      private static const REBEL_WAVE_INSANE:Array = [Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_NINJA,Unit.U_NINJA,Unit.U_SWORDWRATH,Unit.U_SWORDWRATH,Unit.U_SWORDWRATH,Unit.U_SWORDWRATH,Unit.U_MAGIKILL,Unit.U_MONK];
+      private static const HORDE_CS_BEFORE:int = -1;
+      private static const HORDE_CS_FIST_WAIT:int = 0;
+      private static const HORDE_CS_WAIT_END:int = 1;
+      private static const HORDE_CS_DONE:int = 2;
+
+      private static const HORDE_WAVE_TIMES:Array = [90,1200,2100,3000,3900];
+
+      private static const HORDE_WAVE_UNDEAD_NORMAL:Array = [12,16,20,24,30];
+
+      private static const HORDE_WAVE_UNDEAD_HARD:Array = [16,20,26,32,40];
+
+      private static const HORDE_WAVE_UNDEAD_INSANE:Array = [22,28,36,44,54];
+
+      private static const HORDE_WAVE_DEAD_NORMAL:Array = [0,0,2,0,2];
+
+      private static const HORDE_WAVE_DEAD_HARD:Array = [0,0,3,0,4];
+
+      private static const HORDE_WAVE_DEAD_INSANE:Array = [0,0,4,0,6];
       
       private var initialized:Boolean;
       
@@ -154,8 +169,6 @@ import com.brockw.stickwar.singleplayer.EnemyTeamAi;
 
       private var rebelWaveSpawned:Boolean;
 
-      private var rebelCameraQueued:Boolean;
-      
       private var rebelOpeningStarted:Boolean;
 
       private var rebelOpeningFinished:Boolean;
@@ -169,6 +182,12 @@ import com.brockw.stickwar.singleplayer.EnemyTeamAi;
       private var nightOverlay:Sprite;
 
       private var hasUnlockedStalkCloak:Boolean;
+      private var hordeWaveIndex:int;
+      private var activeHordeWaveUnits:Array;
+      private var hordeCutsceneActive:Boolean;
+      private var hordeCutsceneMarrowkai:Skelator;
+      private var hordeCutsceneState:int;
+      private var hordeCutsceneTimer:int;
       
       private var pendingAttackRefreshes:Array;
       
@@ -191,15 +210,18 @@ import com.brockw.stickwar.singleplayer.EnemyTeamAi;
          this.activeRebelWaveUnits = [];
          this.rebelDisplayUnits = [];
          this.rebelWaveSpawned = false;
-          this.rebelCameraQueued = false;
-          this.rebelOpeningStarted = false;
-          this.rebelOpeningFinished = false;
+         this.rebelOpeningStarted = false;
+         this.rebelOpeningFinished = false;
          this.rebelEndingStarted = false;
          this.rebelEndingStartFrame = -1;
          this.rebelRevealFog = false;
          this.nightOverlay = null;
          this.hasUnlockedStalkCloak = false;
          this.pendingAttackRefreshes = [];
+         this.hordeCutsceneActive = false;
+         this.hordeCutsceneMarrowkai = null;
+         this.hordeCutsceneState = HORDE_CS_DONE;
+         this.hordeCutsceneTimer = 0;
       }
       
       override public function update(gameScreen:GameScreen) : void
@@ -207,19 +229,32 @@ import com.brockw.stickwar.singleplayer.EnemyTeamAi;
          if(!this.initialized)
          {
             this.initializeAmbush(gameScreen);
+            if(this.isUndeadHordeLevel(gameScreen))
+            {
+               this.initUndeadHordeCutscene(gameScreen);
+            }
          }
          gameScreen.isFastForward = false;
+         if(this.hordeCutsceneActive)
+         {
+            this.updateUndeadHordeCutscene(gameScreen);
+            return;
+         }
          this.updateMessage(gameScreen);
          this.updateAmbushFog(gameScreen);
          this.keepEnemyBaseHidden(gameScreen);
          this.updateNativeTribesWaves(gameScreen);
          this.updateShadowrathStalkersWaves(gameScreen);
          this.updateShadowrathStalkersCloak(gameScreen);
+         if(this.isUndeadHordeLevel(gameScreen))
+         {
+            this.updateUndeadHordeWaves(gameScreen);
+         }
          this.updateRebelBreakAmbush(gameScreen);
          this.updatePendingAttackRefreshes(gameScreen);
-          this.updateAmbusherOrders(gameScreen);
-           this.stopSpawnedPlayerUnits(gameScreen);
-           this.clampPlayerUnits(gameScreen);
+         this.updateAmbusherOrders(gameScreen);
+         this.stopSpawnedPlayerUnits(gameScreen);
+         this.clampPlayerUnits(gameScreen);
          if(this.isRebelBreakLevel(gameScreen))
          {
             return;
@@ -287,11 +322,9 @@ import com.brockw.stickwar.singleplayer.EnemyTeamAi;
          }
          gameScreen.team.tech.isResearchedMap[Tech.MINER_SPEED] = true;
          gameScreen.team.enemyTeam.tech.isResearchedMap[Tech.MINER_WALL] = false;
-          gameScreen.team.enemyTeam.unitsAvailable[Unit.U_MINER] = 0;
-           this.applyRebelBreakDifficultyResearch(gameScreen);
-           this.clearEnemyStartingCombatUnits(gameScreen);
-            gameScreen.team.enemyTeam.bypassMana = true;
-           this.spawnRebelOpeningDisplay(gameScreen);
+         CampaignGameScreen(gameScreen).enemyTeamAi.setUnitCreationEnabled(false);
+         this.applyRebelBreakDifficultyResearch(gameScreen);
+         this.clearEnemyStartingCombatUnits(gameScreen);
       }
 
       private function applyRebelBreakDifficultyResearch(gameScreen:GameScreen) : void
@@ -311,10 +344,7 @@ import com.brockw.stickwar.singleplayer.EnemyTeamAi;
          {
             gameScreen.team.tech.isResearchedMap[Tech.BANK_PASSIVE_1] = true;
             gameScreen.team.tech.isResearchedMap[Tech.MAGIKILL_POISON] = true;
-          }
-          gameScreen.team.enemyTeam.tech.isResearchedMap[Tech.MAGIKILL_POISON] = true;
-          gameScreen.team.enemyTeam.tech.isResearchedMap[Tech.MAGIKILL_WALL] = true;
-          gameScreen.team.enemyTeam.tech.isResearchedMap[Tech.CLOAK] = true;
+         }
       }
 
       private function initializeShadowrathStalkers(gameScreen:GameScreen) : void
@@ -347,6 +377,199 @@ import com.brockw.stickwar.singleplayer.EnemyTeamAi;
          gameScreen.game.addChild(this.nightOverlay);
       }
 
+      private function initUndeadHordeCutscene(gameScreen:GameScreen) : void
+      {
+         var s:Skelator = null;
+         s = Skelator(gameScreen.game.unitFactory.getUnit(Unit.U_SKELATOR));
+         gameScreen.team.enemyTeam.spawn(s, gameScreen.game);
+         s.px = gameScreen.team.enemyTeam.homeX + gameScreen.team.enemyTeam.direction * 400;
+         s.x = s.px;
+         s.py = gameScreen.game.map.height / 2;
+         s.y = s.py;
+         s.scaleX *= gameScreen.team.enemyTeam.direction * -1;
+         s.makeBoss();
+         s.isBossMovementLocked = true;
+         s.forceFaceDirection(gameScreen.team.direction);
+         var hold:HoldCommand = new HoldCommand(gameScreen.game);
+         s.ai.setCommand(gameScreen.game, hold);
+         gameScreen.team.enemyTeam.tech.isResearchedMap[Tech.SKELETON_FIST_ATTACK] = true;
+         if(!Boolean(gameScreen.team.enemyTeam.unitGroups[Unit.U_UNDEAD]))
+         {
+            gameScreen.team.enemyTeam.unitGroups[Unit.U_UNDEAD] = [];
+         }
+         this.hordeCutsceneMarrowkai = s;
+         this.hordeCutsceneState = HORDE_CS_BEFORE;
+         this.hordeCutsceneTimer = gameScreen.game.frame;
+         this.hordeCutsceneActive = true;
+         gameScreen.team.enemyTeam.currentAttackState = Team.G_GARRISON;
+      }
+
+      private function updateUndeadHordeCutscene(gameScreen:GameScreen) : void
+      {
+         if(this.hordeCutsceneState == HORDE_CS_BEFORE)
+         {
+            this.setCameraTarget(gameScreen, gameScreen.team.enemyTeam.homeX + gameScreen.team.enemyTeam.direction * 1100);
+            if(gameScreen.game.frame - this.hordeCutsceneTimer >= CUTSCENE_PAN_FRAMES)
+            {
+               this.hordeCutsceneState = HORDE_CS_FIST_WAIT;
+               this.hordeCutsceneTimer = gameScreen.game.frame;
+            }
+         }
+         else if(this.hordeCutsceneState == HORDE_CS_FIST_WAIT)
+         {
+            if(gameScreen.game.frame - this.hordeCutsceneTimer >= CUTSCENE_FIST_WAIT_FRAMES)
+            {
+               if(this.hordeCutsceneMarrowkai != null && this.hordeCutsceneMarrowkai.isAlive())
+               {
+                  this.hordeCutsceneMarrowkai.playCutsceneFist(this.hordeCutsceneMarrowkai.px + 200, gameScreen.game.map.height / 2, CUTSCENE_UNDEAD_COUNT);
+               }
+               this.hordeCutsceneState = HORDE_CS_WAIT_END;
+               this.hordeCutsceneTimer = gameScreen.game.frame;
+            }
+         }
+         else if(this.hordeCutsceneState == HORDE_CS_WAIT_END)
+         {
+            if(gameScreen.game.frame - this.hordeCutsceneTimer >= CUTSCENE_END_WAIT_FRAMES)
+            {
+               this.cleanupUndeadHordeCutscene(gameScreen);
+            }
+         }
+      }
+
+      private function cleanupUndeadHordeCutscene(gameScreen:GameScreen) : void
+      {
+         if(this.hordeCutsceneMarrowkai != null)
+         {
+            gameScreen.team.enemyTeam.removeUnitCompletely(this.hordeCutsceneMarrowkai, gameScreen.game);
+            this.hordeCutsceneMarrowkai = null;
+         }
+         this.hordeCutsceneActive = false;
+         this.hordeCutsceneState = HORDE_CS_DONE;
+         this.startFrame = gameScreen.game.frame;
+         gameScreen.team.enemyTeam.currentAttackState = Team.G_DEFEND;
+      }
+
+      private function updateUndeadHordeWaves(gameScreen:GameScreen) : void
+      {
+         var elapsed:int = gameScreen.game.frame - this.startFrame;
+         if(this.hasLivingHordeWaveUnits())
+         {
+            return;
+         }
+         if(this.hordeWaveIndex < HORDE_WAVE_TIMES.length && elapsed >= int(HORDE_WAVE_TIMES[this.hordeWaveIndex]))
+         {
+            this.spawnUndeadHordeWave(gameScreen, int(this.getHordeUndeadCount(gameScreen)), int(this.getHordeDeadCount(gameScreen)));
+            ++this.hordeWaveIndex;
+         }
+         else if(this.hordeWaveIndex >= HORDE_WAVE_TIMES.length)
+         {
+            if(this.ambushCompleteDelayStartFrame < 0)
+            {
+               this.ambushCompleteDelayStartFrame = gameScreen.game.frame;
+            }
+            if(gameScreen.game.frame - this.ambushCompleteDelayStartFrame >= COMPLETE_DELAY_FRAMES)
+            {
+               this.completeAmbush(gameScreen);
+            }
+         }
+      }
+
+      private function spawnUndeadHordeWave(gameScreen:GameScreen, undeadCount:int, deadCount:int) : void
+      {
+         var i:int = 0;
+         var unit:Unit = null;
+         var spawnedUnits:Array = [];
+         var rightCount:int = Math.ceil(undeadCount / 2);
+         var leftCount:int = undeadCount - rightCount;
+         for(i = 0; i < rightCount; i++)
+         {
+            unit = Unit(gameScreen.game.unitFactory.getUnit(Unit.U_UNDEAD));
+            if(unit == null)
+            {
+               continue;
+            }
+            gameScreen.team.enemyTeam.spawn(unit, gameScreen.game);
+            unit.px = gameScreen.team.enemyTeam.homeX + gameScreen.team.enemyTeam.direction * 650;
+            unit.x = unit.px;
+            unit.py = gameScreen.game.map.height / 2 + (i - (rightCount - 1) / 2) * 20;
+            unit.y = unit.py;
+            unit.scaleX *= gameScreen.team.enemyTeam.direction * -1;
+            this.issueAttackCommand(gameScreen, unit);
+            spawnedUnits.push(unit);
+         }
+         for(i = 0; i < leftCount; i++)
+         {
+            unit = Unit(gameScreen.game.unitFactory.getUnit(Unit.U_UNDEAD));
+            if(unit == null)
+            {
+               continue;
+            }
+            gameScreen.team.enemyTeam.spawn(unit, gameScreen.game);
+            unit.px = gameScreen.team.enemyTeam.homeX - gameScreen.team.enemyTeam.direction * 650;
+            unit.x = unit.px;
+            unit.py = gameScreen.game.map.height / 2 + (i - (leftCount - 1) / 2) * 20;
+            unit.y = unit.py;
+            unit.scaleX = Math.abs(unit.scaleX);
+            this.issueAttackCommand(gameScreen, unit);
+            spawnedUnits.push(unit);
+         }
+         for(i = 0; i < deadCount; i++)
+         {
+            unit = Unit(gameScreen.game.unitFactory.getUnit(Unit.U_DEAD));
+            if(unit == null)
+            {
+               continue;
+            }
+            gameScreen.team.enemyTeam.spawn(unit, gameScreen.game);
+            unit.px = gameScreen.team.enemyTeam.homeX + ((i % 2 == 0) ? gameScreen.team.enemyTeam.direction : -gameScreen.team.enemyTeam.direction) * (500 + (i % 3) * 40);
+            unit.x = unit.px;
+            unit.py = gameScreen.game.map.height / 2 + (i - (deadCount - 1) / 2) * 16;
+            unit.y = unit.py;
+            unit.scaleX *= gameScreen.team.enemyTeam.direction * -1;
+            this.issueAttackCommand(gameScreen, unit);
+            spawnedUnits.push(unit);
+         }
+         this.activeHordeWaveUnits = spawnedUnits;
+      }
+
+      private function getHordeUndeadCount(gameScreen:GameScreen) : int
+      {
+         if(gameScreen.main != null && gameScreen.main.campaign != null && gameScreen.main.campaign.difficultyLevel == Campaign.D_INSANE)
+         {
+            return int(HORDE_WAVE_UNDEAD_INSANE[this.hordeWaveIndex]);
+         }
+         if(gameScreen.main != null && gameScreen.main.campaign != null && gameScreen.main.campaign.difficultyLevel == Campaign.D_HARD)
+         {
+            return int(HORDE_WAVE_UNDEAD_HARD[this.hordeWaveIndex]);
+         }
+         return int(HORDE_WAVE_UNDEAD_NORMAL[this.hordeWaveIndex]);
+      }
+
+      private function getHordeDeadCount(gameScreen:GameScreen) : int
+      {
+         if(gameScreen.main != null && gameScreen.main.campaign != null && gameScreen.main.campaign.difficultyLevel == Campaign.D_INSANE)
+         {
+            return int(HORDE_WAVE_DEAD_INSANE[this.hordeWaveIndex]);
+         }
+         if(gameScreen.main != null && gameScreen.main.campaign != null && gameScreen.main.campaign.difficultyLevel == Campaign.D_HARD)
+         {
+            return int(HORDE_WAVE_DEAD_HARD[this.hordeWaveIndex]);
+         }
+         return int(HORDE_WAVE_DEAD_NORMAL[this.hordeWaveIndex]);
+      }
+
+      private function hasLivingHordeWaveUnits() : Boolean
+      {
+         var unit:Unit = null;
+         for each(unit in this.activeHordeWaveUnits)
+         {
+            if(unit != null && unit.isAlive())
+            {
+               return true;
+            }
+         }
+         return false;
+      }
       private function updateMessage(gameScreen:GameScreen) : void
       {
          if(this.message != null)
@@ -465,22 +688,18 @@ import com.brockw.stickwar.singleplayer.EnemyTeamAi;
       }
       
       private function clampPlayerUnits(gameScreen:GameScreen) : void
-       {
-          var unit:Unit = null;
-          if(this.isRebelBreakLevel(gameScreen) && this.rebelOpeningFinished)
-          {
-             return;
-          }
-            for each(unit in gameScreen.team.units)
-          {
-             if(unit != null && unit.isAlive() && this.rebelDisplayUnits.indexOf(unit) == -1 && unit.px > this.barrierX)
-             {
-                unit.px = this.barrierX;
-                unit.x = unit.px;
-                this.holdUnit(gameScreen,unit);
-             }
-          }
-       }
+      {
+         var unit:Unit = null;
+         for each(unit in gameScreen.team.units)
+         {
+            if(unit != null && unit.isAlive() && this.rebelDisplayUnits.indexOf(unit) == -1 && unit.px > this.barrierX)
+            {
+               unit.px = this.barrierX;
+               unit.x = unit.px;
+               this.holdUnit(gameScreen,unit);
+            }
+         }
+      }
       
       private function updateAmbusherOrders(gameScreen:GameScreen) : void
       {
@@ -719,111 +938,75 @@ import com.brockw.stickwar.singleplayer.EnemyTeamAi;
          {
             this.startRebelOpening(gameScreen);
          }
-          if(this.rebelCameraQueued && !this.rebelOpeningFinished && elapsed >= REBEL_OPENING_DELAY_FRAMES + REBEL_CAMERA_DELAY_FRAMES)
-          {
-             this.setCameraTarget(gameScreen, this.getEnemyCameraX(gameScreen) - 100);
-             this.rebelCameraQueued = false;
-          }
-          if(this.rebelOpeningStarted && !this.rebelOpeningFinished && elapsed >= REBEL_OPENING_DELAY_FRAMES + REBEL_OPENING_HOLD_FRAMES)
+         if(this.rebelOpeningStarted && !this.rebelOpeningFinished && elapsed >= REBEL_OPENING_DELAY_FRAMES + REBEL_OPENING_HOLD_FRAMES)
          {
             this.finishRebelOpening(gameScreen);
          }
-          if(!this.rebelWaveSpawned && elapsed >= REBEL_WAVE_FRAME)
-          {
-             this.spawnRebelWave(gameScreen);
-             this.rebelWaveSpawned = true;
-          }
-           if(this.rebelWaveSpawned && !this.rebelEndingStarted && !this.hasLivingActiveRebelWaveUnits())
+         if(!this.rebelWaveSpawned && elapsed >= REBEL_WAVE_FRAME)
+         {
+            this.spawnRebelWave(gameScreen);
+            this.rebelWaveSpawned = true;
+         }
+         if(this.rebelWaveSpawned && !this.rebelEndingStarted && !this.hasLivingActiveRebelWaveUnits())
          {
             if(this.ambushCompleteDelayStartFrame < 0)
             {
-               this.showAmbushMessage(gameScreen,"Something has intercepted the rebels");
                this.ambushCompleteDelayStartFrame = gameScreen.game.frame;
             }
-            if(gameScreen.game.frame - this.ambushCompleteDelayStartFrame >= REBEL_END_MESSAGE_FRAMES)
+            if(gameScreen.game.frame - this.ambushCompleteDelayStartFrame >= REBEL_END_COMPLETE_DELAY_FRAMES)
             {
                this.startRebelEnding(gameScreen);
             }
          }
-          if(this.rebelWaveSpawned && !this.rebelEndingStarted && elapsed >= REBEL_WAVE_FRAME + REBEL_WAVE_ENDING_TIMEOUT_FRAMES)
-          {
-             this.startRebelEnding(gameScreen);
-          }
-          if(this.rebelEndingStarted && gameScreen.game.frame - this.rebelEndingStartFrame >= REBEL_ENDING_HOLD_FRAMES)
-          {
-             this.rebelRevealFog = false;
-             this.completeAmbush(gameScreen);
-          }
+         if(this.rebelEndingStarted && gameScreen.game.frame - this.rebelEndingStartFrame >= REBEL_ENDING_HOLD_FRAMES)
+         {
+            this.cleanupRebelDisplayUnits(gameScreen);
+            this.rebelRevealFog = false;
+            this.completeAmbush(gameScreen);
+         }
       }
 
       private function startRebelOpening(gameScreen:GameScreen) : void
       {
          this.rebelOpeningStarted = true;
          this.rebelRevealFog = true;
+         this.spawnRebelOpeningDisplay(gameScreen);
+         this.setCameraTarget(gameScreen,this.getEnemyCameraX(gameScreen));
          this.showAmbushMessage(gameScreen,"Rebels are sending everything they have at you! Prepare a defense");
-         this.rebelCameraQueued = true;
       }
 
       private function finishRebelOpening(gameScreen:GameScreen) : void
       {
          this.rebelOpeningFinished = true;
          this.rebelRevealFog = false;
-          this.cleanupRebelDisplayUnits(gameScreen);
-           this.killAllEnemyUnits(gameScreen);
-          this.setCameraTarget(gameScreen, gameScreen.team.homeX + gameScreen.team.direction * 300);
+         this.cleanupRebelDisplayUnits(gameScreen);
+         this.killAllEnemyUnits(gameScreen);
+         this.setCameraTarget(gameScreen,this.getPlayerCameraX(gameScreen));
       }
 
       private function startRebelEnding(gameScreen:GameScreen) : void
-       {
-          this.rebelEndingStarted = true;
-          this.rebelEndingStartFrame = gameScreen.game.frame;
-          this.rebelRevealFog = true;
-          gameScreen.doAiUpdates = true;
-          this.pendingAttackRefreshes = [];
-          if(this.message != null && gameScreen.contains(this.message))
-          {
-             gameScreen.removeChild(this.message);
-             this.message = null;
-          }
-          this.spawnRebelEndingBattle(gameScreen);
-          this.setCameraTarget(gameScreen, gameScreen.team.enemyTeam.homeX + gameScreen.team.enemyTeam.direction * 1100);
-       }
+      {
+         this.rebelEndingStarted = true;
+         this.rebelEndingStartFrame = gameScreen.game.frame;
+         this.rebelRevealFog = true;
+         gameScreen.doAiUpdates = true;
+         this.spawnRebelEndingBattle(gameScreen);
+         this.setCameraTarget(gameScreen,this.getEnemyCameraX(gameScreen));
+      }
 
       private function spawnRebelOpeningDisplay(gameScreen:GameScreen) : void
       {
-         var displayTypes:Array = [
-            Unit.U_SPEARTON, Unit.U_SPEARTON, Unit.U_SPEARTON, Unit.U_SPEARTON, Unit.U_SPEARTON, Unit.U_SPEARTON,
-            Unit.U_SPEARTON, Unit.U_SPEARTON, Unit.U_SPEARTON, Unit.U_SPEARTON, Unit.U_SPEARTON, Unit.U_SPEARTON,
-            Unit.U_SWORDWRATH, Unit.U_SWORDWRATH, Unit.U_SWORDWRATH, Unit.U_SWORDWRATH, Unit.U_SWORDWRATH, Unit.U_SWORDWRATH,
-            Unit.U_SWORDWRATH, Unit.U_SWORDWRATH, Unit.U_SWORDWRATH, Unit.U_SWORDWRATH, Unit.U_SWORDWRATH, Unit.U_SWORDWRATH,
-            Unit.U_SWORDWRATH, Unit.U_SWORDWRATH, Unit.U_SWORDWRATH, Unit.U_SWORDWRATH, Unit.U_SWORDWRATH, Unit.U_SWORDWRATH,
-            Unit.U_NINJA, Unit.U_NINJA, Unit.U_NINJA, Unit.U_NINJA, Unit.U_NINJA, Unit.U_NINJA,
-            Unit.U_ARCHER, Unit.U_ARCHER, Unit.U_ARCHER, Unit.U_ARCHER, Unit.U_ARCHER, Unit.U_ARCHER,
-            Unit.U_ARCHER, Unit.U_ARCHER, Unit.U_ARCHER, Unit.U_ARCHER, Unit.U_ARCHER, Unit.U_ARCHER
-         ];
-         var bossTypes:Array = [Unit.U_SPEARTON, Unit.U_ARCHER, Unit.U_NINJA, Unit.U_MAGIKILL, Unit.U_MONK];
+         var displayTypes:Array = [Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_NINJA,Unit.U_NINJA,Unit.U_SWORDWRATH,Unit.U_SWORDWRATH,Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_MAGIKILL,Unit.U_MONK,Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_NINJA,Unit.U_SWORDWRATH];
+         var bossTypes:Array = [Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_NINJA,Unit.U_MAGIKILL,Unit.U_MONK];
          var i:int = 0;
-         var column:int = 0;
-         var row:int = 0;
-         var rowsInColumn:int = 0;
-         var lastCol:int = int(Math.ceil(displayTypes.length / 6));
-          for(i = 0; i < bossTypes.length; i++)
-         {
-            column = 0;
-            row = i;
-            rowsInColumn = bossTypes.length;
-            var bossUnit:Unit = this.spawnDisplayUnit(gameScreen,gameScreen.team.enemyTeam,int(bossTypes[i]),this.getEnemyDisplayX_New(gameScreen,column,row),this.getDisplayY_New(gameScreen,row,rowsInColumn,column),true,false);
-            if(bossUnit != null)
-            {
-               bossUnit.bossAbilitySpawnLockFrames = 999999;
-            }
-         }
+         var bossXOffset:int = int(Math.ceil(displayTypes.length / 6));
          for(i = 0; i < displayTypes.length; i++)
          {
-            column = lastCol - int(i / 6);
-            row = i % 6;
-            rowsInColumn = Math.min(6,displayTypes.length - i);
-            this.spawnDisplayUnit(gameScreen,gameScreen.team.enemyTeam,int(displayTypes[i]),this.getEnemyDisplayX_New(gameScreen,column,row),this.getDisplayY_New(gameScreen,row,rowsInColumn,column),false,false);
+            this.spawnDisplayUnit(gameScreen,gameScreen.team.enemyTeam,int(displayTypes[i]),this.getEnemyDisplayX(gameScreen,i,displayTypes.length),this.getDisplayY(gameScreen,i,displayTypes.length),false,false);
+         }
+         for(i = 0; i < bossTypes.length; i++)
+         {
+            this.spawnDisplayUnit(gameScreen,gameScreen.team.enemyTeam,int(bossTypes[i]),this.getEnemyDisplayX(gameScreen,bossXOffset * 6 + i,bossTypes.length),this.getDisplayY(gameScreen,bossXOffset * 6 + i,bossTypes.length),true,false);
          }
       }
 
@@ -834,123 +1017,78 @@ import com.brockw.stickwar.singleplayer.EnemyTeamAi;
          var unit:Unit = null;
          var goalY:Number = 0;
          var i:int = 0;
-         var spawnX:Number = 0;
          this.activeRebelWaveUnits = [];
          for(i = 0; i < wave.length; i++)
          {
             unit = gameScreen.game.unitFactory.getUnit(int(wave[i]));
             gameScreen.team.enemyTeam.spawn(unit,gameScreen.game);
             goalY = this.getNativeFormationGoalY(gameScreen,i,wave.length);
-            spawnX = gameScreen.game.map.width / 2 + 200;
-            unit.px = spawnX;
+            unit.px = this.getNativeFormationSpawnX(gameScreen,i);
             unit.x = unit.px;
             unit.py = goalY;
             unit.y = unit.py;
             unit.scaleX *= gameScreen.team.enemyTeam.direction * -1;
-              this.issueAmbushAttackCommand(gameScreen,unit,goalY);
-              this.activeRebelWaveUnits.push(unit);
-              if(int(wave[i]) == Unit.U_MAGIKILL)
-              {
-                 Magikill(unit).allowAiAutoCast = true;
-              }
-              else
-              {
-                 refreshEntries.push([unit,goalY]);
-              }
+            this.issueAmbushAttackCommand(gameScreen,unit,goalY);
+            this.activeRebelWaveUnits.push(unit);
+            refreshEntries.push([unit,goalY]);
          }
          this.pendingAttackRefreshes.push([gameScreen.game.frame + ATTACK_REFRESH_DELAY_FRAMES,refreshEntries]);
       }
 
       private function spawnRebelEndingBattle(gameScreen:GameScreen) : void
       {
-         var pairs:Array = [
-            [Unit.U_SPEARTON,  Unit.U_KNIGHT],
-            [Unit.U_SPEARTON,  Unit.U_GIANT],
-            [Unit.U_ARCHER,    Unit.U_KNIGHT],
-            [Unit.U_ARCHER,    Unit.U_CAT],
-            [Unit.U_SPEARTON,  Unit.U_GIANT],
-            [Unit.U_NINJA,     Unit.U_BOMBER],
-            [Unit.U_SWORDWRATH,Unit.U_DEAD],
-            [Unit.U_SPEARTON,  Unit.U_GIANT],
-            [Unit.U_ARCHER,    Unit.U_KNIGHT],
-            [Unit.U_MAGIKILL,  Unit.U_KNIGHT],
-            [Unit.U_MONK,      Unit.U_DEAD],
-            [Unit.U_SPEARTON,  Unit.U_GIANT]
-         ];
+         var rebelTypes:Array = [Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_NINJA,Unit.U_SWORDWRATH,Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_MAGIKILL,Unit.U_MONK];
+         var chaosTypes:Array = [Unit.U_KNIGHT,Unit.U_KNIGHT,Unit.U_DEAD,Unit.U_DEAD,Unit.U_BOMBER,Unit.U_CAT,Unit.U_CAT,Unit.U_WINGIDON,Unit.U_KNIGHT,Unit.U_DEAD];
          var bossTypes:Array = [Unit.U_NINJA,Unit.U_MAGIKILL,Unit.U_SPEARTON];
          var i:int = 0;
          var rebel:Unit = null;
          var chaos:Unit = null;
-         var rebelX:Number;
-         var chaosX:Number;
-         var pairY:Number;
-         var GAP:Number = 160;
-
-         if(gameScreen.team.unitGroups[Unit.U_KNIGHT] == null)   gameScreen.team.unitGroups[Unit.U_KNIGHT] = [];
-         if(gameScreen.team.unitGroups[Unit.U_DEAD] == null)     gameScreen.team.unitGroups[Unit.U_DEAD] = [];
-         if(gameScreen.team.unitGroups[Unit.U_BOMBER] == null)   gameScreen.team.unitGroups[Unit.U_BOMBER] = [];
-         if(gameScreen.team.unitGroups[Unit.U_CAT] == null)      gameScreen.team.unitGroups[Unit.U_CAT] = [];
-         if(gameScreen.team.unitGroups[Unit.U_WINGIDON] == null) gameScreen.team.unitGroups[Unit.U_WINGIDON] = [];
-         if(gameScreen.team.unitGroups[Unit.U_GIANT] == null)    gameScreen.team.unitGroups[Unit.U_GIANT] = [];
-
-          for(i = 0; i < pairs.length; i++)
+         if(gameScreen.team.unitGroups[Unit.U_KNIGHT] == null)
          {
-            var column:int = int(i / 5);
-            var row:int = i % 5;
-            var centerX:Number = gameScreen.team.enemyTeam.homeX + gameScreen.team.enemyTeam.direction * (550 + column * 350);
-            pairY = gameScreen.game.map.height / 2 + (row - 2) * 90;
-            pairY = Math.max(80, Math.min(gameScreen.game.map.height - 80, pairY));
-
-            rebelX = centerX - GAP / 2;
-            chaosX = centerX + GAP / 2;
-
-            if(gameScreen.game.random.nextNumber() > 0.5)
-            {
-               rebelX = centerX + GAP / 2;
-               chaosX = centerX - GAP / 2;
-            }
-
-            rebel = this.spawnDisplayUnit(gameScreen, gameScreen.team.enemyTeam, int(pairs[i][0]), rebelX, pairY, false, true);
+            gameScreen.team.unitGroups[Unit.U_KNIGHT] = [];
+         }
+         if(gameScreen.team.unitGroups[Unit.U_DEAD] == null)
+         {
+            gameScreen.team.unitGroups[Unit.U_DEAD] = [];
+         }
+         if(gameScreen.team.unitGroups[Unit.U_BOMBER] == null)
+         {
+            gameScreen.team.unitGroups[Unit.U_BOMBER] = [];
+         }
+         if(gameScreen.team.unitGroups[Unit.U_CAT] == null)
+         {
+            gameScreen.team.unitGroups[Unit.U_CAT] = [];
+         }
+         if(gameScreen.team.unitGroups[Unit.U_WINGIDON] == null)
+         {
+            gameScreen.team.unitGroups[Unit.U_WINGIDON] = [];
+         }
+         for(i = 0; i < rebelTypes.length; i++)
+         {
+            rebel = this.spawnDisplayUnit(gameScreen,gameScreen.team.enemyTeam,int(rebelTypes[i]),this.getEndingBattleX(gameScreen,i,true),this.getEndingBattleY(gameScreen,i),false,true);
             if(rebel != null)
             {
-               rebel.health = Math.max(1, rebel.maxHealth * (i % 3 == 0 ? 0.25 : 0.5));
+               rebel.health = Math.max(1,rebel.maxHealth * (i % 3 == 0 ? 0.25 : 0.5));
                rebel.healthBar.health = rebel.health;
                rebel.healthBar.reset();
-            }
-
-            chaos = this.spawnDisplayUnitRaw(gameScreen, gameScreen.team, int(pairs[i][1]), chaosX, pairY, false, true);
-            if(chaos != null)
-            {
-               chaos.id = gameScreen.game.getNextUnitId();
-               gameScreen.game.units[chaos.id] = chaos;
-               gameScreen.team.units.push(chaos);
-               if(gameScreen.team.unitGroups[chaos.type] != null)
-               {
-                  gameScreen.team.unitGroups[chaos.type].push(chaos);
-               }
-               chaos.ai.init();
-               var dummyCmd:AttackMoveCommand = new AttackMoveCommand(gameScreen.game);
-               dummyCmd.goalX = gameScreen.team.enemyTeam.homeX;
-               dummyCmd.goalY = gameScreen.game.map.height / 2;
-               chaos.ai.currentCommand = dummyCmd;
-               var chaosCmd:AttackMoveCommand = new AttackMoveCommand(gameScreen.game);
-               chaosCmd.goalX = gameScreen.team.enemyTeam.homeX;
-               chaosCmd.goalY = gameScreen.game.map.height / 2;
-               chaos.ai.setCommand(gameScreen.game, chaosCmd);
-               chaos.cure();
-               this.tintUnitRed(chaos);
+               this.issueDisplayAttackCommand(gameScreen,rebel,this.getEndingBattleX(gameScreen,i,false),rebel.py);
             }
          }
-
-          for(i = 0; i < bossTypes.length; i++)
+         for(i = 0; i < chaosTypes.length; i++)
          {
-            rebel = this.spawnDisplayUnit(gameScreen, gameScreen.team.enemyTeam, int(bossTypes[i]), gameScreen.team.enemyTeam.homeX + gameScreen.team.enemyTeam.direction * (220 + i * 80), gameScreen.game.map.height / 2 + (i - 1) * 70, true, true);
+            chaos = this.spawnDisplayUnit(gameScreen,gameScreen.team,int(chaosTypes[i]),this.getEndingBattleX(gameScreen,i,false),this.getEndingBattleY(gameScreen,i + 3),false,true);
+            if(chaos != null)
+            {
+               this.tintUnitRed(chaos);
+               this.issueDisplayAttackCommand(gameScreen,chaos,this.getEndingBattleX(gameScreen,i,true),chaos.py);
+            }
+         }
+         for(i = 0; i < bossTypes.length; i++)
+         {
+            rebel = this.spawnDisplayUnit(gameScreen,gameScreen.team.enemyTeam,int(bossTypes[i]),gameScreen.team.enemyTeam.homeX + gameScreen.team.enemyTeam.direction * (220 + i * 80),gameScreen.game.map.height / 2 + (i - 1) * 70,true,true);
             if(rebel != null)
             {
-               if(rebel is Ninja)
-               {
-                  Ninja(rebel).bossAbilitySpawnLockFrames = 999999;
-               }
+               this.issueBossEscapeMove(gameScreen,rebel);
             }
          }
       }
@@ -1028,14 +1166,19 @@ import com.brockw.stickwar.singleplayer.EnemyTeamAi;
          return gameScreen.team.enemyTeam.homeX + gameScreen.team.enemyTeam.direction * (NATIVE_BASE_SPAWN_OFFSET + column * NATIVE_FORMATION_COLUMN_SPACING + row * 6);
       }
 
-      private function getEnemyDisplayX_New(gameScreen:GameScreen, column:int, row:int) : Number
+      private function getEnemyDisplayX(gameScreen:GameScreen, formationIndex:int, totalCount:int) : Number
       {
-         return gameScreen.team.enemyTeam.homeX + gameScreen.team.enemyTeam.direction * (220 + column * 80);
+         var column:int = int(formationIndex / 6);
+         var row:int = formationIndex % 6;
+         return gameScreen.team.enemyTeam.homeX + gameScreen.team.enemyTeam.direction * (220 + column * 90 + row * 8);
       }
 
-      private function getDisplayY_New(gameScreen:GameScreen, row:int, rowsInColumn:int, column:int) : Number
+      private function getDisplayY(gameScreen:GameScreen, formationIndex:int, totalCount:int) : Number
       {
-         var goalY:Number = gameScreen.game.map.height / 2 + (row - (rowsInColumn - 1) / 2) * 200;
+         var row:int = formationIndex % 6;
+         var column:int = int(formationIndex / 6);
+         var rowsInColumn:int = Math.min(6,totalCount - column * 6);
+         var goalY:Number = gameScreen.game.map.height / 2 + (row - (rowsInColumn - 1) / 2) * 60 + (column % 2 == 0 ? -15 : 15);
          return Math.max(80,Math.min(gameScreen.game.map.height - 80,goalY));
       }
 
@@ -1171,7 +1314,37 @@ import com.brockw.stickwar.singleplayer.EnemyTeamAi;
          unit.mc.transform.colorTransform = color;
       }
 
+      private function issueDisplayAttackCommand(gameScreen:GameScreen, unit:Unit, goalX:Number, goalY:Number) : void
+      {
+         var attackMoveCommand:AttackMoveCommand = null;
+         if(unit == null || unit.ai == null)
+         {
+            return;
+         }
+         attackMoveCommand = new AttackMoveCommand(gameScreen.game);
+         attackMoveCommand.type = UnitCommand.ATTACK_MOVE;
+         attackMoveCommand.goalX = goalX;
+         attackMoveCommand.goalY = goalY;
+         attackMoveCommand.realX = goalX;
+         attackMoveCommand.realY = goalY;
+         unit.ai.setCommand(gameScreen.game,attackMoveCommand);
+      }
 
+      private function issueBossEscapeMove(gameScreen:GameScreen, unit:Unit) : void
+      {
+         var moveCommand:MoveCommand = null;
+         if(unit == null || unit.ai == null)
+         {
+            return;
+         }
+         moveCommand = new MoveCommand(gameScreen.game);
+         moveCommand.type = UnitCommand.MOVE;
+         moveCommand.goalX = gameScreen.team.enemyTeam.homeX + gameScreen.team.enemyTeam.direction * 80;
+         moveCommand.goalY = unit.py;
+         moveCommand.realX = moveCommand.goalX;
+         moveCommand.realY = moveCommand.goalY;
+         unit.ai.setCommand(gameScreen.game,moveCommand);
+      }
 
       private function hasLivingActiveNativeWaveUnits() : Boolean
       {
@@ -1225,18 +1398,18 @@ import com.brockw.stickwar.singleplayer.EnemyTeamAi;
       }
 
       private function hasSpawnedAllAmbushWaves(gameScreen:GameScreen) : Boolean
-       {
-          if(this.isNativeTribesLevel(gameScreen))
-          {
-             return this.nativeWaveIndex >= NATIVE_WAVE_TIMES.length;
-          }
-          if(this.isShadowrathStalkersLevel(gameScreen))
-          {
-             return this.stalkWaveIndex >= STALK_WAVE_TIMES.length;
-          }
-          if(this.isRebelBreakLevel(gameScreen))
-          {
-             return this.rebelWaveSpawned;
+      {
+         if(this.isNativeTribesLevel(gameScreen))
+         {
+            return this.nativeWaveIndex >= NATIVE_WAVE_TIMES.length;
+         }
+         if(this.isShadowrathStalkersLevel(gameScreen))
+         {
+            return this.stalkWaveIndex >= STALK_WAVE_TIMES.length;
+         }
+         if(this.isRebelBreakLevel(gameScreen))
+         {
+            return this.rebelWaveSpawned;
          }
          return true;
       }
@@ -1284,9 +1457,14 @@ import com.brockw.stickwar.singleplayer.EnemyTeamAi;
          return gameScreen.main != null && gameScreen.main.campaign != null && gameScreen.main.campaign.getCurrentLevel() != null && gameScreen.main.campaign.getCurrentLevel().title == LEVEL_REBELS_BREAK;
       }
 
+      private function isUndeadHordeLevel(gameScreen:GameScreen) : Boolean
+      {
+         return gameScreen.main != null && gameScreen.main.campaign != null && gameScreen.main.campaign.getCurrentLevel() != null && gameScreen.main.campaign.getCurrentLevel().title == "Ambush: Undead Horde";
+      }
+
       private function shouldShowStartMessage(gameScreen:GameScreen) : Boolean
       {
-         return this.isNativeTribesLevel(gameScreen) || this.isShadowrathStalkersLevel(gameScreen);
+         return this.isNativeTribesLevel(gameScreen) || this.isShadowrathStalkersLevel(gameScreen) || this.isUndeadHordeLevel(gameScreen);
       }
 
       private function showAmbushMessage(gameScreen:GameScreen, text:String) : void
@@ -1308,40 +1486,30 @@ import com.brockw.stickwar.singleplayer.EnemyTeamAi;
       private function cleanupRebelDisplayUnits(gameScreen:GameScreen) : void
       {
          var unit:Unit = null;
-          while(this.rebelDisplayUnits.length > 0)
-          {
-             unit = this.rebelDisplayUnits.pop() as Unit;
-             if(unit != null && unit.isAlive())
-             {
-                unit.isBossMovementLocked = false;
-                unit.isBossUnit = false;
-                unit.team.removeUnitCompletely(unit,gameScreen.game);
-             }
+         while(this.rebelDisplayUnits.length > 0)
+         {
+            unit = this.rebelDisplayUnits.pop() as Unit;
+            if(unit != null && unit.isAlive())
+            {
+               unit.damage(Unit.D_NO_SOUND | Unit.D_NO_BLOOD,unit.maxHealth * 2,null);
+            }
          }
       }
 
       private function killAllEnemyUnits(gameScreen:GameScreen) : void
       {
          var unit:Unit = null;
-         var snapshot:Array = null;
-         if(gameScreen.team == null || gameScreen.team.enemyTeam == null)
+         var unitsToKill:Array = [];
+         for each(unit in gameScreen.team.enemyTeam.units)
          {
-            return;
-         }
-         snapshot = gameScreen.team.enemyTeam.units.concat();
-         for each(unit in snapshot)
-         {
-            if(unit != null && unit.isAlive() && unit.type != Unit.U_STATUE)
+            if(unit != null && unit.isAlive())
             {
-               if(unit is Magikill && Magikill(unit).isBoss)
-               {
-                  unit.damage(0,unit.maxHealth * 2,null);
-               }
-               else
-               {
-                  gameScreen.team.enemyTeam.removeUnitCompletely(unit,gameScreen.game);
-               }
+               unitsToKill.push(unit);
             }
+         }
+         for each(unit in unitsToKill)
+         {
+            unit.damage(Unit.D_NO_SOUND | Unit.D_NO_BLOOD,unit.maxHealth * 2,null);
          }
       }
 
@@ -1367,16 +1535,13 @@ import com.brockw.stickwar.singleplayer.EnemyTeamAi;
       private function stopSpawnedPlayerUnits(gameScreen:GameScreen) : void
       {
          var unit:Unit = null;
-           if(this.rebelEndingStarted || this.rebelOpeningFinished)
-          {
-             return;
-          }
+         if(!this.isRebelBreakLevel(gameScreen) || this.rebelEndingStarted)
+         {
+            return;
+         }
          for each(unit in gameScreen.team.units)
          {
-             if(unit != null && unit.isAlive() && unit.type != Unit.U_MINER
-                && this.rebelDisplayUnits.indexOf(unit) == -1
-                && unit.ai.currentCommand.type == UnitCommand.ATTACK_MOVE
-                && unit.px > this.getAmbushBarrierX(gameScreen))
+            if(unit != null && unit.isAlive() && unit.type != Unit.U_MINER && unit.ai.currentCommand.type == UnitCommand.ATTACK_MOVE && unit.px < gameScreen.team.homeX + gameScreen.team.direction * 200)
             {
                this.holdUnit(gameScreen,unit);
             }
@@ -1412,7 +1577,7 @@ import com.brockw.stickwar.singleplayer.EnemyTeamAi;
             }
          }
       }
-
+      
       private function hasLivingEnemyCombatUnits(gameScreen:GameScreen) : Boolean
       {
          var unit:Unit = null;

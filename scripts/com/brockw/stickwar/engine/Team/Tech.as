@@ -143,6 +143,16 @@ package com.brockw.stickwar.engine.Team
       public static const MAGIKILL_LIGHTNING_STUN:int = -70;
 
       public static const MAGIKILL_SUMMON_UPGRADE:int = -71;
+
+      public static const BOSS_SPEARTON_UNLOCK:int = -72;
+
+      public static const BOSS_ARCHER_UNLOCK:int = -73;
+
+      public static const BOSS_NINJA_UNLOCK:int = -74;
+
+      public static const BOSS_MONK_UNLOCK:int = -75;
+
+      public static const BOSS_MAGIKILL_UNLOCK:int = -76;
       
       public var upgrades:Dictionary;
       
@@ -228,18 +238,50 @@ package com.brockw.stickwar.engine.Team
          return 0;
       }
       
-      public function getTechAllowed(type:int) : Boolean
-      {
-         return this.team.techAllowed == null || type in this.team.techAllowed;
-      }
-      
-      public function startResearching(type:int) : void
-      {
-         if(this.team.techAllowed != null && !(type in this.team.techAllowed))
-         {
-            return;
-         }
-         var t:TechItem = this.upgrades[type];
+       public function isBossAbilityAvailable(type:int) : Boolean
+       {
+          if(this.team.techAllowed == null)
+          {
+             return true;
+          }
+          switch(type)
+          {
+             case MONK_BOSS_REVIVE:
+                return BOSS_MONK_UNLOCK in this.team.techAllowed;
+             case NINJA_SHADOW_CLONE:
+                return BOSS_NINJA_UNLOCK in this.team.techAllowed;
+             case ARCHER_BOSS_TRIPLE_SHOT:
+             case ARCHER_BOSS_POISON_EXECUTE:
+                return BOSS_ARCHER_UNLOCK in this.team.techAllowed;
+          }
+          return true;
+       }
+
+       public function getTechAllowed(type:int) : Boolean
+       {
+          if(this.team.techAllowed != null && !(type in this.team.techAllowed))
+          {
+             return false;
+          }
+          return this.isBossAbilityAvailable(type);
+       }
+
+       public function isHideBossTechs() : Boolean
+       {
+          return this.team.hideBossTechs;
+       }
+       
+       public function startResearching(type:int) : void
+       {
+          if(this.team.techAllowed != null && !(type in this.team.techAllowed))
+          {
+             return;
+          }
+          if(!this.isBossAbilityAvailable(type))
+          {
+             return;
+          }
+          var t:TechItem = this.upgrades[type];
          if(t == null)
          {
             return;

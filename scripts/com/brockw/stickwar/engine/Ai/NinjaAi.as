@@ -75,9 +75,9 @@ package com.brockw.stickwar.engine.Ai
           this.lastFriendlyStatueHealth = -1;
       }
       
-      override public function update(game:StickWar) : void
-      {
-         var statueDamagedThisFrame:Boolean = false;
+       override public function update(game:StickWar) : void
+       {
+          var statueDamagedThisFrame:Boolean = false;
          if(!Ninja(unit).isBoss)
          {
             unit.isBossMovementLocked = false;
@@ -121,11 +121,11 @@ package com.brockw.stickwar.engine.Ai
                return;
             }
          }
-         if(currentCommand.type == UnitCommand.CURE)
-         {
-            Ninja(unit).isAutoCloakToggled = !Ninja(unit).isAutoCloakToggled;
-            restoreMove(game);
-         }
+          if(currentCommand.type == UnitCommand.CURE)
+          {
+             Ninja(unit).isAutoCloakToggled = currentCommand.realX != 0;
+             restoreMove(game);
+          }
           if(currentCommand.type == UnitCommand.STEALTH)
           {
              Ninja(unit).stealth();
@@ -136,15 +136,18 @@ package com.brockw.stickwar.engine.Ai
               Ninja(unit).bossSpecialStealth();
               restoreMove(game);
            }
-            if(currentCommand.type == UnitCommand.NINJA_SHADOW_CLONE)
+             if(currentCommand.type == UnitCommand.NINJA_SHADOW_CLONE)
+             {
+                if(Ninja(unit).isBoss)
+                {
+                   Ninja(unit).activateShadowClone();
+                }
+                restoreMove(game);
+             }
+            if(Ninja(unit).isAutoCloakToggled)
             {
-               Ninja(unit).activateShadowClone();
-               restoreMove(game);
+               this.tryAutoAbilityCycle();
             }
-           if(Ninja(unit).isAutoCloakToggled)
-          {
-             this.tryAutoAbilityCycle();
-          }
            if(Ninja(unit).isBoss && !(unit.team != null && !unit.team.isAi && currentCommand.type != UnitCommand.NONE) && this.tryBossAssassinMovement())
           {
              return;
@@ -180,28 +183,28 @@ package com.brockw.stickwar.engine.Ai
       private function tryAutoAbilityCycle() : void
       {
          var closestTarget:Unit = null;
-         if(Ninja(unit).isBoss && (Ninja(unit).hasBossWhiffPenalty() || Ninja(unit).hasBossAbilitySpawnLock()))
-         {
-            return;
-         }
-          if(Ninja(unit).isBoss && (Ninja(unit).campaignBossEscaping || Ninja(unit).isBossSpecialTargetingActive()))
-         {
-            return;
-         }
-         closestTarget = Ninja(unit).isBoss ? super.getClosestTarget() : this.getClosestTarget();
-         var cloneResearched:Boolean = Ninja(unit).team != null && Ninja(unit).team.tech.isResearched(Tech.NINJA_SHADOW_CLONE);
+          if(Ninja(unit).hasBossWhiffPenalty() || Ninja(unit).hasBossAbilitySpawnLock())
+          {
+             return;
+          }
+           if(Ninja(unit).campaignBossEscaping || Ninja(unit).isBossSpecialTargetingActive())
+          {
+             return;
+          }
+          closestTarget = super.getClosestTarget();
+          var cloneResearched:Boolean = Ninja(unit).team != null && Ninja(unit).team.tech.isResearched(Tech.NINJA_SHADOW_CLONE) && (Ninja(unit).team.techAllowed == null || Tech.BOSS_NINJA_UNLOCK in Ninja(unit).team.techAllowed);
          if(closestTarget != null && closestTarget.isAlive())
          {
             if(Math.abs(closestTarget.px - unit.px) < BOSS_OPENER_TRIGGER_RANGE)
             {
                  if(Ninja(unit).isBoss && unit.team != null && unit.team.tech.isResearched(Tech.NINJA_CLOAK3))
-                 {
-                    if(!Ninja(unit).bossSpecialStealth() && cloneResearched)
-                    {
-                       Ninja(unit).autoPendingShadowCloneOnHit = true;
-                    }
-                 }
-                 else if(unit.team != null && unit.team.tech.isResearched(Tech.CLOAK))
+                  {
+                     if(!Ninja(unit).bossSpecialStealth() && cloneResearched)
+                     {
+                        Ninja(unit).autoPendingShadowCloneOnHit = true;
+                     }
+                  }
+                   else if(unit.team != null && unit.team.tech.isResearched(Tech.CLOAK))
                 {
                    Ninja(unit).stealth();
                    if(cloneResearched)
@@ -209,7 +212,7 @@ package com.brockw.stickwar.engine.Ai
                       Ninja(unit).autoPendingShadowCloneOnHit = true;
                    }
                 }
-                 else if(cloneResearched)
+                   else if(cloneResearched)
                 {
                    Ninja(unit).autoPendingShadowCloneOnHit = true;
                 }
@@ -235,7 +238,7 @@ package com.brockw.stickwar.engine.Ai
           }
             if(unit.team != null && !unit.team.isAi && this.currentCommand != null && this.currentCommand.targetId != -1)
            {
-              var cmdTarget:Unit = unit.team.game.units[this.currentCommand.targetId];
+               var cmdTarget:Unit = unit.team.game.units[this.currentCommand.targetId] as Unit;
               if(cmdTarget != null && cmdTarget is Unit && cmdTarget.isAlive() && cmdTarget.isTargetable() && cmdTarget.team.id != unit.team.id)
              {
                 this.lockBossFocusTarget(cmdTarget);

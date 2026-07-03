@@ -46,25 +46,26 @@ package com.brockw.game
          }
       }
       
-      public function getItem() : Object
-      {
-         var i:int = 0;
-         if(this.fIndex >= this.capacity)
-         {
-            this.free = new Vector.<Object>(2 * this.capacity,false);
-            for(i = this.capacity; i < 2 * this.capacity; i++)
-            {
-               this.free[i] = new this.poolClass(this.game);
-            }
-            this.capacity *= 2;
-         }
-         if(this.fIndex < this.capacity)
-         {
-            ++this.fIndex;
-            return this.free[this.fIndex - 1];
-         }
-         return null;
-      }
+       public function getItem() : Object
+       {
+          var i:int = 0;
+          if(this.fIndex >= this.capacity)
+          {
+             var old:Vector.<Object> = this.free;
+             this.free = new Vector.<Object>(2 * this.capacity,false);
+             for(i = 0; i < this.capacity; i++)
+                this.free[i] = old[i];
+             for(i = this.capacity; i < 2 * this.capacity; i++)
+                this.free[i] = new this.poolClass(this.game);
+             this.capacity *= 2;
+          }
+          if(this.fIndex < this.capacity)
+          {
+             ++this.fIndex;
+             return this.free[this.fIndex - 1];
+          }
+          return null;
+       }
       
        public function returnItem(item:Object) : void
        {

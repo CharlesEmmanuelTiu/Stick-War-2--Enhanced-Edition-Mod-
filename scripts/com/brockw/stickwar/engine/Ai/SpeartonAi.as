@@ -14,10 +14,10 @@ package com.brockw.stickwar.engine.Ai
          unit = s;
       }
       
-      override public function update(game:StickWar) : void
-      {
-         var spearton:Spearton = Spearton(unit);
-         if(unit.shouldStartCampaignBossEscape())
+       override public function update(game:StickWar) : void
+       {
+          var spearton:Spearton = Spearton(unit);
+          if(unit.shouldStartCampaignBossEscape())
          {
             unit.startCampaignBossEscape();
          }
@@ -32,14 +32,18 @@ package com.brockw.stickwar.engine.Ai
                super.update(game);
                return;
             }
-            if(spearton.isAutoBraceToggled && unit.team.tech.isResearched(Tech.SHIELD_BASH) && this.tryBossBraceShieldSlam(game))
-          {
-             if(!spearton.inBlock)
-             {
-                baseUpdate(game);
-             }
-             return;
-          }
+             if(spearton.isAutoBraceToggled && unit.team.tech.isResearched(Tech.SHIELD_BASH) && spearton.bossNormalAttackJustFinished)
+           {
+              spearton.bossNormalAttackJustFinished = false;
+              if(this.tryBossBraceShieldSlam(game))
+              {
+                 if(!spearton.inBlock)
+                 {
+                    baseUpdate(game);
+                 }
+                 return;
+              }
+           }
           if(spearton.isInBossBraceSequence)
           {
              return;

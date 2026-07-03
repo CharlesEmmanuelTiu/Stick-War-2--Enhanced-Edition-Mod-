@@ -7,7 +7,8 @@ package com.brockw.stickwar.engine.projectile
    import com.brockw.stickwar.engine.units.*;
    import flash.display.MovieClip;
    import flash.geom.Point;
-   import flash.utils.Dictionary;
+    import flash.geom.ColorTransform;
+    import flash.utils.Dictionary;
    
    public class ProjectileManager
    {
@@ -578,46 +579,60 @@ package com.brockw.stickwar.engine.projectile
          team.game.battlefield.addChild(n);
       }
       
-      public function initTowerSpawn(x:Number, y:Number, team:Team, scale:Number = 1) : void
-      {
-         var n:TowerSpawn = TowerSpawn(this._projectileMap[Projectile.TOWER_SPAWN].getItem());
-         if(n == null)
-         {
-            return;
-         }
-         n.visible = true;
-         n.px = x;
-         n.py = y;
-         n.x = n.px;
-         n.y = n.py;
-         Util.animateToNeutral(n.spellMc);
-         n.spellMc.gotoAndStop(1);
-         n.scale = scale;
-         n.stunTime = 0;
-         this.projectiles.push(n);
-         team.game.battlefield.addChild(n);
-         n.team = team;
-      }
-      
-      public function initSpawnDrip(x:Number, y:Number, team:Team) : void
-      {
-         var n:SpawnDrip = SpawnDrip(this._projectileMap[Projectile.SPAWN_DRIP].getItem());
-         if(n == null)
-         {
-            return;
-         }
-         n.visible = true;
-         n.px = x;
-         n.py = y;
-         n.x = n.px;
-         n.y = n.py;
-         Util.animateToNeutral(n.spellMc);
-         n.spellMc.gotoAndStop(1);
-         n.stunTime = 0;
-         this.projectiles.push(n);
-         team.game.battlefield.addChild(n);
-         n.team = team;
-      }
+       public function initTowerSpawn(x:Number, y:Number, team:Team, scale:Number = 1, tintColor:uint = 0xFFFFFFFF) : void
+       {
+          var ct:ColorTransform = null;
+          var n:TowerSpawn = TowerSpawn(this._projectileMap[Projectile.TOWER_SPAWN].getItem());
+          if(n == null)
+          {
+             return;
+          }
+          n.visible = true;
+          n.px = x;
+          n.py = y;
+          n.x = n.px;
+          n.y = n.py;
+          Util.animateToNeutral(n.spellMc);
+          n.spellMc.gotoAndStop(1);
+          n.scale = scale;
+          n.stunTime = 0;
+          this.projectiles.push(n);
+          team.game.battlefield.addChild(n);
+          n.team = team;
+          if(tintColor != 0xFFFFFFFF)
+          {
+             ct = new ColorTransform();
+             ct.color = tintColor;
+             n.spellMc.transform.colorTransform = ct;
+          }
+       }
+       
+       public function initSpawnDrip(x:Number, y:Number, team:Team, tintColor:uint = 0xFFFFFFFF) : void
+       {
+          var ct:ColorTransform = null;
+          var n:SpawnDrip = SpawnDrip(this._projectileMap[Projectile.SPAWN_DRIP].getItem());
+          if(n == null)
+          {
+             return;
+          }
+          n.visible = true;
+          n.px = x;
+          n.py = y;
+          n.x = n.px;
+          n.y = n.py;
+          Util.animateToNeutral(n.spellMc);
+          n.spellMc.gotoAndStop(1);
+          n.stunTime = 0;
+          this.projectiles.push(n);
+          team.game.battlefield.addChild(n);
+          n.team = team;
+          if(tintColor != 0xFFFFFFFF)
+          {
+             ct = new ColorTransform();
+             ct.color = tintColor;
+             n.spellMc.transform.colorTransform = ct;
+          }
+       }
       
       public function initHealEffect(x:Number, y:Number, py:Number, team:Team, unit:Unit, isCure:Boolean = false) : void
       {
