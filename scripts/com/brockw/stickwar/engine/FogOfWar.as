@@ -27,9 +27,9 @@ package com.brockw.stickwar.engine
       internal var xPos:Number;
       
       public var isFogOn:Boolean;
-
+      
       public var isForwardPositionLocked:Boolean;
-
+      
       public var lockedForwardPosition:Number;
       
       private var blockMc:MovieClip;
@@ -141,12 +141,12 @@ package com.brockw.stickwar.engine
             }
          }
       }
-
+      
       public function forceForwardPosition(value:Number) : void
       {
          this.xPos = value;
       }
-
+      
       public function getForwardPosition(game:StickWar) : Number
       {
          if(this.isForwardPositionLocked)
@@ -155,14 +155,14 @@ package com.brockw.stickwar.engine
          }
          return game.team.getVisionRange();
       }
-
+      
       public function lockForwardPosition(value:Number) : void
       {
          this.isForwardPositionLocked = true;
          this.lockedForwardPosition = value;
          this.xPos = value;
       }
-
+      
       public function unlockForwardPosition() : void
       {
          this.isForwardPositionLocked = false;

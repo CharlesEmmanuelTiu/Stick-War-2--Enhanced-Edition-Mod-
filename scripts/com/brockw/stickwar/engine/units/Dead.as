@@ -1,4 +1,4 @@
-﻿package com.brockw.stickwar.engine.units
+package com.brockw.stickwar.engine.units
 {
    import com.brockw.game.Util;
    import com.brockw.stickwar.engine.ActionInterface;
@@ -299,7 +299,4 @@
       }
    }
 }
-
-
-
 

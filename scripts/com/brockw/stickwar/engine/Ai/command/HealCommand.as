@@ -39,7 +39,7 @@ package com.brockw.stickwar.engine.Ai.command
          u.moveType = this.type;
          for(unit in gameScreen.team.units)
          {
-            if(Unit(gameScreen.team.units[unit]).selected)
+            if(gameScreen.team.units[unit].selected)
             {
                if(this.intendedEntityType == -1 || this.intendedEntityType == gameScreen.team.units[unit].type)
                {
@@ -57,14 +57,14 @@ package com.brockw.stickwar.engine.Ai.command
          gameScreen.doMove(u,gameScreen.team.id);
       }
       
-       override public function isToggled(entity:Entity) : Boolean
-       {
-          if(entity is Archer)
-          {
-             return Archer(entity).isAutoKiteToggled;
-          }
-          return Monk(entity).isHealToggled;
-       }
+      override public function isToggled(entity:Entity) : Boolean
+      {
+         if(entity is Archer)
+         {
+            return entity.isAutoKiteToggled;
+         }
+         return entity.isHealToggled;
+      }
       
       override public function coolDownTime(entity:Entity) : Number
       {
@@ -82,7 +82,7 @@ package com.brockw.stickwar.engine.Ai.command
          {
             return true;
          }
-         return Math.pow(realX - entity.px,2) + Math.pow(realY - entity.py,2) < Math.pow(Unit(entity).team.game.xml.xml.Order.Units.monk.heal.range,2);
+         return Math.pow(realX - entity.px,2) + Math.pow(realY - entity.py,2) < Math.pow(entity.team.game.xml.xml.Order.Units.monk.heal.range,2);
       }
    }
 }

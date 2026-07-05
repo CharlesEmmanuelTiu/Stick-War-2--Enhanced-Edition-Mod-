@@ -51,9 +51,11 @@ package com.brockw.stickwar.engine
          this.main = main;
          this.playing = [];
          this.waiting = [];
-         for(var i:int = 0; i < 20; i++)
+         var i:int = 0;
+         while(i < 20)
          {
             this.waiting.push(new SoundChannel());
+            i++;
          }
          this.lastX = this.lastY = 0;
          this.backgroundLoop = null;
@@ -110,12 +112,12 @@ package com.brockw.stickwar.engine
       {
          this.playSoundInBackgroundWithLoop(name,startTime,true);
       }
-
+      
       public function playSoundInBackgroundOnce(name:String, startTime:Number = 0) : void
       {
          this.playSoundInBackgroundWithLoop(name,startTime,false);
       }
-
+      
       private function playSoundInBackgroundWithLoop(name:String, startTime:Number, shouldLoop:Boolean) : void
       {
          if(name == this.currentBackgroundName && startTime == 0)
@@ -139,7 +141,7 @@ package com.brockw.stickwar.engine
          this.currentBackgroundName = name;
          this.targetBackgroundVolume = 0.2 * this.volumeMap[name];
       }
-
+      
       public function restartBackgroundAtIfPast(name:String, startTime:Number) : void
       {
          if(this.currentBackgroundName == name && this.backgroundLoop != null && this.backgroundLoop.position < startTime)
@@ -148,7 +150,7 @@ package com.brockw.stickwar.engine
          }
          this.playSoundInBackground(name,startTime);
       }
-
+      
       public function restartBackgroundAtIfBefore(name:String, startTime:Number) : void
       {
          if(this.currentBackgroundName == name && this.backgroundLoop != null && this.backgroundLoop.position >= startTime)
@@ -157,12 +159,12 @@ package com.brockw.stickwar.engine
          }
          this.playSoundInBackground(name,startTime);
       }
-
+      
       public function isBackgroundAtOrPast(name:String, startTime:Number) : Boolean
       {
          return this.currentBackgroundName == name && this.backgroundLoop != null && this.backgroundLoop.position >= startTime;
       }
-
+      
       public function playCurrentBackgroundOnceFromCurrentPosition(name:String) : void
       {
          var startTime:Number = 0;
@@ -233,7 +235,7 @@ package com.brockw.stickwar.engine
       public function setSoundTransformation(s:SoundChannel, x:Number, y:Number, px:Number, py:Number, soundModifier:Number = 1) : void
       {
          var transform:SoundTransform = null;
-         var pan:Number = NaN;
+         var pan:Number = Number(NaN);
          if(s != null && this.main.stickWar != null)
          {
             transform = new SoundTransform();

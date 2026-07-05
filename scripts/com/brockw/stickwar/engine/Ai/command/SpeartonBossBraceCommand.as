@@ -6,21 +6,12 @@ package com.brockw.stickwar.engine.Ai.command
    import com.brockw.stickwar.engine.units.*;
    import flash.display.*;
    import flash.geom.ColorTransform;
-   import flash.display.BlendMode;
-
+   
    public class SpeartonBossBraceCommand extends UnitCommand
    {
-      private static function createButtonBitmap() : Bitmap
-      {
-         var bmd:BitmapData = new SpeartanShieldWall();
-         var ct:ColorTransform = new ColorTransform();
-         ct.color = 0x00BFFF;
-         bmd.draw(bmd, null, ct, BlendMode.MULTIPLY);
-         return new Bitmap(bmd);
-      }
-
+      
       public static const actualButtonBitmap:Bitmap = createButtonBitmap();
-
+      
       public function SpeartonBossBraceCommand(game:StickWar)
       {
          super();
@@ -36,25 +27,35 @@ package com.brockw.stickwar.engine.Ai.command
             this.loadXML(game.xml.xml.Order.Units.spearton.brace);
          }
       }
-
+      
+      private static function createButtonBitmap() : Bitmap
+      {
+         var bmd:BitmapData = new SpeartanShieldWall();
+         var ct:ColorTransform = new ColorTransform();
+         ct.color = 49151;
+         bmd.draw(bmd,null,ct,BlendMode.MULTIPLY);
+         return new Bitmap(bmd);
+      }
+      
       override public function isToggled(entity:Entity) : Boolean
       {
-         return Spearton(entity).isAutoBraceToggled;
+         return entity.isAutoBraceToggled;
       }
-
+      
       override public function coolDownTime(entity:Entity) : Number
       {
          return 0;
       }
-
+      
       override public function isFinished(unit:Unit) : Boolean
       {
          return false;
       }
-
+      
       override public function inRange(entity:Entity) : Boolean
       {
          return true;
       }
    }
 }
+

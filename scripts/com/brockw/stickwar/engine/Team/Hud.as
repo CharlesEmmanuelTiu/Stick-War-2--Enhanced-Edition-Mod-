@@ -23,18 +23,18 @@ package com.brockw.stickwar.engine.Team
       
       public function mapClear() : void
       {
-         MovieClip(this.hud.map).graphics.clear();
+         this.hud.map.graphics.clear();
       }
       
       public function mapDrawFocus(game:StickWar) : void
       {
-         var x:Number = NaN;
-         var y:Number = NaN;
+         var x:Number = Number(NaN);
+         var y:Number = Number(NaN);
          var u:String = null;
-         var w:Number = NaN;
-         var sx:Number = NaN;
-         var width:Number = MovieClip(this.hud.map).width;
-         var height:Number = MovieClip(this.hud.map).height;
+         var w:Number = Number(NaN);
+         var sx:Number = Number(NaN);
+         var width:Number = this.hud.map.width;
+         var height:Number = this.hud.map.height;
          for(u in game.units)
          {
             if(Boolean(game.units[u].onMap(game)))
@@ -42,8 +42,8 @@ package com.brockw.stickwar.engine.Team
                game.units[u].drawOnHud(this.hud.map,game);
             }
          }
-         MovieClip(this.hud.map).graphics.lineStyle(0.5,0,1);
-         MovieClip(this.hud.map).graphics.drawRect(width * game.screenX / game.map.width,0,width * game.map.screenWidth / game.map.width,height);
+         this.hud.map.graphics.lineStyle(0.5,0,1);
+         this.hud.map.graphics.drawRect(width * game.screenX / game.map.width,0,width * game.map.screenWidth / game.map.width,height);
          if(game.fogOfWar.isFogOn)
          {
             w = width * game.fogOfWar.getForwardPosition(game) / game.map.width;
@@ -53,8 +53,8 @@ package com.brockw.stickwar.engine.Team
                sx = w;
                w = width - w;
             }
-            MovieClip(this.hud.map).graphics.beginFill(0,0.8);
-            MovieClip(this.hud.map).graphics.drawRect(sx,0,w,height);
+            this.hud.map.graphics.beginFill(0,0.8);
+            this.hud.map.graphics.drawRect(sx,0,w,height);
          }
       }
       

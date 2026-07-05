@@ -77,12 +77,12 @@ package com.brockw.stickwar.engine.Ai.command
       
       override public function coolDownTime(entity:Entity) : Number
       {
-         return Magikill(entity).poisonDartCooldown();
+         return entity.poisonDartCooldown();
       }
       
       override public function isFinished(unit:Unit) : Boolean
       {
-         return Magikill(unit).poisonDartCooldown() != 0;
+         return unit.poisonDartCooldown() != 0;
       }
       
       override public function inRange(entity:Entity) : Boolean

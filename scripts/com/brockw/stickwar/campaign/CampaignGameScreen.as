@@ -1,4 +1,4 @@
-﻿package com.brockw.stickwar.campaign
+package com.brockw.stickwar.campaign
 {
    import com.brockw.*;
    import com.brockw.game.*;
@@ -7,12 +7,11 @@
    import com.brockw.simulationSync.SimulationSyncronizer;
    import com.brockw.stickwar.BaseMain;
    import com.brockw.stickwar.GameScreen;
-    import com.brockw.stickwar.campaign.Level;
-    import com.brockw.stickwar.campaign.controllers.CampaignController;
+   import com.brockw.stickwar.campaign.controllers.CampaignController;
    import com.brockw.stickwar.engine.Ai.MinerAi;
+   import com.brockw.stickwar.engine.Ai.command.*;
    import com.brockw.stickwar.engine.Gold;
    import com.brockw.stickwar.engine.Ore;
-   import com.brockw.stickwar.engine.Ai.command.*;
    import com.brockw.stickwar.engine.StickWar;
    import com.brockw.stickwar.engine.Team.Team;
    import com.brockw.stickwar.engine.Team.Tech;
@@ -22,126 +21,125 @@
    import com.brockw.stickwar.engine.units.*;
    import com.brockw.stickwar.singleplayer.*;
    import com.brockw.stickwar.stickwar2;
-    import com.smartfoxserver.v2.requests.ExtensionRequest;
-    import flash.display.*;
-    import flash.events.*;
-    import flash.geom.Point;
-     import flash.utils.Dictionary;
-     import flash.utils.getTimer;
+   import com.smartfoxserver.v2.requests.ExtensionRequest;
+   import flash.display.*;
+   import flash.events.*;
+   import flash.geom.Point;
+   import flash.utils.getTimer;
    
    public class CampaignGameScreen extends GameScreen
    {
+      
+      private static const SHADOWRATH_LEVEL_TITLE:String = "Silent Assassins: Ninjas Declare War";
+      
+      private static const SHADOWRATH_REVEAL_RANGE_X:Number = 120;
+      
+      private static const SHADOWRATH_REVEAL_RANGE_Y:Number = 70;
+      
+      private static const SHADOWRATH_DEFENSE_RADIUS:Number = 700;
+      
+      private static const SHADOWRATH_REVEAL_STAGGER_FRAMES:int = 8;
+      
+      private static const SHADOWRATH_REDISGUISE_COOLDOWN_FRAMES:int = 30 * 12;
+      
+      private static const SHADOWRATH_INITIAL_DISGUISE_COOLDOWN_FRAMES:int = 30 * 10;
+      
+      private static const SHADOWRATH_HEAVY_UPDATE_INTERVAL_FRAMES:int = 5;
+      
+      private static const DEBUG_SET_ORDER:int = 0;
+      
+      private static const DEBUG_SET_CHAOS:int = 1;
+      
+      private static const LEVEL_TITLE_REBELS_UNITED:String = "Rebels United";
+      
+      private static const LEVEL_TITLE_MAGIKILL_BOSS:String = "Magic in the Air: Wizards and monks Declare War ";
+      
+      private static const LEVEL_TITLE_MEDUSA_GATES:String = "Medusa\'s Gates: The Chaos Capital is in sight. ";
+      
+      private static const REBELS_BOSS_QUEUE_WAVE_FRAMES:int = 30 * 10;
+      
+      private static const REBELS_BOSS_QUEUE_ACTIVE_SLOTS:int = 3;
       
       public var enemyTeamAi:EnemyTeamAi;
       
       private var controller:CampaignController;
       
       public var doAiUpdates:Boolean;
-
+      
       private var shadowrathRevealQueue:Array;
-
+      
       private var shadowrathRevealQueued:Object;
-
+      
       private var shadowrathDisguiseCooldowns:Object;
-
+      
       private var shadowrathDisguiseLockUntil:Object;
-
+      
       private var shadowrathSeenForInitialLock:Object;
-
+      
       private var shadowrathLastAttackState:int;
-
+      
       private var cachedDisguisedShadowrathCount:int;
-
-      private static const SHADOWRATH_LEVEL_TITLE:String = "Silent Assassins: Ninjas Declare War";
-
-      private static const SHADOWRATH_REVEAL_RANGE_X:Number = 120;
-
-      private static const SHADOWRATH_REVEAL_RANGE_Y:Number = 70;
-
-      private static const SHADOWRATH_DEFENSE_RADIUS:Number = 700;
-
-      private static const SHADOWRATH_REVEAL_STAGGER_FRAMES:int = 8;
-
-      private static const SHADOWRATH_REDISGUISE_COOLDOWN_FRAMES:int = 30 * 12;
-
-      private static const SHADOWRATH_INITIAL_DISGUISE_COOLDOWN_FRAMES:int = 30 * 10;
-
-      private static const SHADOWRATH_HEAVY_UPDATE_INTERVAL_FRAMES:int = 5;
-
-      private static const DEBUG_SET_ORDER:int = 0;
-
-      private static const DEBUG_SET_CHAOS:int = 1;
-
-      private static const LEVEL_TITLE_REBELS_UNITED:String = "Rebels United";
-
-      private static const LEVEL_TITLE_MAGIKILL_BOSS:String = "Magic in the Air: Wizards and monks Declare War ";
-
-      private static const LEVEL_TITLE_MEDUSA_GATES:String = "Medusa's Gates: The Chaos Capital is in sight. ";
-
-      private static const REBELS_BOSS_QUEUE_WAVE_FRAMES:int = 30 * 10;
-
-      private static const REBELS_BOSS_QUEUE_ACTIVE_SLOTS:int = 3;
-
+      
       private var campaignMusicManager:CampaignMusicManager;
-
+      
       private var campaignPrewarmManager:CampaignPrewarmManager;
-
+      
       private var campaignBossMessages:CampaignBossMessages;
-
+      
       private var campaignBossSpawner:CampaignBossSpawner;
-
+      
       private var campaignReinforcementManager:CampaignReinforcementManager;
-
+      
       private var campaignDebugTools:CampaignDebugTools;
-
+      
       private var _bossGameTipArrow:tutorialArrow;
-
+      
       private var _bossGameTipMessageBox:inGameMessageBoxMc;
-
+      
       private var _bossGameTipState:int;
-
+      
       private var _bossGameTipTimer:int;
-
+      
       private var _bossGameTipDismissTimer:int;
-
+      
       private var debugModeEnabled:Boolean;
-
+      
       private var debugSpawnSet:int;
-
+      
       private var debugLastFrameTick:int;
-
+      
       private var debugLastFrameMs:Number;
-
+      
       private var debugLastRealtimeFps:Number;
-
+      
       private var debugLastPrewarmMs:int;
-
+      
       private var debugLastEnemyAiMs:int;
-
+      
       private var debugLastControllerMs:int;
-
+      
       private var debugLastCoreMs:int;
-
+      
       private var debugLastTotalMs:int;
-
+      
       private var debugForceEnemyAttackFrames:int;
-
+      
       private var debugEnemyTrainingLocked:Boolean;
-
+      
       private var debugFullVisionEnabled:Boolean;
-
+      
       private var debugEnemyAiFrozenAttackMode:Boolean;
-
+      
       private var debugPreviousDoAiUpdates:Boolean;
-
+      
       private var rebelsBossQueueActiveTypes:Object;
-
+      
       private var rebelsBossQueueRecentWaves:Object;
-
+      
       private var rebelsBossQueueWaveUntilFrame:int;
-
+      
       private var rebelsBossQueueDebugText:String;
-
+      
       public function CampaignGameScreen(main:BaseMain)
       {
          super(main);
@@ -200,43 +198,34 @@
          {
             damageModifier = level.normalDamageModifier;
          }
-           if(Boolean(level.player.unitsAvailable[Unit.U_NINJA]))
-           {
-              upgrade = CampaignUpgrade(main.campaign.upgradeMap["Cloak_BASIC"]);
-              upgrade.upgraded = true;
-               main.campaign.techAllowed[Tech.CLOAK] = 1;
-             }
-            game.initTeams(Team.getIdFromRaceName(level.player.race),Team.getIdFromRaceName(level.oponent.race),level.player.statueHealth,level.oponent.statueHealth,main.campaign.techAllowed,null,1,level.insaneModifier,1,healthModifier,1,damageModifier);
-          team = game.teamA;
-          game.team = team;
-          game.teamA.id = a;
-          game.teamB.id = b;
-           var massiveBattleCompleted:Boolean = false;
-           for each(var mbLevel:Level in main.campaign.levels)
-           {
-              if(mbLevel.title == "Massive Battle" && mbLevel.bestTime >= 0)
-              {
-                 massiveBattleCompleted = true;
-                 break;
-              }
-           }
-           game.teamA.hideBossTechs = !massiveBattleCompleted;
-          var copy:Dictionary = new Dictionary();
-          for(var key:* in level.player.unitsAvailable) { copy[key] = level.player.unitsAvailable[key]; }
-           game.teamA.unitsAvailable = copy;
-           if(main.campaign.isGameFinished())
-           {
-              this.unlockAllPlayerOrderUnits();
-           }
-          copy = new Dictionary();
-          for(key in level.oponent.unitsAvailable) { copy[key] = level.oponent.unitsAvailable[key]; }
-           game.teamB.unitsAvailable = copy;
-          if(level.title == "Ambush: Undead Horde")
-          {
-             delete game.teamB.unitsAvailable[Unit.U_MINER];
-             delete game.teamB.unitsAvailable[Unit.U_CHAOS_MINER];
-          }
-          game.teamA.name = a;
+         if(Boolean(level.player.unitsAvailable[Unit.U_NINJA]))
+         {
+            upgrade = main.campaign.upgradeMap["Cloak_BASIC"];
+            upgrade.upgraded = true;
+            main.campaign.techAllowed[Tech.CLOAK] = 1;
+         }
+         game.initTeams(Team.getIdFromRaceName(level.player.race),Team.getIdFromRaceName(level.oponent.race),level.player.statueHealth,level.oponent.statueHealth,main.campaign.techAllowed,null,1,level.insaneModifier,1,healthModifier,1,damageModifier);
+         team = game.teamA;
+         game.team = team;
+         game.teamA.id = a;
+         game.teamB.id = b;
+         var massiveBattleCompleted:Boolean = false;
+         for each(var mbLevel in main.campaign.levels)
+         {
+            if(mbLevel.title == "Massive Battle" && mbLevel.bestTime >= 0)
+            {
+               massiveBattleCompleted = true;
+               break;
+            }
+         }
+         game.teamA.hideBossTechs = !massiveBattleCompleted;
+         game.teamA.unitsAvailable = level.player.unitsAvailable;
+         if(main.campaign.isGameFinished())
+         {
+            this.unlockAllPlayerOrderUnits();
+         }
+         game.teamB.unitsAvailable = level.oponent.unitsAvailable;
+         game.teamA.name = a;
          game.teamB.name = b;
          this.team.enemyTeam.isEnemy = true;
          this.team.enemyTeam.isAi = true;
@@ -263,7 +252,7 @@
             }
             else
             {
-               towerConstructing = ChaosTower(game.unitFactory.getUnit(int(Unit.U_CHAOS_TOWER)));
+               towerConstructing = game.unitFactory.getUnit(Unit.U_CHAOS_TOWER);
                team.enemyTeam.spawn(towerConstructing,game);
                towerConstructing.scaleX *= team.enemyTeam.direction * -1;
                towerConstructing.px = team.enemyTeam.homeX - 900;
@@ -332,15 +321,15 @@
          {
             game.teamA.tech.isResearchedMap[Tech.CASTLE_ARCHER_4] = 1;
          }
-          userInterface.init(game.team);
-          if(!main.campaign.bossGameTipSeen && team.isAnyBossUnlocked())
-          {
-             this._bossGameTipState = 1;
-             this._bossGameTipTimer = 30;
-             this._bossGameTipDismissTimer = 0;
-             main.campaign.bossGameTipSeen = true;
-          }
-          if(team.enemyTeam.type == Team.T_GOOD)
+         userInterface.init(game.team);
+         if(!main.campaign.bossGameTipSeen && team.isAnyBossUnlocked())
+         {
+            this._bossGameTipState = 1;
+            this._bossGameTipTimer = 30;
+            this._bossGameTipDismissTimer = 0;
+            main.campaign.bossGameTipSeen = true;
+         }
+         if(team.enemyTeam.type == Team.T_GOOD)
          {
             this.enemyTeamAi = new EnemyGoodTeamAi(team.enemyTeam,main,game);
          }
@@ -417,47 +406,47 @@
          }
          this.updateShadowrathLevelDisguises();
          super.update(evt,timeDiff);
-          if(this.campaignBossMessages != null)
-          {
-             this.campaignBossMessages.update();
-          }
-          if(this._bossGameTipState == 1)
-          {
-             --this._bossGameTipTimer;
-             if(this._bossGameTipTimer <= 0)
-             {
-                this.createBossGameTip();
-                this._bossGameTipState = 2;
-             }
-          }
-          else if(this._bossGameTipState == 2)
-          {
-             if(this._bossGameTipArrow != null)
-             {
-                if(this._bossGameTipArrow.currentFrame == this._bossGameTipArrow.totalFrames)
-                {
-                   this._bossGameTipArrow.gotoAndPlay(1);
-                }
-                else
-                {
-                   this._bossGameTipArrow.nextFrame();
-                }
-             }
-             if(this._bossGameTipMessageBox != null)
-             {
-                var targetX:Number = game.stage.stageWidth / 2;
-                this._bossGameTipMessageBox.x += (targetX - this._bossGameTipMessageBox.x) * 0.4;
-             }
-             ++this._bossGameTipDismissTimer;
-             if(this._bossGameTipDismissTimer >= 300)
-             {
-                this.cleanupBossGameTip();
-             }
-          }
-          if(this.campaignDebugTools != null)
-          {
-             this.campaignDebugTools.update();
-          }
+         if(this.campaignBossMessages != null)
+         {
+            this.campaignBossMessages.update();
+         }
+         if(this._bossGameTipState == 1)
+         {
+            --this._bossGameTipTimer;
+            if(this._bossGameTipTimer <= 0)
+            {
+               this.createBossGameTip();
+               this._bossGameTipState = 2;
+            }
+         }
+         else if(this._bossGameTipState == 2)
+         {
+            if(this._bossGameTipArrow != null)
+            {
+               if(this._bossGameTipArrow.currentFrame == this._bossGameTipArrow.totalFrames)
+               {
+                  this._bossGameTipArrow.gotoAndPlay(1);
+               }
+               else
+               {
+                  this._bossGameTipArrow.nextFrame();
+               }
+            }
+            if(this._bossGameTipMessageBox != null)
+            {
+               var targetX:Number = game.stage.stageWidth / 2;
+               this._bossGameTipMessageBox.x += (targetX - this._bossGameTipMessageBox.x) * 0.4;
+            }
+            ++this._bossGameTipDismissTimer;
+            if(this._bossGameTipDismissTimer >= 300)
+            {
+               this.cleanupBossGameTip();
+            }
+         }
+         if(this.campaignDebugTools != null)
+         {
+            this.campaignDebugTools.update();
+         }
       }
       
       override public function leave() : void
@@ -565,53 +554,53 @@
          ++simulation.movesInTurn;
       }
       
-       private function createBossGameTip() : void
-       {
-          var btn:* = this.userInterface.hud.hud.bossToggle;
-          if(Boolean(btn))
-          {
-             var localPos:Point = new Point(btn.width / 2, 0);
-             var globalPos:Point = btn.localToGlobal(localPos);
-             this._bossGameTipArrow = new tutorialArrow();
-             this._bossGameTipArrow.x = globalPos.x;
-             this._bossGameTipArrow.y = globalPos.y - 40;
-             addChild(this._bossGameTipArrow);
-          }
-          this._bossGameTipMessageBox = new inGameMessageBoxMc();
-          this._bossGameTipMessageBox.text.text = "Click here or press 'B' keybind to switch from a set of normal units to boss units";
-          this._bossGameTipMessageBox.step.text = "";
-          this._bossGameTipMessageBox.tick.visible = false;
-          this._bossGameTipMessageBox.scaleX = 1.3;
-          this._bossGameTipMessageBox.scaleY = 1.3;
-          this._bossGameTipMessageBox.x = game.stage.stageWidth + this._bossGameTipMessageBox.width;
-          this._bossGameTipMessageBox.y = game.stage.stageHeight / 4 - 75;
-          addChild(this._bossGameTipMessageBox);
-       }
-
-       private function cleanupBossGameTip() : void
-       {
-          this._bossGameTipState = 0;
-          if(this._bossGameTipArrow != null)
-          {
-             if(contains(this._bossGameTipArrow))
-             {
-                removeChild(this._bossGameTipArrow);
-             }
-             this._bossGameTipArrow = null;
-          }
-          if(this._bossGameTipMessageBox != null)
-          {
-             if(contains(this._bossGameTipMessageBox))
-             {
-                removeChild(this._bossGameTipMessageBox);
-             }
-             this._bossGameTipMessageBox = null;
-          }
-       }
-
-       override public function cleanUp() : void
-       {
-          trace("Do the cleanup");
+      private function createBossGameTip() : void
+      {
+         var btn:* = this.userInterface.hud.hud.bossToggle;
+         if(Boolean(btn))
+         {
+            var localPos:Point = new Point(btn.width / 2,0);
+            var globalPos:Point = btn.localToGlobal(localPos);
+            this._bossGameTipArrow = new tutorialArrow();
+            this._bossGameTipArrow.x = globalPos.x;
+            this._bossGameTipArrow.y = globalPos.y - 40;
+            addChild(this._bossGameTipArrow);
+         }
+         this._bossGameTipMessageBox = new inGameMessageBoxMc();
+         this._bossGameTipMessageBox.text.text = "Click here or press \'B\' keybind to switch from a set of normal units to boss units";
+         this._bossGameTipMessageBox.step.text = "";
+         this._bossGameTipMessageBox.tick.visible = false;
+         this._bossGameTipMessageBox.scaleX = 1.3;
+         this._bossGameTipMessageBox.scaleY = 1.3;
+         this._bossGameTipMessageBox.x = game.stage.stageWidth + this._bossGameTipMessageBox.width;
+         this._bossGameTipMessageBox.y = game.stage.stageHeight / 4 - 75;
+         addChild(this._bossGameTipMessageBox);
+      }
+      
+      private function cleanupBossGameTip() : void
+      {
+         this._bossGameTipState = 0;
+         if(this._bossGameTipArrow != null)
+         {
+            if(contains(this._bossGameTipArrow))
+            {
+               removeChild(this._bossGameTipArrow);
+            }
+            this._bossGameTipArrow = null;
+         }
+         if(this._bossGameTipMessageBox != null)
+         {
+            if(contains(this._bossGameTipMessageBox))
+            {
+               removeChild(this._bossGameTipMessageBox);
+            }
+            this._bossGameTipMessageBox = null;
+         }
+      }
+      
+      override public function cleanUp() : void
+      {
+         trace("Do the cleanup");
          this.enemyTeamAi = null;
          this.controller = null;
          if(this.campaignPrewarmManager != null)
@@ -620,12 +609,12 @@
          }
          this.campaignMusicManager = null;
          this.campaignPrewarmManager = null;
-          if(this.campaignBossMessages != null)
-          {
-             this.campaignBossMessages.cleanUp();
-          }
-          this.cleanupBossGameTip();
-          this.campaignBossMessages = null;
+         if(this.campaignBossMessages != null)
+         {
+            this.campaignBossMessages.cleanUp();
+         }
+         this.cleanupBossGameTip();
+         this.campaignBossMessages = null;
          if(this.campaignBossSpawner != null)
          {
             this.campaignBossSpawner.cleanUp();
@@ -648,7 +637,7 @@
          this.rebelsBossQueueDebugText = "";
          super.cleanUp();
       }
-
+      
       public function showDebugBossAbility(message:String) : void
       {
          if(!this.debugModeEnabled)
@@ -660,17 +649,17 @@
             this.campaignDebugTools.showToast(message);
          }
       }
-
+      
       public function setDebugModeEnabled(value:Boolean) : void
       {
          this.debugModeEnabled = value;
       }
-
+      
       public function setDebugSpawnSet(value:int) : void
       {
          this.debugSpawnSet = value;
       }
-
+      
       public function canUseRebelsUnitedBossAbility(unit:Unit, abilityName:String = "") : Boolean
       {
          if(!this.isRebelsUnitedBossQueueEnabled() || unit == null || !unit.isBossUnit || !unit.isAlive())
@@ -680,7 +669,7 @@
          this.updateRebelsUnitedBossAbilityWave();
          return this.rebelsBossQueueActiveTypes != null && unit.type in this.rebelsBossQueueActiveTypes;
       }
-
+      
       public function shouldBlockEnemyStatueDamageWithMagikillWard(inflictor:Object) : Boolean
       {
          if(!this.isMagikillWardLevel() || this.isEnemyReinforcementShieldActive() || !this.isPlayerInflictor(inflictor) || !this.hasLivingEnemyMagikillBoss())
@@ -690,7 +679,7 @@
          this.showMagikillWardMessage();
          return true;
       }
-
+      
       private function isMagikillWardLevel() : Boolean
       {
          var title:String = null;
@@ -701,12 +690,12 @@
          title = main.campaign.getCurrentLevel().title;
          return title == LEVEL_TITLE_MAGIKILL_BOSS || title == LEVEL_TITLE_REBELS_UNITED;
       }
-
+      
       private function isPlayerInflictor(inflictor:Object) : Boolean
       {
-         return game != null && (inflictor == null || inflictor is Unit && Unit(inflictor).team == game.teamA);
+         return game != null && (inflictor == null || inflictor is Unit && inflictor.team == game.teamA);
       }
-
+      
       private function hasLivingEnemyMagikillBoss() : Boolean
       {
          var unit:Unit = null;
@@ -716,14 +705,14 @@
          }
          for each(unit in game.teamB.units)
          {
-            if(unit is Magikill && unit.isAlive() && Magikill(unit).isBoss)
+            if(unit is Magikill && unit.isAlive() && unit.isBoss)
             {
                return true;
             }
          }
          return false;
       }
-
+      
       private function showMagikillWardMessage() : void
       {
          if(this.campaignBossMessages != null)
@@ -731,7 +720,7 @@
             this.campaignBossMessages.showMagikillWard();
          }
       }
-
+      
       public function showMedusaLookAtMeMessage() : void
       {
          if(this.campaignBossMessages != null)
@@ -739,12 +728,12 @@
             this.campaignBossMessages.showMedusaLookAtMe();
          }
       }
-
+      
       private function isRebelsUnitedBossQueueEnabled() : Boolean
       {
          return game != null && main != null && main.campaign != null && main.campaign.getCurrentLevel() != null && main.campaign.getCurrentLevel().title == LEVEL_TITLE_REBELS_UNITED;
       }
-
+      
       private function updateRebelsUnitedBossAbilityWave() : void
       {
          if(game == null)
@@ -757,7 +746,7 @@
          }
          this.chooseRebelsUnitedBossAbilityWave();
       }
-
+      
       private function chooseRebelsUnitedBossAbilityWave() : void
       {
          var candidates:Array = this.getLivingRebelsUnitedBossTypes();
@@ -777,9 +766,11 @@
          while(selected.length < slots && candidates.length > 0)
          {
             totalWeight = 0;
-            for(i = 0; i < candidates.length; i++)
+            i = 0;
+            while(i < candidates.length)
             {
                totalWeight += this.getRebelsUnitedBossQueueWeight(int(candidates[i]));
+               i++;
             }
             if(totalWeight <= 0)
             {
@@ -789,7 +780,8 @@
             {
                roll = Math.abs(game.random.nextInt()) % totalWeight;
                running = 0;
-               for(i = 0; i < candidates.length; i++)
+               i = 0;
+               while(i < candidates.length)
                {
                   running += this.getRebelsUnitedBossQueueWeight(int(candidates[i]));
                   if(roll < running)
@@ -797,6 +789,7 @@
                      type = int(candidates.splice(i,1)[0]);
                      break;
                   }
+                  i++;
                }
             }
             selected.push(type);
@@ -814,7 +807,7 @@
          this.rebelsBossQueueDebugText = this.getRebelsUnitedBossQueueNames(selected);
          this.rebelsBossQueueWaveUntilFrame = game.frame + REBELS_BOSS_QUEUE_WAVE_FRAMES;
       }
-
+      
       private function getRebelsUnitedBossQueueWeight(type:int) : int
       {
          var age:int = 0;
@@ -833,7 +826,7 @@
          }
          return 100;
       }
-
+      
       private function getLivingRebelsUnitedBossTypes() : Array
       {
          var unit:Unit = null;
@@ -845,21 +838,20 @@
          }
          for each(unit in game.teamB.units)
          {
-            if(unit == null || !unit.isAlive() || !unit.isBossUnit || !this.isRebelsUnitedQueueBossType(unit.type) || unit.type in seen)
+            if(!(unit == null || !unit.isAlive() || !unit.isBossUnit || !this.isRebelsUnitedQueueBossType(unit.type) || unit.type in seen))
             {
-               continue;
+               seen[unit.type] = true;
+               result.push(unit.type);
             }
-            seen[unit.type] = true;
-            result.push(unit.type);
          }
          return result;
       }
-
+      
       private function isRebelsUnitedQueueBossType(type:int) : Boolean
       {
          return type == Unit.U_SPEARTON || type == Unit.U_ARCHER || type == Unit.U_NINJA || type == Unit.U_MAGIKILL || type == Unit.U_MONK;
       }
-
+      
       private function getRebelsUnitedBossQueueNames(types:Array) : String
       {
          var names:Array = [];
@@ -874,7 +866,7 @@
          }
          return names.join(", ");
       }
-
+      
       private function getRebelsUnitedBossName(type:int) : String
       {
          switch(type)
@@ -898,12 +890,12 @@
       {
          return false;
       }
-
+      
       public function get campaignController() : CampaignController
       {
          return this.controller;
       }
-
+      
       private function unlockAllPlayerOrderUnits() : void
       {
          game.teamA.unitsAvailable[Unit.U_MINER] = 1;
@@ -916,7 +908,7 @@
          game.teamA.unitsAvailable[Unit.U_MAGIKILL] = 1;
          game.teamA.unitsAvailable[Unit.U_ENSLAVED_GIANT] = 1;
       }
-
+      
       private function getCampaignPointReward(level:Level) : int
       {
          if(level == null)
@@ -925,7 +917,7 @@
          }
          return level.points;
       }
-
+      
       private function tryTriggerCampaignReinforcements() : void
       {
          if(this.campaignReinforcementManager != null)
@@ -933,7 +925,7 @@
             this.campaignReinforcementManager.tryTrigger();
          }
       }
-
+      
       private function getCampaignReinforcementsForLevel(title:String, difficulty:int) : Array
       {
          if(this.campaignReinforcementManager != null)
@@ -942,7 +934,7 @@
          }
          return null;
       }
-
+      
       private function spawnEnemyReinforcements(unitTypes:Array) : void
       {
          if(this.campaignReinforcementManager != null)
@@ -950,25 +942,25 @@
             this.campaignReinforcementManager.spawnEnemyReinforcements(unitTypes);
          }
       }
-
+      
       private function spawnShadowrathFlankReinforcements(difficulty:int) : void
       {
       }
-
+      
       private function getShadowrathFlankCount(difficulty:int) : int
       {
          return difficulty == Campaign.D_NORMAL ? 2 : 3;
       }
-
+      
       private function getShadowrathFlankSpawnX() : Number
       {
          return team != null ? team.medianPosition : 0;
       }
-
+      
       private function activateEnemyReinforcementShield() : void
       {
       }
-
+      
       private function getEnemyReinforcementShieldFrames() : int
       {
          if(main == null || main.campaign == null)
@@ -985,17 +977,17 @@
          }
          return 150;
       }
-
+      
       public function isEnemyReinforcementShieldActive() : Boolean
       {
          return this.campaignReinforcementManager != null && this.campaignReinforcementManager.isShieldActive();
       }
-
+      
       private function shouldPromoteWestwindBoss(unitType:int, spawnedCount:int) : Boolean
       {
          return this.campaignBossSpawner != null && this.campaignBossSpawner.shouldPromoteWestwindBoss(unitType,spawnedCount);
       }
-
+      
       private function configureWestwindBoss(unit:Unit) : void
       {
          if(this.campaignBossSpawner != null)
@@ -1003,17 +995,17 @@
             this.campaignBossSpawner.configureWestwindBoss(unit);
          }
       }
-
+      
       private function isFactionBossLevel(title:String) : Boolean
       {
          return this.campaignBossSpawner != null && this.campaignBossSpawner.isFactionBossLevel(title);
       }
-
+      
       private function shouldPromoteFactionBoss(title:String, unitType:int, spawnedCount:int) : Boolean
       {
          return this.campaignBossSpawner != null && this.campaignBossSpawner.shouldPromoteFactionBoss(title,unitType,spawnedCount);
       }
-
+      
       private function configureFactionBoss(unit:Unit, title:String = "") : void
       {
          if(this.campaignBossSpawner != null)
@@ -1021,7 +1013,7 @@
             this.campaignBossSpawner.configureFactionBoss(unit,title);
          }
       }
-
+      
       private function playReinforcementSpawnEffects() : void
       {
          if(game == null || game.soundManager == null)
@@ -1032,7 +1024,7 @@
          game.soundManager.playSoundFullVolume("Rage2");
          game.soundManager.playSoundFullVolume("Rage3");
       }
-
+      
       private function grantWestwindBossResearch() : void
       {
          if(this.campaignBossSpawner != null)
@@ -1040,7 +1032,7 @@
             this.campaignBossSpawner.grantWestwindBossResearch();
          }
       }
-
+      
       private function grantFactionBossResearch(title:String) : void
       {
          if(this.campaignBossSpawner != null)
@@ -1048,12 +1040,12 @@
             this.campaignBossSpawner.grantFactionBossResearch(title);
          }
       }
-
+      
       private function isShadowrathDisguiseLevelActive() : Boolean
       {
          return main != null && main.campaign != null && main.campaign.getCurrentLevel() != null && main.campaign.getCurrentLevel().title == SHADOWRATH_LEVEL_TITLE;
       }
-
+      
       private function updateShadowrathLevelDisguises() : void
       {
          var unit:Unit = null;
@@ -1084,18 +1076,18 @@
          snapshot = game.teamB.units.concat();
          for each(unit in snapshot)
          {
-            if(unit is Miner && Miner(unit).isShadowrathDisguise)
+            if(unit is Miner && unit.isShadowrathDisguise)
             {
-               ++disguisedCount;
+               disguisedCount++;
             }
-            else if(unit is Ninja && this.canShadowrathDisguise(Ninja(unit)))
+            else if(unit is Ninja && this.canShadowrathDisguise(unit))
             {
-               this.tryDisguiseShadowrath(Ninja(unit));
+               this.tryDisguiseShadowrath(unit);
             }
          }
          this.cachedDisguisedShadowrathCount = disguisedCount;
       }
-
+      
       private function updateShadowrathDisguiseCooldowns() : void
       {
          var unitId:String = null;
@@ -1127,7 +1119,7 @@
             }
          }
       }
-
+      
       private function processShadowrathRevealQueue() : void
       {
          var i:int = 0;
@@ -1139,7 +1131,7 @@
             entry.delay -= 1;
             if(entry.delay > 0)
             {
-               ++i;
+               i++;
             }
             else
             {
@@ -1153,25 +1145,25 @@
             }
          }
       }
-
+      
       private function queueRevealAllShadowrathFakeMiners() : void
       {
          var unit:Unit = null;
          var delay:int = 0;
          for each(unit in game.teamB.units)
          {
-            if(unit is Miner && Miner(unit).isShadowrathDisguise && !(unit.id in this.shadowrathRevealQueued))
+            if(unit is Miner && unit.isShadowrathDisguise && !(unit.id in this.shadowrathRevealQueued))
             {
                this.shadowrathRevealQueued[unit.id] = true;
                this.shadowrathRevealQueue.push({
-                  unitId: unit.id,
-                  delay: delay
+                  "unitId":unit.id,
+                  "delay":delay
                });
                delay += SHADOWRATH_REVEAL_STAGGER_FRAMES;
             }
          }
       }
-
+      
       private function startShadowrathRevealChain(trigger:Miner) : void
       {
          var unit:Unit = null;
@@ -1184,25 +1176,25 @@
          {
             this.shadowrathRevealQueued[trigger.id] = true;
             this.shadowrathRevealQueue.push({
-               unitId: trigger.id,
-               delay: 0
+               "unitId":trigger.id,
+               "delay":0
             });
          }
          delay = SHADOWRATH_REVEAL_STAGGER_FRAMES;
          for each(unit in game.teamB.units)
          {
-            if(unit is Miner && unit != trigger && Miner(unit).isShadowrathDisguise && !(unit.id in this.shadowrathRevealQueued))
+            if(unit is Miner && unit != trigger && unit.isShadowrathDisguise && !(unit.id in this.shadowrathRevealQueued))
             {
                this.shadowrathRevealQueued[unit.id] = true;
                this.shadowrathRevealQueue.push({
-                  unitId: unit.id,
-                  delay: delay
+                  "unitId":unit.id,
+                  "delay":delay
                });
                delay += SHADOWRATH_REVEAL_STAGGER_FRAMES;
             }
          }
       }
-
+      
       public function onShadowrathFakeMinerDamaged(miner:Miner) : void
       {
          if(miner == null || game == null || game.teamB == null || !this.isShadowrathDisguiseLevelActive() || !miner.isShadowrathDisguise || miner.team != game.teamB)
@@ -1211,7 +1203,7 @@
          }
          this.startShadowrathRevealChain(miner);
       }
-
+      
       private function canShadowrathDisguise(ninja:Ninja) : Boolean
       {
          if(ninja == null || !ninja.isAlive() || ninja.isGarrisoned || ninja.team != game.teamB)
@@ -1240,7 +1232,7 @@
          }
          return true;
       }
-
+      
       private function tryDisguiseShadowrath(ninja:Ninja, forceDebug:Boolean = false) : Boolean
       {
          var miner:Miner = null;
@@ -1249,7 +1241,7 @@
          {
             return false;
          }
-         miner = Miner(game.unitFactory.getUnit(Unit.U_MINER));
+         miner = game.unitFactory.getUnit(Unit.U_MINER);
          game.teamB.spawn(miner,game);
          miner.x = miner.px = ninja.px;
          miner.y = miner.py = ninja.py;
@@ -1263,9 +1255,9 @@
                game.teamB.removeUnitCompletely(miner,game);
                return false;
             }
-            MinerAi(miner.ai).targetOre = null;
-            MinerAi(miner.ai).isUnassigned = false;
-            MinerAi(miner.ai).isGoingForOre = false;
+            miner.ai.targetOre = null;
+            miner.ai.isUnassigned = false;
+            miner.ai.isGoingForOre = false;
             moveCommand = new MoveCommand(game);
             moveCommand.type = UnitCommand.MOVE;
             moveCommand.goalX = miner.px;
@@ -1284,7 +1276,7 @@
          ++this.cachedDisguisedShadowrathCount;
          return true;
       }
-
+      
       private function revealShadowrathFakeMiner(miner:Miner) : Ninja
       {
          var ninja:Ninja = null;
@@ -1296,8 +1288,8 @@
          }
          healthRatio = miner.maxHealth > 0 ? miner.health / miner.maxHealth : 1;
          healthRatio = Math.max(0.25,Math.min(1,healthRatio));
-         MinerAi(miner.ai).targetOre = null;
-         ninja = Ninja(game.unitFactory.getUnit(Unit.U_NINJA));
+         miner.ai.targetOre = null;
+         ninja = game.unitFactory.getUnit(Unit.U_NINJA);
          game.teamB.spawn(ninja,game);
          ninja.x = ninja.px = miner.px;
          ninja.y = ninja.py = miner.py;
@@ -1323,27 +1315,27 @@
          this.setShadowrathDisguiseCooldown(ninja.id,SHADOWRATH_REDISGUISE_COOLDOWN_FRAMES);
          return ninja;
       }
-
+      
       private function assignFakeMinerSlot(miner:Miner) : Boolean
       {
          var goldOre:Ore = this.getFreeGoldOreForEnemyMiner(miner);
          if(goldOre != null && goldOre.reserveMiningSpot(miner))
          {
-            MinerAi(miner.ai).isUnassigned = false;
-            MinerAi(miner.ai).isGoingForOre = true;
-            MinerAi(miner.ai).targetOre = goldOre;
+            miner.ai.isUnassigned = false;
+            miner.ai.isGoingForOre = true;
+            miner.ai.targetOre = goldOre;
             return true;
          }
          if(!miner.team.statue.isMineFull() && miner.team.statue.reserveMiningSpot(miner))
          {
-            MinerAi(miner.ai).isUnassigned = false;
-            MinerAi(miner.ai).isGoingForOre = false;
-            MinerAi(miner.ai).targetOre = miner.team.statue;
+            miner.ai.isUnassigned = false;
+            miner.ai.isGoingForOre = false;
+            miner.ai.targetOre = miner.team.statue;
             return true;
          }
          return false;
       }
-
+      
       private function resolveShadowrathFakeMinerPriority() : void
       {
          var unit:Unit = null;
@@ -1351,9 +1343,9 @@
          var needsSlot:Boolean = false;
          for each(unit in game.teamB.units)
          {
-            if(unit is Miner && !Miner(unit).isShadowrathDisguise)
+            if(unit is Miner && !unit.isShadowrathDisguise)
             {
-               if(MinerAi(unit.ai).targetOre == null)
+               if(unit.ai.targetOre == null)
                {
                   needsSlot = true;
                   break;
@@ -1366,19 +1358,18 @@
          }
          for each(unit in game.teamB.units)
          {
-            if(!(unit is Miner) || !Miner(unit).isShadowrathDisguise)
+            if(!(!(unit is Miner) || !unit.isShadowrathDisguise))
             {
-               continue;
+               miner = unit;
+               if(!this.reassignFakeMinerSlot(miner))
+               {
+                  this.startShadowrathRevealChain(miner);
+               }
+               break;
             }
-            miner = Miner(unit);
-            if(!this.reassignFakeMinerSlot(miner))
-            {
-               this.startShadowrathRevealChain(miner);
-            }
-            break;
          }
       }
-
+      
       private function reassignFakeMinerSlot(miner:Miner) : Boolean
       {
          var goldOre:Ore = null;
@@ -1387,32 +1378,32 @@
             return false;
          }
          goldOre = this.getFreeGoldOreForEnemyMiner(miner);
-         if(goldOre != null && goldOre != MinerAi(miner.ai).targetOre && goldOre.reserveMiningSpot(miner))
+         if(goldOre != null && goldOre != miner.ai.targetOre && goldOre.reserveMiningSpot(miner))
          {
-            MinerAi(miner.ai).isUnassigned = false;
-            MinerAi(miner.ai).isGoingForOre = true;
-            MinerAi(miner.ai).targetOre = goldOre;
+            miner.ai.isUnassigned = false;
+            miner.ai.isGoingForOre = true;
+            miner.ai.targetOre = goldOre;
             return true;
          }
-         if(MinerAi(miner.ai).targetOre != miner.team.statue && this.moveFakeMinerToPrayer(miner))
+         if(miner.ai.targetOre != miner.team.statue && this.moveFakeMinerToPrayer(miner))
          {
             return true;
          }
          return false;
       }
-
+      
       private function moveFakeMinerToPrayer(miner:Miner) : Boolean
       {
          if(miner == null || miner.team.statue.isMineFull() || !miner.team.statue.reserveMiningSpot(miner))
          {
             return false;
          }
-         MinerAi(miner.ai).isUnassigned = false;
-         MinerAi(miner.ai).isGoingForOre = false;
-         MinerAi(miner.ai).targetOre = miner.team.statue;
+         miner.ai.isUnassigned = false;
+         miner.ai.isGoingForOre = false;
+         miner.ai.targetOre = miner.team.statue;
          return true;
       }
-
+      
       private function getFreeGoldOreForEnemyMiner(miner:Miner) : Ore
       {
          var i:int = 0;
@@ -1420,53 +1411,59 @@
          {
             return null;
          }
-         if(miner.team.direction == 1)
+         if(miner.team.direction != 1)
          {
-            for(i = 0; i < game.map.gold.length / 2; i++)
+            i = game.map.gold.length - 1;
+            while(true)
             {
-               if(!game.map.gold[i].isMineFull())
+               if(i >= game.map.gold.length / 2)
                {
-                  return game.map.gold[i];
+                  if(!game.map.gold[i].isMineFull())
+                  {
+                     break;
+                  }
+                  i--;
+                  continue;
                }
             }
+            return game.map.gold[i];
          }
-         else
+         i = 0;
+         while(i < game.map.gold.length / 2)
          {
-            for(i = game.map.gold.length - 1; i >= game.map.gold.length / 2; i--)
+            if(!game.map.gold[i].isMineFull())
             {
-               if(!game.map.gold[i].isMineFull())
-               {
-                  return game.map.gold[i];
-               }
+               return game.map.gold[i];
             }
+            i++;
          }
          return null;
       }
-
+      
       private function getDisguisedMinerById(unitId:int) : Miner
       {
-         if(game != null && unitId in game.units && game.units[unitId] is Miner && Miner(game.units[unitId]).isShadowrathDisguise)
+         if(game != null && unitId in game.units && game.units[unitId] is Miner && game.units[unitId].isShadowrathDisguise)
          {
-            return Miner(game.units[unitId]);
+            return game.units[unitId];
          }
          return null;
       }
-
+      
       private function getShadowrathDisguiseCooldown(unitId:int) : int
       {
          return unitId in this.shadowrathDisguiseCooldowns ? int(this.shadowrathDisguiseCooldowns[unitId]) : 0;
       }
-
+      
       private function setShadowrathDisguiseCooldown(unitId:int, frames:int) : void
       {
          this.shadowrathDisguiseCooldowns[unitId] = frames;
       }
-
+      
       private function setShadowrathDisguiseLock(unitId:int, frames:int) : void
       {
          this.shadowrathDisguiseLockUntil[unitId] = game != null ? game.frame + frames : frames;
       }
-
+      
       private function hasShadowrathDisguiseLock(unitId:int) : Boolean
       {
          if(!(unitId in this.shadowrathDisguiseLockUntil))
@@ -1475,7 +1472,7 @@
          }
          return game != null && int(this.shadowrathDisguiseLockUntil[unitId]) > game.frame;
       }
-
+      
       private function applyShadowrathInitialDisguiseCooldown() : void
       {
          var unit:Unit = null;
@@ -1487,7 +1484,7 @@
             }
          }
       }
-
+      
       private function applyInitialShadowrathSpawnLocks() : void
       {
          var unit:Unit = null;
@@ -1500,7 +1497,7 @@
             }
          }
       }
-
+      
       private function isEnemyNearUnit(unit:Unit, rangeX:Number, rangeY:Number) : Boolean
       {
          var enemy:Unit = null;
@@ -1513,12 +1510,12 @@
          }
          return false;
       }
-
+      
       public function spawnDebugKnightBoss() : void
       {
          var boss:Unit = null;
-         var spawnX:Number = NaN;
-         var spawnY:Number = NaN;
+         var spawnX:Number = Number(NaN);
+         var spawnY:Number = Number(NaN);
          if(game == null || game.teamB == null || game.teamB.tech == null)
          {
             return;
@@ -1532,7 +1529,7 @@
          game.teamB.spawn(boss,game);
          if(boss is Knight)
          {
-            Knight(boss).makeBoss();
+            boss.makeBoss();
          }
          boss.isBossMovementLocked = false;
          spawnX = game.teamB.homeX + game.teamB.direction * 180;
@@ -1546,7 +1543,7 @@
          game.projectileManager.initSpawnDrip(spawnX,spawnY,game.teamB);
          game.soundManager.playSoundFullVolume("Rage1");
       }
-
+      
       public function damageDebugEnemyStatue(amount:Number) : void
       {
          if(game == null || game.teamB == null || game.teamB.statue == null)
@@ -1556,12 +1553,12 @@
          game.teamB.statue.health = Math.max(1,game.teamB.statue.health - amount);
          this.showDebugBossAbility("DEBUG: Enemy statue -" + amount + " HP");
       }
-
+      
       public function spawnDebugAlliedUnit(unitType:int, count:int) : void
       {
          var ally:Unit = null;
-         var spawnX:Number = NaN;
-         var spawnY:Number = NaN;
+         var spawnX:Number = Number(NaN);
+         var spawnY:Number = Number(NaN);
          var i:int = 0;
          var attackMoveCommand:AttackMoveCommand = null;
          if(game == null || game.teamA == null || game.teamB == null)
@@ -1574,7 +1571,8 @@
          }
          spawnX = game.teamA.homeX + game.teamA.direction * 220;
          spawnY = game.map.height / 2;
-         for(i = 0; i < count; i++)
+         i = 0;
+         while(i < count)
          {
             ally = game.unitFactory.getUnit(unitType);
             game.teamA.spawn(ally,game);
@@ -1590,14 +1588,15 @@
             attackMoveCommand.realX = game.teamB.statue.px;
             attackMoveCommand.realY = game.map.height / 2;
             ally.ai.setCommand(game,attackMoveCommand);
+            i++;
          }
       }
-
+      
       public function spawnDebugAlliedGroupAtBase(unitTypes:Array) : void
       {
          var ally:Unit = null;
-         var spawnX:Number = NaN;
-         var spawnY:Number = NaN;
+         var spawnX:Number = Number(NaN);
+         var spawnY:Number = Number(NaN);
          var i:int = 0;
          var attackMoveCommand:AttackMoveCommand = null;
          if(game == null || game.teamA == null || game.teamB == null)
@@ -1610,7 +1609,8 @@
          }
          spawnX = game.teamA.homeX + game.teamA.direction * 220;
          spawnY = game.map.height / 2;
-         for(i = 0; i < unitTypes.length; i++)
+         i = 0;
+         while(i < unitTypes.length)
          {
             ally = game.unitFactory.getUnit(int(unitTypes[i]));
             game.teamA.spawn(ally,game);
@@ -1626,16 +1626,17 @@
             attackMoveCommand.realX = game.teamB.statue.px;
             attackMoveCommand.realY = game.map.height / 2;
             ally.ai.setCommand(game,attackMoveCommand);
+            i++;
          }
       }
-
+      
       public function spawnDebugBoss(unitType:int) : void
       {
          var boss:Unit = null;
          var ally:Unit = null;
-         var spawnX:Number = NaN;
-         var spawnY:Number = NaN;
-         var offsetY:Number = NaN;
+         var spawnX:Number = Number(NaN);
+         var spawnY:Number = Number(NaN);
+         var offsetY:Number = Number(NaN);
          var i:int = 0;
          if(game == null || game.teamB == null)
          {
@@ -1661,7 +1662,8 @@
          game.soundManager.playSoundFullVolume("Rage1");
          if(unitType == Unit.U_SPEARTON)
          {
-            for(i = 0; i < 2; i++)
+            i = 0;
+            while(i < 2)
             {
                ally = game.unitFactory.getUnit(Unit.U_SPEARTON);
                game.teamB.spawn(ally,game);
@@ -1670,17 +1672,18 @@
                ally.y = ally.py = spawnY + offsetY;
                game.teamB.population += ally.population;
                this.applyDebugFrozenAttackModeToUnit(ally);
+               i++;
             }
          }
       }
-
+      
       public function spawnDebugThumbnailBossLineup() : void
       {
          var bossTypes:Array = [Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_NINJA,Unit.U_MAGIKILL,Unit.U_MONK,Unit.U_KNIGHT,Unit.U_WINGIDON,Unit.U_SKELATOR,Unit.U_MEDUSA];
          var boss:Unit = null;
          var standCommand:StandCommand = null;
-         var spawnX:Number = NaN;
-         var spawnY:Number = NaN;
+         var spawnX:Number = Number(NaN);
+         var spawnY:Number = Number(NaN);
          var i:int = 0;
          if(game == null || game.teamA == null)
          {
@@ -1691,7 +1694,8 @@
          this.clearDebugThumbnailStage();
          spawnX = game.teamA.homeX + game.teamA.direction * 520;
          spawnY = game.map.height / 2;
-         for(i = 0; i < bossTypes.length; i++)
+         i = 0;
+         while(i < bossTypes.length)
          {
             this.ensureDebugUnitGroup(game.teamA,int(bossTypes[i]));
             boss = game.unitFactory.getUnit(int(bossTypes[i]));
@@ -1704,10 +1708,11 @@
             standCommand = new StandCommand(game);
             boss.ai.setCommand(game,standCommand);
             game.teamA.population += boss.population;
+            i++;
          }
          this.showDebugBossAbility("DEBUG: Thumbnail boss lineup spawned");
       }
-
+      
       private function clearDebugThumbnailStage() : void
       {
          var ore:Ore = null;
@@ -1724,7 +1729,7 @@
             {
                if(ore is Gold)
                {
-                  gold = Gold(ore);
+                  gold = ore;
                   gold.ore.visible = false;
                   gold.frontOre.visible = false;
                   gold.ore.mouseEnabled = false;
@@ -1757,7 +1762,7 @@
             }
          }
       }
-
+      
       private function ensureDebugUnitGroup(targetTeam:Team, unitType:int) : void
       {
          if(targetTeam == null || targetTeam.unitGroups == null)
@@ -1769,7 +1774,7 @@
             targetTeam.unitGroups[unitType] = [];
          }
       }
-
+      
       private function configureThumbnailBoss(unit:Unit) : void
       {
          if(unit == null)
@@ -1778,12 +1783,12 @@
          }
          if(unit is Medusa)
          {
-            Medusa(unit).enableSuperMedusa();
+            unit.enableSuperMedusa();
             return;
          }
          this.configureWestwindBoss(unit);
       }
-
+      
       private function commandDebugBossForCurrentArmyState(boss:Unit) : void
       {
          var attackMoveCommand:AttackMoveCommand = null;
@@ -1808,12 +1813,12 @@
          attackMoveCommand.realY = attackMoveCommand.goalY;
          boss.ai.setCommand(game,attackMoveCommand);
       }
-
+      
       private function spawnDebugEnemy(unitType:int) : void
       {
          var enemy:Unit = null;
-         var spawnX:Number = NaN;
-         var spawnY:Number = NaN;
+         var spawnX:Number = Number(NaN);
+         var spawnY:Number = Number(NaN);
          var attackMoveCommand:AttackMoveCommand = null;
          if(game == null || game.teamB == null)
          {
@@ -1843,12 +1848,12 @@
          enemy.ai.setCommand(game,attackMoveCommand);
          this.applyDebugFrozenAttackModeToUnit(enemy);
       }
-
+      
       public function spawnDebugEnemyAtBase(unitType:int, count:int) : void
       {
          var enemy:Unit = null;
-         var spawnX:Number = NaN;
-         var spawnY:Number = NaN;
+         var spawnX:Number = Number(NaN);
+         var spawnY:Number = Number(NaN);
          var i:int = 0;
          if(game == null || game.teamB == null)
          {
@@ -1860,7 +1865,8 @@
          }
          spawnX = game.teamB.homeX + game.teamB.direction * 220;
          spawnY = game.map.height / 2;
-         for(i = 0; i < count; i++)
+         i = 0;
+         while(i < count)
          {
             enemy = game.unitFactory.getUnit(unitType);
             game.teamB.spawn(enemy,game);
@@ -1870,14 +1876,15 @@
             game.projectileManager.initTowerSpawn(enemy.px,enemy.py,game.teamB,0.6);
             game.projectileManager.initSpawnDrip(enemy.px,enemy.py,game.teamB);
             this.applyDebugFrozenAttackModeToUnit(enemy);
+            i++;
          }
       }
-
+      
       public function spawnDebugEnemyGroupAtBase(unitTypes:Array) : void
       {
          var enemy:Unit = null;
-         var spawnX:Number = NaN;
-         var spawnY:Number = NaN;
+         var spawnX:Number = Number(NaN);
+         var spawnY:Number = Number(NaN);
          var i:int = 0;
          if(game == null || game.teamB == null)
          {
@@ -1889,7 +1896,8 @@
          }
          spawnX = game.teamB.homeX + game.teamB.direction * 220;
          spawnY = game.map.height / 2;
-         for(i = 0; i < unitTypes.length; i++)
+         i = 0;
+         while(i < unitTypes.length)
          {
             enemy = game.unitFactory.getUnit(int(unitTypes[i]));
             game.teamB.spawn(enemy,game);
@@ -1899,9 +1907,10 @@
             game.projectileManager.initTowerSpawn(enemy.px,enemy.py,game.teamB,0.6);
             game.projectileManager.initSpawnDrip(enemy.px,enemy.py,game.teamB);
             this.applyDebugFrozenAttackModeToUnit(enemy);
+            i++;
          }
       }
-
+      
       public function toggleDebugEnemyAiFreezeAttackMode() : void
       {
          if(game == null || game.teamB == null)
@@ -1931,7 +1940,7 @@
             this.showDebugBossAbility("DEBUG: Enemy AI resumed");
          }
       }
-
+      
       private function forceDebugEnemyArmyAttackMove() : void
       {
          var unit:Unit = null;
@@ -1945,7 +1954,7 @@
             this.applyDebugFrozenAttackModeToUnit(unit);
          }
       }
-
+      
       private function unlockDebugEnemyArmyMovement() : void
       {
          var unit:Unit = null;
@@ -1961,7 +1970,7 @@
             }
          }
       }
-
+      
       private function applyDebugFrozenAttackModeToUnit(unit:Unit) : void
       {
          var attackMoveCommand:AttackMoveCommand = null;
@@ -1978,7 +1987,7 @@
          attackMoveCommand.realY = game.map.height / 2;
          unit.ai.setCommand(game,attackMoveCommand);
       }
-
+      
       private function canDebugSpawnUnitGroupOnTeam(unitTypes:Array, targetTeam:Team) : Boolean
       {
          var unitType:int = 0;
@@ -1995,7 +2004,7 @@
          }
          return true;
       }
-
+      
       private function canDebugSpawnUnitOnTeam(unitType:int, targetTeam:Team) : Boolean
       {
          var expectedTeam:int = this.getDebugUnitTeamType(unitType);
@@ -2010,7 +2019,7 @@
          }
          return true;
       }
-
+      
       private function getDebugUnitTeamType(unitType:int) : int
       {
          switch(unitType)
@@ -2039,7 +2048,7 @@
                return -1;
          }
       }
-
+      
       public function killEnemyUnitsAndLockTraining() : void
       {
          var unit:Unit = null;
@@ -2069,7 +2078,7 @@
          }
          this.showDebugBossAbility("DEBUG: Enemy units killed; training locked");
       }
-
+      
       private function handleDebugHotkeys() : void
       {
          if(this.campaignDebugTools != null)
@@ -2077,7 +2086,7 @@
             this.campaignDebugTools.handleHotkeys();
          }
       }
-
+      
       private function playDebugBackgroundMusic(name:String) : void
       {
          if(game == null || game.soundManager == null)
@@ -2087,17 +2096,17 @@
          game.soundManager.playSoundInBackground(name);
          this.showDebugBossAbility("DEBUG MUSIC: " + name);
       }
-
+      
       private function getDebugSpawnSetName() : String
       {
          return this.debugSpawnSet == DEBUG_SET_CHAOS ? "Chaos" : "Order";
       }
-
+      
       private function formatNumber(value:Number) : String
       {
          return value.toFixed(1);
       }
-
+      
       private function describeAttackState(state:int) : String
       {
          if(state == Team.G_ATTACK)
@@ -2110,7 +2119,7 @@
          }
          return "IDLE";
       }
-
+      
       private function getUnitCount(targetTeam:Team) : int
       {
          var count:int = 0;
@@ -2123,22 +2132,22 @@
          {
             if(unit != null && unit.isAlive())
             {
-               ++count;
+               count++;
             }
          }
          return count;
       }
-
+      
       private function getProjectileCount() : int
       {
          return game != null && game.projectileManager != null && game.projectileManager.projectiles != null ? game.projectileManager.projectiles.length : 0;
       }
-
+      
       private function getAirEffectCount() : int
       {
          return game != null && game.projectileManager != null && game.projectileManager.airEffects != null ? game.projectileManager.airEffects.length : 0;
       }
-
+      
       private function triggerDebugSpeartonBossSpecial() : void
       {
          var unit:Unit = null;
@@ -2149,15 +2158,15 @@
          this.grantWestwindBossResearch();
          for each(unit in game.teamB.units)
          {
-            if(unit is Spearton && Spearton(unit).isBoss && unit.isAlive())
+            if(unit is Spearton && unit.isBoss && unit.isAlive())
             {
-               Spearton(unit).resetBossSpecialDebugState();
-               Spearton(unit).tryBossBraceShieldSlam();
+               unit.resetBossSpecialDebugState();
+               unit.tryBossBraceShieldSlam();
                break;
             }
          }
       }
-
+      
       private function triggerDebugShadowrathEscapeEffect() : void
       {
          var unit:Unit = null;
@@ -2167,7 +2176,7 @@
          }
          for each(unit in game.teamB.units)
          {
-            if(unit is Ninja && Ninja(unit).isBoss && unit.isAlive())
+            if(unit is Ninja && unit.isBoss && unit.isAlive())
             {
                game.projectileManager.initWallExplosion(unit.px,unit.py,game.teamB);
                game.soundManager.playSound("mediumExplosion3",unit.px,unit.py);
@@ -2175,7 +2184,7 @@
             }
          }
       }
-
+      
       public function toggleDebugFullVision() : void
       {
          if(game == null || game.fogOfWar == null)
@@ -2185,17 +2194,17 @@
          this.debugFullVisionEnabled = !this.debugFullVisionEnabled;
          game.fogOfWar.isFogOn = !this.debugFullVisionEnabled;
       }
-
+      
       public function get isDebugFullVisionEnabled() : Boolean
       {
          return this.debugFullVisionEnabled;
       }
-
+      
       public function spawnDebugShadowrathAtEnemyBase() : void
       {
          var enemy:Unit = null;
-         var spawnX:Number = NaN;
-         var spawnY:Number = NaN;
+         var spawnX:Number = Number(NaN);
+         var spawnY:Number = Number(NaN);
          var moveCommand:MoveCommand = null;
          if(game == null || game.teamB == null)
          {
@@ -2224,7 +2233,7 @@
          enemy.ai.setCommand(game,moveCommand);
          this.applyDebugFrozenAttackModeToUnit(enemy);
       }
-
+      
       private function triggerDebugShadowrathDisguise() : void
       {
          var unit:Unit = null;
@@ -2240,11 +2249,11 @@
             {
                delete this.shadowrathDisguiseCooldowns[unit.id];
                delete this.shadowrathDisguiseLockUntil[unit.id];
-               this.tryDisguiseShadowrath(Ninja(unit),true);
+               this.tryDisguiseShadowrath(unit,true);
             }
          }
       }
-
+      
       public function getDisguisedShadowrathCount() : int
       {
          if(game == null || game.teamB == null)
@@ -2253,7 +2262,7 @@
          }
          return this.cachedDisguisedShadowrathCount;
       }
-
+      
       public function revealShadowrathDisguises(limit:int = -1) : int
       {
          var unit:Unit = null;
@@ -2267,22 +2276,19 @@
          snapshot = game.teamB.units.concat();
          for each(unit in snapshot)
          {
-            if(!(unit is Miner) || !Miner(unit).isShadowrathDisguise || !unit.isAlive())
+            if(!(!(unit is Miner) || !unit.isShadowrathDisguise || !unit.isAlive()))
             {
-               continue;
-            }
-            miner = Miner(unit);
-            this.revealShadowrathFakeMiner(miner);
-            ++revealed;
-            if(limit >= 0 && revealed >= limit)
-            {
-               break;
+               miner = unit;
+               this.revealShadowrathFakeMiner(miner);
+               revealed++;
+               if(limit >= 0 && revealed >= limit)
+               {
+                  break;
+               }
             }
          }
          return revealed;
       }
    }
 }
-
-
 

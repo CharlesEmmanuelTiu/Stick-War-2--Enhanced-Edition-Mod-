@@ -1,10 +1,11 @@
-﻿package com.brockw.stickwar.engine.Ai
+package com.brockw.stickwar.engine.Ai
 {
    import com.brockw.stickwar.engine.StickWar;
    import com.brockw.stickwar.engine.units.Undead;
    
    public class UndeadAi extends UnitAi
    {
+      
       public function UndeadAi(s:Undead)
       {
          super();
@@ -17,3 +18,4 @@
       }
    }
 }
+

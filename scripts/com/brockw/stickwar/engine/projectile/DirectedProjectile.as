@@ -62,7 +62,7 @@ package com.brockw.stickwar.engine.projectile
       
       override public function update(game:StickWar) : void
       {
-         var dy:Number = NaN;
+         var dy:Number = Number(NaN);
          if(!this.targetUnit.isAlive())
          {
             this.visible = false;
@@ -107,7 +107,7 @@ package com.brockw.stickwar.engine.projectile
       {
          return this._inFlight;
       }
-
+      
       override public function isReadyForCleanup() : Boolean
       {
          return this.framesDead > 45;

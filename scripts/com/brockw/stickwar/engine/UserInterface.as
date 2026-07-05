@@ -14,13 +14,13 @@ package com.brockw.stickwar.engine
    import com.brockw.stickwar.engine.units.*;
    import com.smartfoxserver.v2.entities.data.*;
    import com.smartfoxserver.v2.requests.*;
-import flash.display.*;
-import flash.events.*;
-    import flash.geom.Point;
-    import flash.text.TextField;
-     import flash.ui.Keyboard;
-    import flash.utils.Timer;
-    import flash.utils.getTimer;
+   import flash.display.*;
+   import flash.events.*;
+   import flash.geom.Point;
+   import flash.text.TextField;
+   import flash.ui.Keyboard;
+   import flash.utils.Timer;
+   import flash.utils.getTimer;
    
    public class UserInterface extends Screen
    {
@@ -72,7 +72,7 @@ import flash.events.*;
       private var gameTimer:Timer;
       
       private var spacePressTimer:int;
-
+      
       private var poisonedPressTimer:int;
       
       private var replayData:Array;
@@ -81,13 +81,9 @@ import flash.events.*;
       
       public var lastSentScreenPosition:int;
       
-       public var isGlobalsEnabled:Boolean = true;
-       
-       public var cameraLocked:Boolean = false;
-       
-       public var tutorialActionsLocked:Boolean = false;
-       
-       public var isMouseEdgeScrolling:Boolean = false;
+      public var isGlobalsEnabled:Boolean = true;
+      
+      public var isMouseEdgeScrolling:Boolean = false;
       
       private var mouseEdgeScrollGraceFrames:int = 0;
       
@@ -100,9 +96,9 @@ import flash.events.*;
       private var mouseOverFrames:int;
       
       private var lastButton:SimpleButton;
-
+      
       private var isMinionSelectMode:Boolean;
-
+      
       private var minionModeText:TextField;
       
       public function UserInterface(main:BaseMain, gameScreen:GameScreen)
@@ -151,17 +147,17 @@ import flash.events.*;
          addChild(this._actionInterface);
          this._actionInterface.mouseEnabled = false;
          this._actionInterface.mouseChildren = false;
-          addChild(this._hud);
-          this.isMinionSelectMode = false;
-          this.minionModeText = new TextField();
-          this.minionModeText.textColor = 0x00FF00;
-          this.minionModeText.text = "[Minion Mode]";
-          this.minionModeText.x = 200;
-          this.minionModeText.y = 5;
-          this.minionModeText.visible = false;
-          this.minionModeText.selectable = false;
-          addChild(this.minionModeText);
-          this._chat = new Chat(this.gameScreen);
+         addChild(this._hud);
+         this.isMinionSelectMode = false;
+         this.minionModeText = new TextField();
+         this.minionModeText.textColor = 65280;
+         this.minionModeText.text = "[Minion Mode]";
+         this.minionModeText.x = 200;
+         this.minionModeText.y = 5;
+         this.minionModeText.visible = false;
+         this.minionModeText.selectable = false;
+         addChild(this.minionModeText);
+         this._chat = new Chat(this.gameScreen);
          ++this.main.loadingFraction;
          addChild(this._chat);
          this.gameScreen.addChild(this.pauseMenu);
@@ -213,36 +209,36 @@ import flash.events.*;
          this.hud.hud.lowButton.addEventListener(MouseEvent.CLICK,this.lowButton);
          this.hud.hud.medButton.addEventListener(MouseEvent.CLICK,this.medButton);
          this.hud.hud.highButton.addEventListener(MouseEvent.CLICK,this.highButton);
-          if(Boolean(this.hud.hud.fastForward))
-          {
-             if(!(this.gameScreen is MultiplayerGameScreen))
-             {
-                this.hud.hud.fastForward.visible = true;
-                this.hud.hud.fastForward.addEventListener(MouseEvent.CLICK,this.clickFastForward,true);
-                MovieClip(this.hud.hud.fastForward).buttonMode = true;
-             }
-             else
-             {
-                this.hud.hud.fastForward.visible = false;
-             }
-          }
-            if(Boolean(this.hud.hud.bossToggle))
+         if(Boolean(this.hud.hud.fastForward))
+         {
+            if(!(this.gameScreen is MultiplayerGameScreen))
             {
-               if(this.team.techAllowed == null || this.team.isAnyBossUnlocked())
-               {
-                  this.hud.hud.bossToggle.visible = true;
-                  this.hud.hud.bossToggle.addEventListener(MouseEvent.CLICK,this.bossToggleClick);
-                  MovieClip(this.hud.hud.bossToggle).buttonMode = true;
-                  MovieClip(this.hud.hud.bossToggle).useHandCursor = true;
-               }
-               else
-               {
-                  this.hud.hud.bossToggle.visible = false;
-               }
+               this.hud.hud.fastForward.visible = true;
+               this.hud.hud.fastForward.addEventListener(MouseEvent.CLICK,this.clickFastForward,true);
+               this.hud.hud.fastForward.buttonMode = true;
             }
-       }
-       
-       private function exitButton(evt:Event) : void
+            else
+            {
+               this.hud.hud.fastForward.visible = false;
+            }
+         }
+         if(Boolean(this.hud.hud.bossToggle))
+         {
+            if(this.team.techAllowed == null || this.team.isAnyBossUnlocked())
+            {
+               this.hud.hud.bossToggle.visible = true;
+               this.hud.hud.bossToggle.addEventListener(MouseEvent.CLICK,this.bossToggleClick);
+               this.hud.hud.bossToggle.buttonMode = true;
+               this.hud.hud.bossToggle.useHandCursor = true;
+            }
+            else
+            {
+               this.hud.hud.bossToggle.visible = false;
+            }
+         }
+      }
+      
+      private function exitButton(evt:Event) : void
       {
          trace("hit the quit");
          trace("QUIT GAME");
@@ -304,17 +300,17 @@ import flash.events.*;
          }
          this.hud.hud.defendButton.removeEventListener(MouseEvent.CLICK,this.defendButton);
          this.hud.hud.menuButton.removeEventListener(MouseEvent.CLICK,this.openMenu);
-          if(Boolean(this.hud.hud.bossToggle))
-          {
-             this.hud.hud.bossToggle.removeEventListener(MouseEvent.CLICK,this.bossToggleClick);
-          }
+         if(Boolean(this.hud.hud.bossToggle))
+         {
+            this.hud.hud.bossToggle.removeEventListener(MouseEvent.CLICK,this.bossToggleClick);
+         }
          this.hud.hud.lowButton.removeEventListener(MouseEvent.CLICK,this.lowButton);
          this.hud.hud.medButton.removeEventListener(MouseEvent.CLICK,this.medButton);
          this.hud.hud.highButton.removeEventListener(MouseEvent.CLICK,this.highButton);
          this.hud.hud.leftMinerButton.removeEventListener(MouseEvent.CLICK,this.unGarrisonMinerButton);
          this.hud.hud.rightMinerButton.removeEventListener(MouseEvent.CLICK,this.garrisonMinerButton);
          this._hud = null;
-         Util.recursiveRemoval(Sprite(this));
+         Util.recursiveRemoval(this);
       }
       
       private function economyButton(evt:MouseEvent) : void
@@ -325,32 +321,16 @@ import flash.events.*;
       {
       }
       
-       public function garrisonMinerButton(evt:MouseEvent) : void
-       {
-          if(!this.isGlobalsEnabled)
-          {
-             return;
-          }
-           var m:GlobalMove = new GlobalMove();
-           m.globalMoveType = Team.G_GARRISON_MINER;
-           if(this.team.isCenterBase)
-           {
-              var viewLeft:Number = this.gameScreen.game.screenX;
-              var viewRight:Number = viewLeft + this.gameScreen.game.stage.stageWidth;
-              var centerX:Number = this.gameScreen.game.map.width / 2;
-              for each(var miner:Unit in this.team.units)
-                 if(miner.type == this.team.getMinerType())
-                    miner.assignedSide = miner.px < centerX ? -1 : 1;
-              var statueVisible:Boolean = centerX >= viewLeft && centerX <= viewRight;
-              if(!statueVisible)
-              {
-                 m.filterSide = (viewLeft + viewRight) / 2 < centerX ? -1 : 1;
-                 if((viewLeft + viewRight) / 2 < centerX)
-                    m.globalMoveType = Team.G_UNGARRISON_MINER;
-              }
-           }
-           this.gameScreen.doMove(m,this.team.id);
-          if(this.team.type == Team.T_GOOD)
+      public function garrisonMinerButton(evt:MouseEvent) : void
+      {
+         if(!this.isGlobalsEnabled)
+         {
+            return;
+         }
+         var m:GlobalMove = new GlobalMove();
+         m.globalMoveType = Team.G_GARRISON_MINER;
+         this.gameScreen.doMove(m,this.team.id);
+         if(this.team.type == Team.T_GOOD)
          {
             this.gameScreen.game.soundManager.playSoundFullVolume("manthefortSoundOrder");
          }
@@ -360,32 +340,16 @@ import flash.events.*;
          }
       }
       
-       public function unGarrisonMinerButton(evt:MouseEvent) : void
-       {
-          if(!this.isGlobalsEnabled)
-          {
-             return;
-          }
-           var m:GlobalMove = new GlobalMove();
-           m.globalMoveType = Team.G_UNGARRISON_MINER;
-           if(this.team.isCenterBase)
-           {
-              var viewLeft:Number = this.gameScreen.game.screenX;
-              var viewRight:Number = viewLeft + this.gameScreen.game.stage.stageWidth;
-              var centerX:Number = this.gameScreen.game.map.width / 2;
-              for each(var miner:Unit in this.team.units)
-                 if(miner.type == this.team.getMinerType())
-                    miner.assignedSide = miner.px < centerX ? -1 : 1;
-              var statueVisible:Boolean = centerX >= viewLeft && centerX <= viewRight;
-              if(!statueVisible)
-              {
-                 m.filterSide = (viewLeft + viewRight) / 2 < centerX ? -1 : 1;
-                 if((viewLeft + viewRight) / 2 < centerX)
-                    m.globalMoveType = Team.G_GARRISON_MINER;
-              }
-           }
-           this.gameScreen.doMove(m,this.team.id);
-          if(this.team.type == Team.T_GOOD)
+      public function unGarrisonMinerButton(evt:MouseEvent) : void
+      {
+         if(!this.isGlobalsEnabled)
+         {
+            return;
+         }
+         var m:GlobalMove = new GlobalMove();
+         m.globalMoveType = Team.G_UNGARRISON_MINER;
+         this.gameScreen.doMove(m,this.team.id);
+         if(this.team.type == Team.T_GOOD)
          {
             this.gameScreen.game.soundManager.playSoundFullVolume("defendSoundOrder");
          }
@@ -395,39 +359,24 @@ import flash.events.*;
          }
       }
       
-       public function garrisonButton(evt:MouseEvent) : void
-       {
-          if(!this.isGlobalsEnabled)
-          {
-             return;
-          }
-          var m:GlobalMove = new GlobalMove();
-          m.globalMoveType = Team.G_GARRISON;
-          if(this.team.isCenterBase)
-          {
-             var viewLeft:Number = this.gameScreen.game.screenX;
-             var viewRight:Number = viewLeft + this.gameScreen.game.stage.stageWidth;
-             var centerX:Number = this.gameScreen.game.map.width / 2;
-             var statueVisible:Boolean = centerX >= viewLeft && centerX <= viewRight;
-             if(!statueVisible && (viewLeft + viewRight) / 2 < centerX)
-                m.globalMoveType = Team.G_ATTACK;
-          }
-          this.gameScreen.doMove(m,this.team.id);
-          if(m.globalMoveType == Team.G_GARRISON)
-          {
-             if(this.team.type == Team.T_GOOD)
-                this.gameScreen.game.soundManager.playSoundFullVolume("manthefortSoundOrder");
-             else
-                this.gameScreen.game.soundManager.playSoundFullVolume("manthefortSoundChaos");
-          }
-          else
-          {
-             if(this.team.type == Team.T_GOOD)
-                this.gameScreen.game.soundManager.playSoundFullVolume("attackSoundOrder");
-             else
-                this.gameScreen.game.soundManager.playSoundFullVolume("attackSoundChaos");
-          }
-       }
+      public function garrisonButton(evt:MouseEvent) : void
+      {
+         if(!this.isGlobalsEnabled)
+         {
+            return;
+         }
+         var m:GlobalMove = new GlobalMove();
+         m.globalMoveType = Team.G_GARRISON;
+         this.gameScreen.doMove(m,this.team.id);
+         if(this.team.type == Team.T_GOOD)
+         {
+            this.gameScreen.game.soundManager.playSoundFullVolume("manthefortSoundOrder");
+         }
+         else
+         {
+            this.gameScreen.game.soundManager.playSoundFullVolume("manthefortSoundChaos");
+         }
+      }
       
       public function defendButton(evt:MouseEvent) : void
       {
@@ -448,59 +397,35 @@ import flash.events.*;
          }
       }
       
-       public function attackButton(evt:MouseEvent) : void
-       {
-          if(!this.isGlobalsEnabled)
-          {
-             return;
-          }
-          var m:GlobalMove = new GlobalMove();
-          m.globalMoveType = Team.G_ATTACK;
-          if(this.team.isCenterBase)
-          {
-             var viewLeft:Number = this.gameScreen.game.screenX;
-             var viewRight:Number = viewLeft + this.gameScreen.game.stage.stageWidth;
-             var centerX:Number = this.gameScreen.game.map.width / 2;
-             var statueVisible:Boolean = centerX >= viewLeft && centerX <= viewRight;
-             if(!statueVisible && (viewLeft + viewRight) / 2 < centerX)
-                m.globalMoveType = Team.G_GARRISON;
-          }
-          this.gameScreen.doMove(m,this.team.id);
-          if(m.globalMoveType == Team.G_GARRISON)
-          {
-             if(this.team.type == Team.T_GOOD)
-                this.gameScreen.game.soundManager.playSoundFullVolume("manthefortSoundOrder");
-             else
-                this.gameScreen.game.soundManager.playSoundFullVolume("manthefortSoundChaos");
-          }
-          else
-          {
-             if(this.team.type == Team.T_GOOD)
-                this.gameScreen.game.soundManager.playSoundFullVolume("attackSoundOrder");
-             else
-                this.gameScreen.game.soundManager.playSoundFullVolume("attackSoundChaos");
-          }
-       }
-
-       private function performGlobalMove(globalMoveType:int) : void
-       {
-          var m:GlobalMove = null;
-          if(!this.isGlobalsEnabled)
-          {
-             return;
-          }
-          if(this.team.isCenterBase && (globalMoveType == Team.G_GARRISON || globalMoveType == Team.G_ATTACK))
-          {
-             var viewLeft:Number = this.gameScreen.game.screenX;
-             var viewRight:Number = viewLeft + this.gameScreen.game.stage.stageWidth;
-             var centerX:Number = this.gameScreen.game.map.width / 2;
-             var statueVisible:Boolean = centerX >= viewLeft && centerX <= viewRight;
-             if(!statueVisible && (viewLeft + viewRight) / 2 < centerX)
-                globalMoveType = globalMoveType == Team.G_GARRISON ? Team.G_ATTACK : Team.G_GARRISON;
-          }
-          m = new GlobalMove();
-          m.globalMoveType = globalMoveType;
-          this.gameScreen.doMove(m,this.team.id);
+      public function attackButton(evt:MouseEvent) : void
+      {
+         if(!this.isGlobalsEnabled)
+         {
+            return;
+         }
+         var m:GlobalMove = new GlobalMove();
+         m.globalMoveType = Team.G_ATTACK;
+         this.gameScreen.doMove(m,this.team.id);
+         if(this.team.type == Team.T_GOOD)
+         {
+            this.gameScreen.game.soundManager.playSoundFullVolume("attackSoundOrder");
+         }
+         else
+         {
+            this.gameScreen.game.soundManager.playSoundFullVolume("attackSoundChaos");
+         }
+      }
+      
+      private function performGlobalMove(globalMoveType:int) : void
+      {
+         var m:GlobalMove = null;
+         if(!this.isGlobalsEnabled)
+         {
+            return;
+         }
+         m = new GlobalMove();
+         m.globalMoveType = globalMoveType;
+         this.gameScreen.doMove(m,this.team.id);
          if(globalMoveType == Team.G_GARRISON)
          {
             this.gameScreen.game.soundManager.playSoundFullVolume(this.team.type == Team.T_GOOD ? "manthefortSoundOrder" : "manthefortSoundChaos");
@@ -515,14 +440,13 @@ import flash.events.*;
          }
       }
       
-       private function tryToSelectABuilding() : void
-       {
-          if(this.tutorialActionsLocked) return;
-          var i:String = null;
+      private function tryToSelectABuilding() : void
+      {
+         var i:String = null;
          var b:Building = null;
          for(i in this.team.buildings)
          {
-            b = Building(this.team.buildings[i]);
+            b = this.team.buildings[i];
             if(b.hitAreaMovieClip.hitTestPoint(stage.mouseX,stage.mouseY,true))
             {
                if(this.mouseState.clicked)
@@ -531,12 +455,12 @@ import flash.events.*;
                   this.mouseState.oldMouseDown = false;
                   this.mouseState.clicked = false;
                   b.selected = true;
-                  this.selectedUnits.add(Unit(b));
+                  this.selectedUnits.add(b);
                   this.mouseState.clicked = false;
                   if(b.button.currentFrame != 3)
                   {
                      b.button.gotoAndStop(3);
-                     Util.animateToNeutral(MovieClip(b.button),-1);
+                     Util.animateToNeutral(b.button,-1);
                   }
                   b.button.gotoAndStop(3);
                }
@@ -545,7 +469,7 @@ import flash.events.*;
                   if(b.button.currentFrame != 2)
                   {
                      b.button.gotoAndStop(2);
-                     Util.animateToNeutral(MovieClip(b.button),-1);
+                     Util.animateToNeutral(b.button,-1);
                   }
                   b.button.gotoAndStop(2);
                }
@@ -555,43 +479,42 @@ import flash.events.*;
                if(b.button.currentFrame != 1)
                {
                   b.button.gotoAndStop(1);
-                  Util.animateToNeutral(MovieClip(b.button),-1);
+                  Util.animateToNeutral(b.button,-1);
                }
                b.button.gotoAndStop(1);
             }
-            Util.animateMovieClip(MovieClip(b.button),0,-1);
+            Util.animateMovieClip(b.button,0,-1);
          }
       }
       
-       private function clickFastForward(evt:Event) : void
-       {
-          this.gameScreen.isFastForward = !this.gameScreen.isFastForward;
-          this.mouseState.mouseDown = false;
-       }
-       
-       private function bossToggleClick(evt:Event) : void
-        {
-           var newState:Boolean = this.team.toggleBossMode();
-           var btn:MovieClip = MovieClip(evt.currentTarget);
-           btn.gotoAndStop(newState ? 2 : 1);
-        }
-       
-       public function update(evt:Event, timeDiff:Number) : void
+      private function clickFastForward(evt:Event) : void
+      {
+         this.gameScreen.isFastForward = !this.gameScreen.isFastForward;
+         this.mouseState.mouseDown = false;
+      }
+      
+      private function bossToggleClick(evt:Event) : void
+      {
+         var newState:Boolean = this.team.toggleBossMode();
+         var btn:MovieClip = evt.currentTarget;
+         btn.gotoAndStop(newState ? 2 : 1);
+      }
+      
+      public function update(evt:Event, timeDiff:Number) : void
       {
          var u:Unit = null;
          var loser:Team = null;
          var m:ScreenPositionUpdateMove = null;
          var mouseWidth:int = 0;
-         var posX:Number = NaN;
-         var posY:Number = NaN;
+         var posX:Number = Number(NaN);
+         var posY:Number = Number(NaN);
          var p:Point = null;
-         var dposX:Number = NaN;
-         var dposY:Number = NaN;
+         var dposX:Number = Number(NaN);
+         var dposY:Number = Number(NaN);
          var wall:Wall = null;
          var candidate:Entity = null;
-          var type:int = 0;
-          var clickedSide:int = 0;
-          var unit:String = null;
+         var type:int = 0;
+         var unit:String = null;
          var x:int = 0;
          var y:int = 0;
          if(!(this.gameScreen is MultiplayerGameScreen))
@@ -741,7 +664,7 @@ import flash.events.*;
          {
             this.clickFastForward(null);
          }
-          if(this.keyBoardState.isPressed(66) && Boolean(this.hud.hud.bossToggle) && this.hud.hud.bossToggle.visible)
+         if(this.keyBoardState.isPressed(66) && Boolean(this.hud.hud.bossToggle) && this.hud.hud.bossToggle.visible)
          {
             var bossToggleNewState:Boolean = this.team.toggleBossMode();
             this.hud.hud.bossToggle.gotoAndStop(bossToggleNewState ? 2 : 1);
@@ -767,56 +690,42 @@ import flash.events.*;
          {
             this.selectedUnits.nextSelectedUnitType();
          }
-          if(this.keyBoardState.isPressed(32))
-          {
-             this.selectedUnits.clear();
-             if(this.isMinionSelectMode)
-             {
-                for each(var magikillUnit:Unit in this.team.units)
-                {
-                   if(magikillUnit is Magikill && Magikill(magikillUnit).isBoss)
-                   {
-                      var minions:Array = Magikill(magikillUnit).getLivingBossSummonedUnits();
-                      for each(var minion:Unit in minions)
-                      {
-                         this.selectedUnits.add(minion);
-                         minion.selected = true;
-                      }
-                   }
-                }
-             }
-              else
-              {
-                 for each(u in this.team.units)
-                 {
-                     if(!u.isTowerSpawned && !u.isConfused() && u.type != Unit.U_MINER && u.type != Unit.U_CHAOS_MINER && !u.isDead && u.isGarrisoned == false && u.type != Unit.U_CHAOS_TOWER && u.assignedSide != 0)
-                    {
-                        if(this.team.isCenterBase && u.assignedSide != 0)
-                         {
-                            var viewCenter:Number = this.gameScreen.game.screenX + this.gameScreen.game.stage.stageWidth / 2;
-                            var centerX:Number = this.gameScreen.game.map.width / 2;
-                            var statueVisible:Boolean = centerX >= this.gameScreen.game.screenX && centerX <= this.gameScreen.game.screenX + this.gameScreen.game.stage.stageWidth;
-                            if(!statueVisible)
-                            {
-                               var cameraIsLeft:Boolean = viewCenter < centerX;
-                               if((cameraIsLeft && u.assignedSide != -1) || (!cameraIsLeft && u.assignedSide != 1))
-                               {
-                                  continue;
-                               }
-                            }
-                         }
-                       this.selectedUnits.add(u);
-                       u.selected = true;
-                    }
-                 }
-              }
-              if(!this.cameraLocked && getTimer() - this.spacePressTimer < 400 && this.team.forwardUnitNotSpawn != null)
-              {
-                 this.gameScreen.game.targetScreenX = this.team.forwardUnitNotSpawn.px - this.gameScreen.game.map.screenWidth / 2;
-                 this.isSlowCamera = false;
-              }
-              this.spacePressTimer = getTimer();
-          }
+         if(this.keyBoardState.isPressed(32))
+         {
+            this.selectedUnits.clear();
+            if(this.isMinionSelectMode)
+            {
+               for each(var magikillUnit in this.team.units)
+               {
+                  if(magikillUnit is Magikill && magikillUnit.isBoss)
+                  {
+                     var minions:Array = magikillUnit.getLivingBossSummonedUnits();
+                     for each(var minion in minions)
+                     {
+                        this.selectedUnits.add(minion);
+                        minion.selected = true;
+                     }
+                  }
+               }
+            }
+            else
+            {
+               for each(u in this.team.units)
+               {
+                  if(!u.isTowerSpawned && !u.isConfused() && u.type != Unit.U_MINER && u.type != Unit.U_CHAOS_MINER && !u.isDead && u.isGarrisoned == false && u.type != Unit.U_CHAOS_TOWER)
+                  {
+                     this.selectedUnits.add(u);
+                     u.selected = true;
+                  }
+               }
+            }
+            if(getTimer() - this.spacePressTimer < 400 && this.team.forwardUnitNotSpawn != null)
+            {
+               this.gameScreen.game.targetScreenX = this.team.forwardUnitNotSpawn.px - this.gameScreen.game.map.screenWidth / 2;
+               this.isSlowCamera = false;
+            }
+            this.spacePressTimer = getTimer();
+         }
          if(this.keyBoardState.isPressed(71))
          {
             this.tryUngarrisonSelectedUnits();
@@ -829,16 +738,16 @@ import flash.events.*;
          {
             this.selectAllGarrisonedUnits();
          }
-          if(!this.cameraLocked && this.keyBoardState.isDown(67))
-          {
-             this.gameScreen.game.targetScreenX += this.SCROLL_SPEED * 1;
-             this.isSlowCamera = false;
-          }
-          if(!this.cameraLocked && this.keyBoardState.isDown(90))
-          {
-             this.gameScreen.game.targetScreenX -= this.SCROLL_SPEED * 1;
-             this.isSlowCamera = false;
-          }
+         if(this.keyBoardState.isDown(67))
+         {
+            this.gameScreen.game.targetScreenX += this.SCROLL_SPEED * 1;
+            this.isSlowCamera = false;
+         }
+         if(this.keyBoardState.isDown(90))
+         {
+            this.gameScreen.game.targetScreenX -= this.SCROLL_SPEED * 1;
+            this.isSlowCamera = false;
+         }
          if(this.gameScreen.game.showGameOverAnimation)
          {
             this.gameScreen.game.fogOfWar.isFogOn = false;
@@ -894,34 +803,34 @@ import flash.events.*;
          {
             this.team.detectedUserInput(this);
          }
-           if(this.keyBoardState.isPressed(74))
-           {
-              this.selectPoisonedUnits();
-              if(!this.cameraLocked) this.jumpToPoisonedUnitIfDoublePressed();
-              this.poisonedPressTimer = getTimer();
-           }
-          if(this.keyBoardState.isPressed(77))
-          {
-             this.isMinionSelectMode = !this.isMinionSelectMode;
-             this.minionModeText.visible = this.isMinionSelectMode;
-          }
-           this.isMouseEdgeScrolling = false;
-          if(!this.cameraLocked && this.mouseState.mouseIn && this.stage.mouseY < this.gameScreen.game.battlefield.y + 240)
-          {
-             mouseWidth = 120;
-             if(this.stage.mouseX < mouseWidth)
-             {
-                this.gameScreen.game.targetScreenX -= this.SCROLL_SPEED * (mouseWidth - stage.mouseX) / mouseWidth;
-                this.isSlowCamera = false;
-                this.isMouseEdgeScrolling = true;
-             }
-             if(this.stage.mouseX > this.gameScreen.game.map.screenWidth - mouseWidth)
-             {
-                this.gameScreen.game.targetScreenX -= this.SCROLL_SPEED * (this.gameScreen.game.map.screenWidth - mouseWidth - stage.mouseX) / mouseWidth;
-                this.isSlowCamera = false;
-                this.isMouseEdgeScrolling = true;
-             }
-          }
+         if(this.keyBoardState.isPressed(74))
+         {
+            this.selectPoisonedUnits();
+            this.jumpToPoisonedUnitIfDoublePressed();
+            this.poisonedPressTimer = getTimer();
+         }
+         if(this.keyBoardState.isPressed(77))
+         {
+            this.isMinionSelectMode = !this.isMinionSelectMode;
+            this.minionModeText.visible = this.isMinionSelectMode;
+         }
+         this.isMouseEdgeScrolling = false;
+         if(this.mouseState.mouseIn && this.stage.mouseY < this.gameScreen.game.battlefield.y + 240)
+         {
+            mouseWidth = 120;
+            if(this.stage.mouseX < mouseWidth)
+            {
+               this.gameScreen.game.targetScreenX -= this.SCROLL_SPEED * (mouseWidth - stage.mouseX) / mouseWidth;
+               this.isSlowCamera = false;
+               this.isMouseEdgeScrolling = true;
+            }
+            if(this.stage.mouseX > this.gameScreen.game.map.screenWidth - mouseWidth)
+            {
+               this.gameScreen.game.targetScreenX -= this.SCROLL_SPEED * (this.gameScreen.game.map.screenWidth - mouseWidth - stage.mouseX) / mouseWidth;
+               this.isSlowCamera = false;
+               this.isMouseEdgeScrolling = true;
+            }
+         }
          if(this.isMouseEdgeScrolling)
          {
             this.mouseEdgeScrollGraceFrames = 10;
@@ -931,19 +840,19 @@ import flash.events.*;
             --this.mouseEdgeScrollGraceFrames;
             this.isMouseEdgeScrolling = true;
          }
-          if(!this.cameraLocked && this.mouseState.mouseDown)
-          {
-             posX = this.hud.hud.map.mouseX / this.hud.hud.map.width;
-             posY = this.hud.hud.map.mouseY / this.hud.hud.map.height;
-             p = this.hud.hud.map.globalToLocal(new Point(this.mouseState.mouseDownX,this.mouseState.mouseDownY));
-             dposX = p.x / this.hud.hud.map.width;
-             dposY = p.y / this.hud.hud.map.height;
-             if(posX >= 0 && posX <= 1 && posY >= 0 && posY <= 1 && dposX >= 0 && dposX <= 1 && dposY >= 0 && dposY <= 1 && !(dposX > 0.95 && dposY < 0.54))
-             {
-                this.gameScreen.game.targetScreenX = posX * this.gameScreen.game.map.width - this.gameScreen.game.map.screenWidth / 2;
-                this.isSlowCamera = false;
-             }
-          }
+         if(this.mouseState.mouseDown)
+         {
+            posX = this.hud.hud.map.mouseX / this.hud.hud.map.width;
+            posY = this.hud.hud.map.mouseY / this.hud.hud.map.height;
+            p = this.hud.hud.map.globalToLocal(new Point(this.mouseState.mouseDownX,this.mouseState.mouseDownY));
+            dposX = p.x / this.hud.hud.map.width;
+            dposY = p.y / this.hud.hud.map.height;
+            if(posX >= 0 && posX <= 1 && posY >= 0 && posY <= 1 && dposX >= 0 && dposX <= 1 && dposY >= 0 && dposY <= 1 && !(dposX > 0.95 && dposY < 0.54))
+            {
+               this.gameScreen.game.targetScreenX = posX * this.gameScreen.game.map.width - this.gameScreen.game.map.screenWidth / 2;
+               this.isSlowCamera = false;
+            }
+         }
          if(!this.actionInterface.isInCommand() && this.stage.mouseY <= 700 - 125)
          {
             if(!this.isMouseEdgeScrolling || this.mouseState.clicked || this.mouseState.mouseDown)
@@ -960,93 +869,78 @@ import flash.events.*;
                {
                   if(wall.checkForHitPoint3(new Point(stage.mouseX,stage.mouseY)))
                   {
-                     this.selectedUnits.add(Unit(wall));
-                     Unit(wall).selected = true;
+                     this.selectedUnits.add(wall);
+                     wall.selected = true;
                   }
                   else
                   {
-                     Unit(wall).selected = false;
+                     wall.selected = false;
                   }
                }
                candidate = this.gameScreen.game.mouseOverUnit;
-               if(candidate != null && candidate is Unit && Unit(candidate).team == this.team && !Unit(candidate).isConfused() && !(candidate is Statue) && !Unit(candidate).isBossSummoned)
+               if(candidate != null && candidate is Unit && candidate.team == this.team && !candidate.isConfused() && !(candidate is Statue) && !candidate.isBossSummoned)
                {
                   if(this.keyBoardState.isShift)
                   {
-                     Unit(candidate).selected = true;
+                     candidate.selected = true;
                   }
                   else
                   {
-                     Unit(candidate).selected = true;
+                     candidate.selected = true;
                   }
-                  this.selectedUnits.add(Unit(candidate));
+                  this.selectedUnits.add(candidate);
                }
             }
-             if(this.mouseState.doubleClicked)
-             {
-                if(!this.keyBoardState.isShift)
-                {
-                   this.selectedUnits.clear();
-                }
-                type = -1;
-                if(this.gameScreen.game.mouseOverUnit != null && this.gameScreen.game.mouseOverUnit is Unit && Unit(this.gameScreen.game.mouseOverUnit).team == this.team && !Unit(this.gameScreen.game.mouseOverUnit).isConfused() && !Unit(this.gameScreen.game.mouseOverUnit).isBossSummoned)
-                {
-                    type = this.gameScreen.game.mouseOverUnit.type;
-                    clickedSide = Unit(this.gameScreen.game.mouseOverUnit).assignedSide;
-                 }
-                 if(this.isMinionSelectMode && type != -1)
-                {
-                   for each(var magikillUnit:Unit in this.team.units)
-                   {
-                      if(magikillUnit is Magikill && Magikill(magikillUnit).isBoss)
-                      {
-                         var minions:Array = Magikill(magikillUnit).getLivingBossSummonedUnits();
-                         for each(var minion:Unit in minions)
-                         {
-                            if(minion.type == type || (minion.selected && this.keyBoardState.isShift))
-                            {
-                               minion.selected = true;
-                               this.selectedUnits.add(minion);
-                            }
-                         }
-                      }
-                   }
-                }
-                 else
-                 {
-                    for(unit in this.team.units)
-                    {
-                       x = this.team.units[unit].x - this.gameScreen.game.screenX;
-                       y = this.team.units[unit].y + this.gameScreen.game.battlefield.y;
-                       if(!Unit(this.team.units[unit]).isConfused() && !Unit(this.team.units[unit]).isBossSummoned && (Unit(this.team.units[unit]).type == type || Unit(this.team.units[unit]).selected && this.keyBoardState.isShift))
-                       {
-                             if(this.team.isCenterBase)
-                             {
-                                if(Unit(this.team.units[unit]).assignedSide == clickedSide)
-                                {
-                                   Unit(this.team.units[unit]).selected = true;
-                                }
-                                else
-                                {
-                                   Unit(this.team.units[unit]).selected = false;
-                                }
-                             }
-                            else
-                            {
-                               Unit(this.team.units[unit]).selected = true;
-                            }
-                       }
-                       else
-                       {
-                          Unit(this.team.units[unit]).selected = false;
-                       }
-                       if(Unit(this.team.units[unit]).selected)
-                       {
-                          this.selectedUnits.add(Unit(this.team.units[unit]));
-                       }
-                    }
-                 }
-             }
+            if(this.mouseState.doubleClicked)
+            {
+               if(!this.keyBoardState.isShift)
+               {
+                  this.selectedUnits.clear();
+               }
+               type = -1;
+               if(this.gameScreen.game.mouseOverUnit != null && this.gameScreen.game.mouseOverUnit is Unit && this.gameScreen.game.mouseOverUnit.team == this.team && !this.gameScreen.game.mouseOverUnit.isConfused() && !this.gameScreen.game.mouseOverUnit.isBossSummoned)
+               {
+                  type = this.gameScreen.game.mouseOverUnit.type;
+               }
+               if(this.isMinionSelectMode && type != -1)
+               {
+                  for each(magikillUnit in this.team.units)
+                  {
+                     if(magikillUnit is Magikill && magikillUnit.isBoss)
+                     {
+                        minions = magikillUnit.getLivingBossSummonedUnits();
+                        for each(minion in minions)
+                        {
+                           if(minion.type == type || minion.selected && this.keyBoardState.isShift)
+                           {
+                              minion.selected = true;
+                              this.selectedUnits.add(minion);
+                           }
+                        }
+                     }
+                  }
+               }
+               else
+               {
+                  for(unit in this.team.units)
+                  {
+                     x = this.team.units[unit].x - this.gameScreen.game.screenX;
+                     y = this.team.units[unit].y + this.gameScreen.game.battlefield.y;
+                     if(!this.team.units[unit].isConfused() && !this.team.units[unit].isBossSummoned && (this.team.units[unit].type == type || this.team.units[unit].selected && this.keyBoardState.isShift))
+                     {
+                        this.team.units[unit].selected = true;
+                     }
+                     else
+                     {
+                        this.team.units[unit].selected = false;
+                     }
+                     if(this.team.units[unit].selected)
+                     {
+                        this.selectedUnits.add(this.team.units[unit]);
+                     }
+                  }
+               }
+            }
          }
          this.box.update(this.gameScreen.game.battlefield.mouseX,this.gameScreen.game.battlefield.mouseY);
          if(this.box.isOn)
@@ -1055,21 +949,21 @@ import flash.events.*;
             {
                if(this.team.units[unit].isAlive())
                {
-                  if(!(Boolean(Unit(this.team.units[unit]).interactsWith & Unit.I_IS_BUILDING)))
+                  if(!(Boolean(this.team.units[unit].interactsWith & Unit.I_IS_BUILDING)))
                   {
                      x = int(this.team.units[unit].x);
                      y = int(this.team.units[unit].y);
                      if(this.keyBoardState.isShift)
                      {
-                        Unit(this.team.units[unit]).selected = !Unit(this.team.units[unit]).isConfused() && !Unit(this.team.units[unit]).isBossSummoned && (this.box.isInside(x,y,this.team.units[unit].mc.height / 2,20) || Unit(this.team.units[unit]).selected || this.gameScreen.game.mouseOverUnit == this.team.units[unit]);
+                        this.team.units[unit].selected = !this.team.units[unit].isConfused() && !this.team.units[unit].isBossSummoned && (this.box.isInside(x,y,this.team.units[unit].mc.height / 2,20) || this.team.units[unit].selected || this.gameScreen.game.mouseOverUnit == this.team.units[unit]);
                      }
                      else
                      {
-                        Unit(this.team.units[unit]).selected = !Unit(this.team.units[unit]).isConfused() && !Unit(this.team.units[unit]).isBossSummoned && (this.box.isInside(x,y,this.team.units[unit].mc.height / 2,20) || this.gameScreen.game.mouseOverUnit == this.team.units[unit]);
+                        this.team.units[unit].selected = !this.team.units[unit].isConfused() && !this.team.units[unit].isBossSummoned && (this.box.isInside(x,y,this.team.units[unit].mc.height / 2,20) || this.gameScreen.game.mouseOverUnit == this.team.units[unit]);
                      }
-                     if(Unit(this.team.units[unit]).selected)
+                     if(this.team.units[unit].selected)
                      {
-                        this.selectedUnits.add(Unit(this.team.units[unit]));
+                        this.selectedUnits.add(this.team.units[unit]);
                      }
                   }
                }
@@ -1093,7 +987,7 @@ import flash.events.*;
          }
          this.actionInterface.updateActionAlpha(this.gameScreen);
       }
-
+      
       private function selectPoisonedUnits() : void
       {
          var poisoned:Unit = null;
@@ -1102,26 +996,12 @@ import flash.events.*;
          {
             if(this.isSelectablePoisonedUnit(poisoned))
             {
-                 if(this.team.isCenterBase && poisoned.assignedSide != 0)
-                 {
-                    var viewCenter:Number = this.gameScreen.game.screenX + this.gameScreen.game.stage.stageWidth / 2;
-                    var centerX:Number = this.gameScreen.game.map.width / 2;
-                    var statueVisible:Boolean = centerX >= this.gameScreen.game.screenX && centerX <= this.gameScreen.game.screenX + this.gameScreen.game.stage.stageWidth;
-                    if(!statueVisible)
-                    {
-                       var cameraIsLeft:Boolean = viewCenter < centerX;
-                       if((cameraIsLeft && poisoned.assignedSide != -1) || (!cameraIsLeft && poisoned.assignedSide != 1))
-                       {
-                          continue;
-                       }
-                    }
-                 }
                this.selectedUnits.add(poisoned);
                poisoned.selected = true;
             }
          }
       }
-
+      
       private function jumpToPoisonedUnitIfDoublePressed() : void
       {
          var poisoned:Unit = null;
@@ -1139,15 +1019,13 @@ import flash.events.*;
             }
          }
       }
-
+      
       private function isSelectablePoisonedUnit(poisoned:Unit) : Boolean
       {
          return poisoned != null && !poisoned.isDead && !poisoned.isConfused() && poisoned.isPoisoned() && poisoned.team == this.team && !poisoned.isGarrisoned && poisoned.ai != null && poisoned.ai.currentCommand != null && poisoned.ai.currentCommand.type != UnitCommand.GARRISON;
       }
-
-
-
-       private function tryUngarrisonSelectedUnits() : void
+      
+      private function tryUngarrisonSelectedUnits() : void
       {
          var selected:Unit = null;
          var move:UnitMove = null;
@@ -1171,7 +1049,7 @@ import flash.events.*;
          this.gameScreen.doMove(move,this.team.id);
          this.gameScreen.game.soundManager.playSoundFullVolume("GarrisonExit");
       }
-
+      
       private function selectFullHealthGarrisonedUnits() : void
       {
          var key:* = undefined;
@@ -1187,7 +1065,7 @@ import flash.events.*;
             }
          }
       }
-
+      
       private function selectAllGarrisonedUnits() : void
       {
          var key:* = undefined;
@@ -1203,7 +1081,7 @@ import flash.events.*;
             }
          }
       }
-
+      
       private function isSelectableFullHealthGarrisonedUnit(unit:Unit) : Boolean
       {
          return unit != null && !unit.isDead && !unit.isConfused() && unit.team == this.team && unit.isGarrisoned && unit.health >= unit.maxHealth;

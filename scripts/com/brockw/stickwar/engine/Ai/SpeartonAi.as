@@ -14,10 +14,10 @@ package com.brockw.stickwar.engine.Ai
          unit = s;
       }
       
-       override public function update(game:StickWar) : void
-       {
-          var spearton:Spearton = Spearton(unit);
-          if(unit.shouldStartCampaignBossEscape())
+      override public function update(game:StickWar) : void
+      {
+         var spearton:Spearton = unit;
+         if(unit.shouldStartCampaignBossEscape())
          {
             unit.startCampaignBossEscape();
          }
@@ -25,30 +25,30 @@ package com.brockw.stickwar.engine.Ai
          {
             return;
          }
-            if(currentCommand.type == UnitCommand.SPEARTON_BOSS_BRACE)
+         if(currentCommand.type == UnitCommand.SPEARTON_BOSS_BRACE)
+         {
+            spearton.isAutoBraceToggled = !spearton.isAutoBraceToggled;
+            restoreMove(game);
+            super.update(game);
+            return;
+         }
+         if(spearton.isAutoBraceToggled && unit.team.tech.isResearched(Tech.SHIELD_BASH) && spearton.bossNormalAttackJustFinished)
+         {
+            spearton.bossNormalAttackJustFinished = false;
+            if(this.tryBossBraceShieldSlam(game))
             {
-               spearton.isAutoBraceToggled = !spearton.isAutoBraceToggled;
-               restoreMove(game);
-               super.update(game);
+               if(!spearton.inBlock)
+               {
+                  baseUpdate(game);
+               }
                return;
             }
-             if(spearton.isAutoBraceToggled && unit.team.tech.isResearched(Tech.SHIELD_BASH) && spearton.bossNormalAttackJustFinished)
-           {
-              spearton.bossNormalAttackJustFinished = false;
-              if(this.tryBossBraceShieldSlam(game))
-              {
-                 if(!spearton.inBlock)
-                 {
-                    baseUpdate(game);
-                 }
-                 return;
-              }
-           }
-          if(spearton.isInBossBraceSequence)
-          {
-             return;
-          }
-          if(currentCommand.type == UnitCommand.SPEARTON_BLOCK)
+         }
+         if(spearton.isInBossBraceSequence)
+         {
+            return;
+         }
+         if(currentCommand.type == UnitCommand.SPEARTON_BLOCK)
          {
             if(spearton.inBlock)
             {
@@ -74,27 +74,27 @@ package com.brockw.stickwar.engine.Ai
             baseUpdate(game);
          }
       }
-
-       private function tryBossBraceShieldSlam(game:StickWar) : Boolean
-       {
-          var spearton:Spearton = Spearton(unit);
-          var target:* = null;
-          if(!spearton.isBoss)
-          {
-             return false;
-          }
-          target = this.getClosestTarget();
-          if(target == null || target.team == unit.team || !target.isTargetable())
-          {
-             return false;
-          }
-          if(unit.sqrDistanceToTarget(target) > spearton.bossCombatRadius * spearton.bossCombatRadius)
-          {
-             return false;
-          }
-          spearton.tryBossBraceShieldSlam();
-          return spearton.inBlock;
-       }
+      
+      private function tryBossBraceShieldSlam(game:StickWar) : Boolean
+      {
+         var spearton:Spearton = unit;
+         var target:* = null;
+         if(!spearton.isBoss)
+         {
+            return false;
+         }
+         target = this.getClosestTarget();
+         if(target == null || target.team == unit.team || !target.isTargetable())
+         {
+            return false;
+         }
+         if(unit.sqrDistanceToTarget(target) > spearton.bossCombatRadius * spearton.bossCombatRadius)
+         {
+            return false;
+         }
+         spearton.tryBossBraceShieldSlam();
+         return spearton.inBlock;
+      }
    }
 }
 

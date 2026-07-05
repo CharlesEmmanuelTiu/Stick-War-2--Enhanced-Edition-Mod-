@@ -123,35 +123,35 @@ package com.brockw.stickwar.engine.Team
       public static const TOWER_SPAWN_I:int = -60;
       
       public static const TOWER_SPAWN_II:int = -61;
-
+      
       public static const ARCHER_BOSS_TRIPLE_SHOT:int = -62;
-
+      
       public static const ARCHER_BOSS_POISON_EXECUTE:int = -63;
-
+      
       public static const ARCHER_BOSS_ARROW_STORM:int = -64;
-
+      
       public static const ARCHER_BOSS_EXPLOSION_ARROW:int = -65;
-
+      
       public static const NINJA_CLOAK3:int = -66;
-
+      
       public static const NINJA_SHADOW_CLONE:int = -67;
-
+      
       public static const MONK_BOSS_REVIVE:int = -68;
-
+      
       public static const MAGIKILL_NUKE_2:int = -69;
-
+      
       public static const MAGIKILL_LIGHTNING_STUN:int = -70;
-
+      
       public static const MAGIKILL_SUMMON_UPGRADE:int = -71;
-
+      
       public static const BOSS_SPEARTON_UNLOCK:int = -72;
-
+      
       public static const BOSS_ARCHER_UNLOCK:int = -73;
-
+      
       public static const BOSS_NINJA_UNLOCK:int = -74;
-
+      
       public static const BOSS_MONK_UNLOCK:int = -75;
-
+      
       public static const BOSS_MAGIKILL_UNLOCK:int = -76;
       
       public var upgrades:Dictionary;
@@ -238,50 +238,51 @@ package com.brockw.stickwar.engine.Team
          return 0;
       }
       
-       public function isBossAbilityAvailable(type:int) : Boolean
-       {
-          if(this.team.techAllowed == null)
-          {
-             return true;
-          }
-          switch(type)
-          {
-             case MONK_BOSS_REVIVE:
-                return BOSS_MONK_UNLOCK in this.team.techAllowed;
-             case NINJA_SHADOW_CLONE:
-                return BOSS_NINJA_UNLOCK in this.team.techAllowed;
-             case ARCHER_BOSS_TRIPLE_SHOT:
-             case ARCHER_BOSS_POISON_EXECUTE:
-                return BOSS_ARCHER_UNLOCK in this.team.techAllowed;
-          }
-          return true;
-       }
-
-       public function getTechAllowed(type:int) : Boolean
-       {
-          if(this.team.techAllowed != null && !(type in this.team.techAllowed))
-          {
-             return false;
-          }
-          return this.isBossAbilityAvailable(type);
-       }
-
-       public function isHideBossTechs() : Boolean
-       {
-          return this.team.hideBossTechs;
-       }
-       
-       public function startResearching(type:int) : void
-       {
-          if(this.team.techAllowed != null && !(type in this.team.techAllowed))
-          {
-             return;
-          }
-          if(!this.isBossAbilityAvailable(type))
-          {
-             return;
-          }
-          var t:TechItem = this.upgrades[type];
+      public function isBossAbilityAvailable(type:int) : Boolean
+      {
+         if(this.team.techAllowed == null)
+         {
+            return true;
+         }
+         switch(type)
+         {
+            case MONK_BOSS_REVIVE:
+               return BOSS_MONK_UNLOCK in this.team.techAllowed;
+            case NINJA_SHADOW_CLONE:
+               return BOSS_NINJA_UNLOCK in this.team.techAllowed;
+            case ARCHER_BOSS_TRIPLE_SHOT:
+            case ARCHER_BOSS_POISON_EXECUTE:
+               return BOSS_ARCHER_UNLOCK in this.team.techAllowed;
+            default:
+               return true;
+         }
+      }
+      
+      public function getTechAllowed(type:int) : Boolean
+      {
+         if(this.team.techAllowed != null && !(type in this.team.techAllowed))
+         {
+            return false;
+         }
+         return this.isBossAbilityAvailable(type);
+      }
+      
+      public function isHideBossTechs() : Boolean
+      {
+         return this.team.hideBossTechs;
+      }
+      
+      public function startResearching(type:int) : void
+      {
+         if(this.team.techAllowed != null && !(type in this.team.techAllowed))
+         {
+            return;
+         }
+         if(!this.isBossAbilityAvailable(type))
+         {
+            return;
+         }
+         var t:TechItem = this.upgrades[type];
          if(t == null)
          {
             return;
@@ -293,7 +294,7 @@ package com.brockw.stickwar.engine.Team
             this.researchingMap[type] = Math.max(1,int(Math.ceil(t.researchTime * this.researchTimeMultiplier)));
          }
       }
-
+      
       public function speedUpResearch(type:int, multiplier:Number) : void
       {
          if(!(type in this.researchingMap))

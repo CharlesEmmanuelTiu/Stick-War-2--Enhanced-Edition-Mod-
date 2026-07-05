@@ -18,7 +18,7 @@ package com.brockw.stickwar.campaign
       private static const SHADOWRATH_FLANK_MIN_BASE_DISTANCE:Number = 700;
       
       private static const SHADOWRATH_FLANK_ROW_SPACING:Number = 55;
-
+      
       private static const SHADOWRATH_FLANK_LOCK_FRAMES:int = 30 * 12;
       
       private var main:BaseMain;
@@ -32,7 +32,7 @@ package com.brockw.stickwar.campaign
       private var hasTriggered:Boolean;
       
       private var shieldUntilFrame:int;
-
+      
       private var shadowrathFlankUnits:Array;
       
       public function CampaignReinforcementManager(main:BaseMain, game:StickWar, playerTeam:Team, bossSpawner:CampaignBossSpawner)
@@ -112,6 +112,7 @@ package com.brockw.stickwar.campaign
                   return [Unit.U_SPEARTON,Unit.U_SPEARTON];
                }
                return [Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_SPEARTON];
+               break;
             case "Blot out the sun: Archidons Declare War":
                return [];
             case "Silent Assassins: Ninjas Declare War":
@@ -124,6 +125,7 @@ package com.brockw.stickwar.campaign
                   return [Unit.U_NINJA,Unit.U_NINJA,Unit.U_SWORDWRATH,Unit.U_SWORDWRATH,Unit.U_SWORDWRATH];
                }
                return [Unit.U_NINJA,Unit.U_NINJA,Unit.U_NINJA,Unit.U_SWORDWRATH,Unit.U_SWORDWRATH,Unit.U_SWORDWRATH,Unit.U_SWORDWRATH];
+               break;
             case "Magic in the Air: Wizards and monks Declare War ":
                if(difficulty == Campaign.D_NORMAL)
                {
@@ -134,6 +136,7 @@ package com.brockw.stickwar.campaign
                   return [Unit.U_MAGIKILL,Unit.U_MONK,Unit.U_MONK,Unit.U_SWORDWRATH];
                }
                return [Unit.U_MAGIKILL,Unit.U_MONK,Unit.U_MONK,Unit.U_SWORDWRATH,Unit.U_SWORDWRATH];
+               break;
             case "Rebels United":
                if(difficulty == Campaign.D_NORMAL)
                {
@@ -144,6 +147,7 @@ package com.brockw.stickwar.campaign
                   return [Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_NINJA,Unit.U_MAGIKILL,Unit.U_MONK,Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_NINJA];
                }
                return [Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_NINJA,Unit.U_NINJA,Unit.U_NINJA,Unit.U_MAGIKILL,Unit.U_MONK];
+               break;
             case "Explosive War: Bombers Attack":
                if(difficulty == Campaign.D_NORMAL)
                {
@@ -154,6 +158,7 @@ package com.brockw.stickwar.campaign
                   return [Unit.U_BOMBER,Unit.U_BOMBER,Unit.U_GIANT];
                }
                return [Unit.U_BOMBER,Unit.U_BOMBER,Unit.U_BOMBER,Unit.U_GIANT];
+               break;
             case "The Night is Dark: Juggerknights Attack":
                if(difficulty == Campaign.D_NORMAL)
                {
@@ -164,6 +169,7 @@ package com.brockw.stickwar.campaign
                   return [Unit.U_KNIGHT,Unit.U_KNIGHT,Unit.U_KNIGHT,Unit.U_DEAD];
                }
                return [Unit.U_KNIGHT,Unit.U_KNIGHT,Unit.U_KNIGHT,Unit.U_DEAD,Unit.U_DEAD];
+               break;
             case "Undead War: Deadly Deads Attack":
                if(difficulty == Campaign.D_NORMAL)
                {
@@ -174,6 +180,7 @@ package com.brockw.stickwar.campaign
                   return [Unit.U_DEAD,Unit.U_DEAD,Unit.U_DEAD,Unit.U_KNIGHT,Unit.U_KNIGHT];
                }
                return [Unit.U_DEAD,Unit.U_DEAD,Unit.U_DEAD,Unit.U_DEAD,Unit.U_KNIGHT,Unit.U_KNIGHT];
+               break;
             case " 4 legged Fury: Crawlers Attack":
                if(difficulty == Campaign.D_NORMAL)
                {
@@ -184,6 +191,7 @@ package com.brockw.stickwar.campaign
                   return [Unit.U_CAT,Unit.U_CAT,Unit.U_CAT,Unit.U_CAT,Unit.U_BOMBER,Unit.U_BOMBER];
                }
                return [Unit.U_CAT,Unit.U_CAT,Unit.U_CAT,Unit.U_CAT,Unit.U_CAT,Unit.U_CAT,Unit.U_BOMBER,Unit.U_BOMBER];
+               break;
             case "Shadow of the moon: Eclipsors Attack.":
                if(difficulty == Campaign.D_NORMAL)
                {
@@ -194,6 +202,7 @@ package com.brockw.stickwar.campaign
                   return [Unit.U_WINGIDON,Unit.U_WINGIDON,Unit.U_WINGIDON,Unit.U_KNIGHT];
                }
                return [Unit.U_WINGIDON,Unit.U_WINGIDON,Unit.U_WINGIDON,Unit.U_KNIGHT,Unit.U_KNIGHT];
+               break;
             case "Bone Pile: Marrowkai summon war":
                if(difficulty == Campaign.D_NORMAL)
                {
@@ -204,7 +213,8 @@ package com.brockw.stickwar.campaign
                   return [Unit.U_SKELATOR,Unit.U_DEAD,Unit.U_DEAD,Unit.U_KNIGHT];
                }
                return [Unit.U_SKELATOR,Unit.U_DEAD,Unit.U_DEAD,Unit.U_DEAD,Unit.U_KNIGHT];
-            case "Medusa's Gates: The Chaos Capital is in sight. ":
+               break;
+            case "Medusa\'s Gates: The Chaos Capital is in sight. ":
                if(difficulty == Campaign.D_NORMAL)
                {
                   return [Unit.U_MEDUSA,Unit.U_KNIGHT,Unit.U_WINGIDON,Unit.U_SKELATOR];
@@ -214,6 +224,7 @@ package com.brockw.stickwar.campaign
                   return [Unit.U_MEDUSA,Unit.U_KNIGHT,Unit.U_KNIGHT,Unit.U_WINGIDON,Unit.U_WINGIDON,Unit.U_SKELATOR];
                }
                return [Unit.U_MEDUSA,Unit.U_KNIGHT,Unit.U_KNIGHT,Unit.U_WINGIDON,Unit.U_WINGIDON,Unit.U_WINGIDON,Unit.U_SKELATOR];
+               break;
             default:
                return null;
          }
@@ -232,8 +243,8 @@ package com.brockw.stickwar.campaign
          var column:int = 0;
          var rowCount:int = 0;
          var totalRows:int = 0;
-         var xPos:Number = NaN;
-         var yPos:Number = NaN;
+         var xPos:Number = Number(NaN);
+         var yPos:Number = Number(NaN);
          var minerIndex:int = 0;
          var isHelperMiner:Boolean = false;
          var currentLevelTitle:String = null;
@@ -275,9 +286,10 @@ package com.brockw.stickwar.campaign
          totalRows = Math.ceil(unitTypes.length / 4);
          this.activateShield();
          this.playSpawnEffects();
-         for(i = 0; i < unitTypes.length; i++)
+         i = 0;
+         while(i < unitTypes.length)
          {
-            unitType = unitTypes[i];
+            unitType = int(unitTypes[i]);
             if(this.game.teamB.unitsAvailable != null && !(unitType in this.game.teamB.unitsAvailable))
             {
                this.game.teamB.unitsAvailable[unitType] = 1;
@@ -294,7 +306,6 @@ package com.brockw.stickwar.campaign
                if(this.bossSpawner.shouldPromoteWestwindBoss(unitType,int(spawnedBossTypeCounts[unitType])))
                {
                   this.bossSpawner.configureWestwindBoss(newUnit);
-
                   newUnit.enableCampaignBossEscape();
                }
             }
@@ -320,7 +331,7 @@ package com.brockw.stickwar.campaign
             {
                xPos = this.game.teamB.homeX + this.game.teamB.direction * 70;
                yPos = Math.max(80,Math.min(this.game.map.height - 80,this.game.map.height / 2 + (minerIndex - 1) * 75));
-               ++minerIndex;
+               minerIndex++;
             }
             newUnit.x = newUnit.px = xPos;
             newUnit.y = newUnit.py = yPos;
@@ -332,6 +343,7 @@ package com.brockw.stickwar.campaign
             attackMoveCommand.realX = this.playerTeam.statue.px;
             attackMoveCommand.realY = this.game.map.height / 2;
             newUnit.ai.setCommand(this.game,attackMoveCommand);
+            i++;
          }
       }
       
@@ -347,9 +359,10 @@ package com.brockw.stickwar.campaign
             return;
          }
          spawnX = this.getShadowrathFlankSpawnX();
-         for(i = 0; i < count; i++)
+         i = 0;
+         while(i < count)
          {
-            ninja = Ninja(this.game.unitFactory.getUnit(Unit.U_NINJA));
+            ninja = this.game.unitFactory.getUnit(Unit.U_NINJA);
             this.game.teamB.spawn(ninja,this.game);
             if(i == 0)
             {
@@ -371,9 +384,10 @@ package com.brockw.stickwar.campaign
                ninja.isBossMovementLocked = true;
                this.shadowrathFlankUnits.push([ninja,this.game.frame + SHADOWRATH_FLANK_LOCK_FRAMES]);
             }
+            i++;
          }
       }
-
+      
       private function updateShadowrathFlankUnits() : void
       {
          var i:int = 0;
@@ -390,23 +404,24 @@ package com.brockw.stickwar.campaign
             if(ninja == null || !ninja.isAlive())
             {
                this.shadowrathFlankUnits.splice(i,1);
-               continue;
             }
-            if(this.game.frame >= int(entry[1]))
+            else if(this.game.frame >= int(entry[1]))
             {
                ninja.isBossMovementLocked = false;
                this.shadowrathFlankUnits.splice(i,1);
-               continue;
             }
-            ninja.isBossMovementLocked = true;
-            if(this.game.frame % 15 == 0 && (ninja.ai == null || ninja.ai.currentTarget == null || !ninja.ai.currentTarget.isAlive()))
+            else
             {
-               this.issueShadowrathFlankTarget(ninja);
+               ninja.isBossMovementLocked = true;
+               if(this.game.frame % 15 == 0 && (ninja.ai == null || ninja.ai.currentTarget == null || !ninja.ai.currentTarget.isAlive()))
+               {
+                  this.issueShadowrathFlankTarget(ninja);
+               }
+               i++;
             }
-            ++i;
          }
       }
-
+      
       private function issueShadowrathFlankTarget(ninja:Ninja, preferBossPriority:Boolean = false) : void
       {
          var target:Unit = preferBossPriority ? this.getShadowrathFlankBossTarget(ninja) : this.getClosestFlankTarget(ninja);
@@ -436,7 +451,7 @@ package com.brockw.stickwar.campaign
          attackMoveCommand.realY = attackMoveCommand.goalY;
          ninja.ai.setCommand(this.game,attackMoveCommand);
       }
-
+      
       private function getShadowrathFlankBossTarget(ninja:Ninja) : Unit
       {
          var archer:Archer = null;
@@ -453,33 +468,32 @@ package com.brockw.stickwar.campaign
          }
          for each(unit in this.playerTeam.units)
          {
-            if(unit == null || !unit.isAlive() || !unit.isTargetable() || unit.isGarrisoned || unit.type == Unit.U_STATUE || unit.type == Unit.U_MINER || unit.type == Unit.U_CHAOS_MINER || unit.isFlying() && !ninja.canAttackAir())
+            if(!(unit == null || !unit.isAlive() || !unit.isTargetable() || unit.isGarrisoned || unit.type == Unit.U_STATUE || unit.type == Unit.U_MINER || unit.type == Unit.U_CHAOS_MINER || unit.isFlying() && !ninja.canAttackAir()))
             {
-               continue;
-            }
-            if(unit is Archer)
-            {
-               archer = Archer(unit);
-               archerDistance = ninja.sqrDistanceTo(archer);
-               if(archerDistance < bestArcherDistance)
+               if(unit is Archer)
                {
-                  bestArcherDistance = archerDistance;
-                  bestArcher = archer;
+                  archer = unit;
+                  archerDistance = ninja.sqrDistanceTo(archer);
+                  if(archerDistance < bestArcherDistance)
+                  {
+                     bestArcherDistance = archerDistance;
+                     bestArcher = archer;
+                  }
                }
-            }
-            else
-            {
-               fallbackDistance = ninja.sqrDistanceTo(unit);
-               if(fallbackDistance < bestFallbackDistance)
+               else
                {
-                  bestFallbackDistance = fallbackDistance;
-                  bestFallback = unit;
+                  fallbackDistance = ninja.sqrDistanceTo(unit);
+                  if(fallbackDistance < bestFallbackDistance)
+                  {
+                     bestFallbackDistance = fallbackDistance;
+                     bestFallback = unit;
+                  }
                }
             }
          }
          return bestArcher != null ? bestArcher : bestFallback;
       }
-
+      
       private function getClosestFlankTarget(ninja:Ninja) : Unit
       {
          var unit:Unit = null;
@@ -562,3 +576,4 @@ package com.brockw.stickwar.campaign
       }
    }
 }
+

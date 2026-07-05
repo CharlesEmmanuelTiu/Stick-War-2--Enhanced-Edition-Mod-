@@ -22,7 +22,7 @@ package com.brockw.stickwar.campaign
       
       public function isFactionBossLevel(title:String) : Boolean
       {
-         return title == "Tutorial" || title == "Blot out the sun: Archidons Declare War" || title == "Silent Assassins: Ninjas Declare War" || title == "Magic in the Air: Wizards and monks Declare War " || title == "The Night is Dark: Juggerknights Attack" || title == "Shadow of the moon: Eclipsors Attack." || title == "Bone Pile: Marrowkai summon war" || title == "Medusa's Gates: The Chaos Capital is in sight. ";
+         return title == "Tutorial" || title == "Blot out the sun: Archidons Declare War" || title == "Silent Assassins: Ninjas Declare War" || title == "Magic in the Air: Wizards and monks Declare War " || title == "The Night is Dark: Juggerknights Attack" || title == "Shadow of the moon: Eclipsors Attack." || title == "Bone Pile: Marrowkai summon war" || title == "Medusa\'s Gates: The Chaos Capital is in sight. ";
       }
       
       public function shouldPromoteWestwindBoss(unitType:int, spawnedCount:int) : Boolean
@@ -58,7 +58,7 @@ package com.brockw.stickwar.campaign
                return unitType == Unit.U_WINGIDON && spawnedCount == 1;
             case "Bone Pile: Marrowkai summon war":
                return unitType == Unit.U_SKELATOR && spawnedCount == 1;
-            case "Medusa's Gates: The Chaos Capital is in sight. ":
+            case "Medusa\'s Gates: The Chaos Capital is in sight. ":
                return (unitType == Unit.U_KNIGHT || unitType == Unit.U_WINGIDON || unitType == Unit.U_SKELATOR) && spawnedCount == 1;
             default:
                return false;
@@ -73,36 +73,36 @@ package com.brockw.stickwar.campaign
          }
          if(unit is Spearton)
          {
-            Spearton(unit).makeBoss();
+            unit.makeBoss();
             return;
          }
          if(unit is Archer)
          {
-            Archer(unit).makeBoss();
+            unit.makeBoss();
          }
          else if(unit is Ninja)
          {
-            Ninja(unit).makeBoss();
+            unit.makeBoss();
          }
          else if(unit is Magikill)
          {
-            Magikill(unit).makeBoss();
+            unit.makeBoss();
          }
          else if(unit is Monk)
          {
-            Monk(unit).makeBoss();
+            unit.makeBoss();
          }
          else if(unit is Knight)
          {
-            Knight(unit).makeBoss();
+            unit.makeBoss();
          }
          else if(unit is Wingidon)
          {
-            Wingidon(unit).makeBoss();
+            unit.makeBoss();
          }
          else if(unit is Skelator)
          {
-            Skelator(unit).makeBoss();
+            unit.makeBoss();
          }
          unit.isBossMovementLocked = false;
       }
@@ -112,9 +112,9 @@ package com.brockw.stickwar.campaign
          this.configureWestwindBoss(unit);
          if(unit is Skelator)
          {
-            Skelator(unit).makeBoss(title == "Medusa's Gates: The Chaos Capital is in sight. ");
+            unit.makeBoss(title == "Medusa\'s Gates: The Chaos Capital is in sight. ");
          }
-         if(unit != null && title != "Medusa's Gates: The Chaos Capital is in sight. ")
+         if(unit != null && title != "Medusa\'s Gates: The Chaos Capital is in sight. ")
          {
             unit.enableCampaignBossEscape();
          }
@@ -133,15 +133,15 @@ package com.brockw.stickwar.campaign
          this.game.teamB.tech.isResearchedMap[Tech.CLOAK_II] = true;
          this.game.teamB.tech.isResearchedMap[Tech.MAGIKILL_WALL] = true;
          this.game.teamB.tech.isResearchedMap[Tech.MAGIKILL_POISON] = true;
-          this.game.teamB.tech.isResearchedMap[Tech.MONK_CURE] = true;
-          this.game.teamB.tech.isResearchedMap[Tech.MONK_BOSS_REVIVE] = true;
-          this.game.teamB.tech.isResearchedMap[Tech.CASTLE_ARCHER_1] = true;
+         this.game.teamB.tech.isResearchedMap[Tech.MONK_CURE] = true;
+         this.game.teamB.tech.isResearchedMap[Tech.MONK_BOSS_REVIVE] = true;
+         this.game.teamB.tech.isResearchedMap[Tech.CASTLE_ARCHER_1] = true;
          this.game.teamB.tech.isResearchedMap[Tech.CASTLE_ARCHER_2] = true;
-          this.game.teamB.tech.isResearchedMap[Tech.WINGIDON_SPEED] = true;
-          this.game.teamB.tech.isResearchedMap[Tech.MAGIKILL_SUMMON_UPGRADE] = true;
-          this.game.teamB.tech.isResearchedMap[Tech.MAGIKILL_NUKE_2] = true;
-          this.game.teamB.tech.isResearchedMap[Tech.MAGIKILL_LIGHTNING_STUN] = true;
-       }
+         this.game.teamB.tech.isResearchedMap[Tech.WINGIDON_SPEED] = true;
+         this.game.teamB.tech.isResearchedMap[Tech.MAGIKILL_SUMMON_UPGRADE] = true;
+         this.game.teamB.tech.isResearchedMap[Tech.MAGIKILL_NUKE_2] = true;
+         this.game.teamB.tech.isResearchedMap[Tech.MAGIKILL_LIGHTNING_STUN] = true;
+      }
       
       public function grantFactionBossResearch(title:String) : void
       {
@@ -158,12 +158,12 @@ package com.brockw.stickwar.campaign
             case "Blot out the sun: Archidons Declare War":
                this.game.teamB.tech.isResearchedMap[Tech.ARCHIDON_FIRE] = true;
                break;
-             case "Silent Assassins: Ninjas Declare War":
-                this.game.teamB.tech.isResearchedMap[Tech.CLOAK] = true;
-                this.game.teamB.tech.isResearchedMap[Tech.CLOAK_II] = true;
-                this.game.teamB.tech.isResearchedMap[Tech.NINJA_CLOAK3] = true;
-                this.game.teamB.tech.isResearchedMap[Tech.NINJA_SHADOW_CLONE] = true;
-                break;
+            case "Silent Assassins: Ninjas Declare War":
+               this.game.teamB.tech.isResearchedMap[Tech.CLOAK] = true;
+               this.game.teamB.tech.isResearchedMap[Tech.CLOAK_II] = true;
+               this.game.teamB.tech.isResearchedMap[Tech.NINJA_CLOAK3] = true;
+               this.game.teamB.tech.isResearchedMap[Tech.NINJA_SHADOW_CLONE] = true;
+               break;
             case "Magic in the Air: Wizards and monks Declare War ":
                this.game.teamB.tech.isResearchedMap[Tech.MAGIKILL_WALL] = true;
                this.game.teamB.tech.isResearchedMap[Tech.MAGIKILL_POISON] = true;
@@ -172,7 +172,7 @@ package com.brockw.stickwar.campaign
             case "Shadow of the moon: Eclipsors Attack.":
                this.game.teamB.tech.isResearchedMap[Tech.WINGIDON_SPEED] = true;
                break;
-            case "Medusa's Gates: The Chaos Capital is in sight. ":
+            case "Medusa\'s Gates: The Chaos Capital is in sight. ":
                this.game.teamB.tech.isResearchedMap[Tech.WINGIDON_SPEED] = true;
                this.game.teamB.tech.isResearchedMap[Tech.SKELETON_FIST_ATTACK] = true;
                break;
@@ -182,3 +182,4 @@ package com.brockw.stickwar.campaign
       }
    }
 }
+

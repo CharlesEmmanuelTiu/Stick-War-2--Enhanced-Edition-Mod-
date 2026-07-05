@@ -18,9 +18,9 @@ package com.brockw.stickwar.campaign
       private static const MEDUSA_LOOK_AT_ME_COOLDOWN_FRAMES:int = 30 * 14;
       
       private static const MEDUSA_LOOK_AT_ME_VISIBLE_FRAMES:int = 30 * 7;
-
+      
       private static const ARCHIDON_CAPTAIN_MESSAGE:String = "The Archidon Captain has joined the battle";
-
+      
       private static const ARCHIDON_CAPTAIN_VISIBLE_FRAMES:int = 30 * 4;
       
       private static const DEFAULT_MESSAGE_SCALE:Number = 1.3;
@@ -38,7 +38,7 @@ package com.brockw.stickwar.campaign
       private var nextMagikillWardFrame:int;
       
       private var nextMedusaLookAtMeFrame:int;
-
+      
       private var activeWarningText:String;
       
       public function CampaignBossMessages(owner:DisplayObjectContainer, game:StickWar)
@@ -73,7 +73,7 @@ package com.brockw.stickwar.campaign
          this.showWarning(MEDUSA_LOOK_AT_ME_MESSAGE,MEDUSA_LOOK_AT_ME_VISIBLE_FRAMES);
          this.nextMedusaLookAtMeFrame = this.game.frame + MEDUSA_LOOK_AT_ME_COOLDOWN_FRAMES;
       }
-
+      
       public function showArchidonCaptain() : void
       {
          this.showWarning(ARCHIDON_CAPTAIN_MESSAGE,ARCHIDON_CAPTAIN_VISIBLE_FRAMES);
@@ -144,3 +144,4 @@ package com.brockw.stickwar.campaign
       }
    }
 }
+

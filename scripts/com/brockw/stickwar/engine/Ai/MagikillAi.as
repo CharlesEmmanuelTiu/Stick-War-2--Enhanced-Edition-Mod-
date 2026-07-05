@@ -1,10 +1,10 @@
 package com.brockw.stickwar.engine.Ai
 {
    import com.brockw.stickwar.engine.Ai.command.AttackMoveCommand;
+   import com.brockw.stickwar.engine.Ai.command.HoldCommand;
    import com.brockw.stickwar.engine.Ai.command.NukeCommand;
    import com.brockw.stickwar.engine.Ai.command.PoisonDartCommand;
    import com.brockw.stickwar.engine.Ai.command.StunCommand;
-   import com.brockw.stickwar.engine.Ai.command.HoldCommand;
    import com.brockw.stickwar.engine.Ai.command.UnitCommand;
    import com.brockw.stickwar.engine.StickWar;
    import com.brockw.stickwar.engine.Team.Team;
@@ -16,18 +16,19 @@ package com.brockw.stickwar.engine.Ai
    
    public class MagikillAi extends UnitAi
    {
+      
       private static const NUKE_WEIGHT:int = 5;
       
       private static const STUN_WEIGHT:int = 3;
       
       private static const POISON_WEIGHT:int = 2;
-
+      
       private static const BOSS_CASTING_DISTANCE:Number = 320;
-
+      
       private static const BOSS_PULLBACK_DISTANCE:Number = 390;
-
+      
       private static const BOSS_MELEE_LAST_RESORT_DISTANCE:Number = 95;
-
+      
       private static const BOSS_ATTACK_ACQUIRE_RANGE_SQR:Number = 640000;
       
       private var nukeCommand:NukeCommand;
@@ -39,27 +40,27 @@ package com.brockw.stickwar.engine.Ai
       private var shouldRestoreAutoSpellCommand:Boolean;
       
       private var holdCommand:HoldCommand;
-
+      
       private var attackMoveCommand:AttackMoveCommand;
-
+      
       private var cachedNearestTargetAny:Unit;
-
+      
       private var cachedNearestTargetAnyFrame:int;
-
+      
       private var cachedNearestTargetInRange:Unit;
-
+      
       private var cachedNearestTargetInRangeFrame:int;
-
+      
       private var cachedNearestSharedTarget:Unit;
-
+      
       private var cachedNearestSharedTargetFrame:int;
-
+      
       private var cachedNearestSharedTargetMask:int;
-
+      
       private var bossCommandAfterSummon:UnitCommand;
-
+      
       private var bossWasSummoning:Boolean;
-
+      
       private var bossAttackIntent:Boolean;
       
       public function MagikillAi(s:Magikill)
@@ -79,10 +80,10 @@ package com.brockw.stickwar.engine.Ai
          this.bossAttackIntent = false;
       }
       
-       override public function update(game:StickWar) : void
-       {
-          var magikill:Magikill = Magikill(unit);
-          if(unit.shouldStartCampaignBossEscape())
+      override public function update(game:StickWar) : void
+      {
+         var magikill:Magikill = unit;
+         if(unit.shouldStartCampaignBossEscape())
          {
             unit.startCampaignBossEscape();
          }
@@ -101,143 +102,143 @@ package com.brockw.stickwar.engine.Ai
             baseUpdate(game);
             return;
          }
-            if(magikill.isBoss)
+         if(magikill.isBoss)
+         {
+            if(currentCommand.type == UnitCommand.CURE)
             {
-                if(currentCommand.type == UnitCommand.CURE)
-                {
-                   Magikill(unit).autoCastMode = currentCommand.realX;
-                   restoreMove(game);
-                   baseUpdate(game);
-                   return;
-                }
-                 if(currentCommand.type == UnitCommand.MAGIKILL_SUMMON)
-                 {
-                    if(!magikill.canBossSummonAnyGuardType())
-                    {
-                       game.gameScreen.userInterface.helpMessage.showMessage("Max Minions reached");
-                       game.soundManager.playSoundFullVolume("UnitMakeFail");
-                       baseUpdate(game);
-                    }
-                    else if(magikill.tryBossSummonGuards(game))
-                    {
-                       unit.dx = 0;
-                       unit.dy = 0;
-                       unit.isBusyForSpell = true;
-                       nextMove(game);
-                    }
-                    return;
-                 }
-                if(currentCommand.type == UnitCommand.NUKE || currentCommand.type == UnitCommand.NUKE_2 || currentCommand.type == UnitCommand.STUN || currentCommand.type == UnitCommand.LIGHTNING_STUN || currentCommand.type == UnitCommand.POISON_DART)
-                {
-                   if(this.shouldRestoreAutoSpellCommand && !this.isAutoSpellTargetStillValid(game))
-                   {
-                      this.finishSpellCommand(game);
-                      return;
-                   }
-                   this.updateSpellCommandTargetPosition(game);
-                   if(!currentCommand.inRange(unit))
-                   {
-                      unit.mayWalkThrough = true;
-                      unit.isBusyForSpell = true;
-                      unit.walk((currentCommand.realX - unit.px) / 100,(currentCommand.realY - unit.py) / 100,(currentCommand.realX - unit.px) / 100);
-                   }
-                    else if(currentCommand.type == UnitCommand.NUKE || currentCommand.type == UnitCommand.NUKE_2)
-                    {
-                       Magikill(unit).nukeSpell(currentCommand.realX,currentCommand.realY);
-                       this.finishSpellCommand(game);
-                    }
-                      else if(currentCommand.type == UnitCommand.STUN || currentCommand.type == UnitCommand.LIGHTNING_STUN)
-                      {
-                         Magikill(unit).stunSpell(currentCommand.realX,currentCommand.realY);
-                         this.finishSpellCommand(game);
-                      }
-                     else if(currentCommand.type == UnitCommand.POISON_DART)
-                     {
-                        Magikill(unit).poisonDartSpell(PoisonDartCommand(currentCommand).realX,PoisonDartCommand(currentCommand).realY);
-                        this.finishSpellCommand(game);
-                     }
-                     return;
-                  }
-                  if(unit.team.isAi)
-                 {
-                    this.updateBossGenericCasting(game,magikill);
-                    return;
-                 }
-                  this.shouldRestoreAutoSpellCommand = false;
-                  if(magikill.isAutoCastEnabled && this.commandQueue.isEmpty())
-                  {
-                     this.tryAutoCast(game);
-                  }
-                  if(currentCommand.type == UnitCommand.NUKE || currentCommand.type == UnitCommand.NUKE_2 || currentCommand.type == UnitCommand.STUN || currentCommand.type == UnitCommand.LIGHTNING_STUN || currentCommand.type == UnitCommand.POISON_DART)
-                  {
-                     return;
-                  }
-                  if(!this.commandQueue.isEmpty())
-                  {
-                     nextMove(game);
-                  }
-                  baseUpdate(game);
-                  return;
-              }
-            if(this.tryFinishInitialSpawnMove(game))
-          {
-             return;
-          }
-           if(currentCommand.type == UnitCommand.CURE)
-           {
-              Magikill(unit).autoCastMode = currentCommand.realX;
-              restoreMove(game);
-              baseUpdate(game);
-           }
-           else if(currentCommand.type == UnitCommand.NUKE || currentCommand.type == UnitCommand.NUKE_2 || currentCommand.type == UnitCommand.STUN || currentCommand.type == UnitCommand.LIGHTNING_STUN || currentCommand.type == UnitCommand.POISON_DART)
-           {
-              if(this.shouldRestoreAutoSpellCommand && !this.isAutoSpellTargetStillValid(game))
-              {
-                 this.finishSpellCommand(game);
-                 return;
-              }
-              this.updateSpellCommandTargetPosition(game);
-              if(!currentCommand.inRange(unit))
-              {
-                 unit.mayWalkThrough = true;
-                 unit.isBusyForSpell = true;
-                 unit.walk((currentCommand.realX - unit.px) / 100,(currentCommand.realY - unit.py) / 100,(currentCommand.realX - unit.px) / 100);
-              }
-              else if(currentCommand.type == UnitCommand.NUKE || currentCommand.type == UnitCommand.NUKE_2)
-              {
-                 Magikill(unit).nukeSpell(currentCommand.realX,currentCommand.realY);
-                 this.finishSpellCommand(game);
-              }
-                else if(currentCommand.type == UnitCommand.STUN || currentCommand.type == UnitCommand.LIGHTNING_STUN)
-                   {
-                      Magikill(unit).stunSpell(currentCommand.realX,currentCommand.realY);
-                      this.finishSpellCommand(game);
-                   }
-               else if(currentCommand.type == UnitCommand.POISON_DART)
+               unit.autoCastMode = currentCommand.realX;
+               restoreMove(game);
+               baseUpdate(game);
+               return;
+            }
+            if(currentCommand.type == UnitCommand.MAGIKILL_SUMMON)
+            {
+               if(!magikill.canBossSummonAnyGuardType())
                {
-                  Magikill(unit).poisonDartSpell(PoisonDartCommand(currentCommand).realX,PoisonDartCommand(currentCommand).realY);
+                  game.gameScreen.userInterface.helpMessage.showMessage("Max Minions reached");
+                  game.soundManager.playSoundFullVolume("UnitMakeFail");
+                  baseUpdate(game);
+               }
+               else if(magikill.tryBossSummonGuards(game))
+               {
+                  unit.dx = 0;
+                  unit.dy = 0;
+                  unit.isBusyForSpell = true;
+                  nextMove(game);
+               }
+               return;
+            }
+            if(currentCommand.type == UnitCommand.NUKE || currentCommand.type == UnitCommand.NUKE_2 || currentCommand.type == UnitCommand.STUN || currentCommand.type == UnitCommand.LIGHTNING_STUN || currentCommand.type == UnitCommand.POISON_DART)
+            {
+               if(this.shouldRestoreAutoSpellCommand && !this.isAutoSpellTargetStillValid(game))
+               {
+                  this.finishSpellCommand(game);
+                  return;
+               }
+               this.updateSpellCommandTargetPosition(game);
+               if(!currentCommand.inRange(unit))
+               {
+                  unit.mayWalkThrough = true;
+                  unit.isBusyForSpell = true;
+                  unit.walk((currentCommand.realX - unit.px) / 100,(currentCommand.realY - unit.py) / 100,(currentCommand.realX - unit.px) / 100);
+               }
+               else if(currentCommand.type == UnitCommand.NUKE || currentCommand.type == UnitCommand.NUKE_2)
+               {
+                  unit.nukeSpell(currentCommand.realX,currentCommand.realY);
                   this.finishSpellCommand(game);
                }
-           }
-            else
-           {
-              this.shouldRestoreAutoSpellCommand = false;
-              if(unit.team.isAi && magikill.allowAiAutoCast)
-              {
-                 this.tryAiAutoCast(game,magikill);
-              }
-              else if(this.commandQueue.isEmpty())
-              {
-                 this.tryAutoCast(game);
-              }
-               if(currentCommand.type == UnitCommand.NUKE || currentCommand.type == UnitCommand.NUKE_2 || currentCommand.type == UnitCommand.STUN || currentCommand.type == UnitCommand.LIGHTNING_STUN || currentCommand.type == UnitCommand.POISON_DART)
+               else if(currentCommand.type == UnitCommand.STUN || currentCommand.type == UnitCommand.LIGHTNING_STUN)
                {
-                  return;
-              }
-             baseUpdate(game);
-          }
+                  unit.stunSpell(currentCommand.realX,currentCommand.realY);
+                  this.finishSpellCommand(game);
+               }
+               else if(currentCommand.type == UnitCommand.POISON_DART)
+               {
+                  unit.poisonDartSpell(currentCommand.realX,currentCommand.realY);
+                  this.finishSpellCommand(game);
+               }
+               return;
+            }
+            if(unit.team.isAi)
+            {
+               this.updateBossGenericCasting(game,magikill);
+               return;
+            }
+            this.shouldRestoreAutoSpellCommand = false;
+            if(magikill.isAutoCastEnabled && this.commandQueue.isEmpty())
+            {
+               this.tryAutoCast(game);
+            }
+            if(currentCommand.type == UnitCommand.NUKE || currentCommand.type == UnitCommand.NUKE_2 || currentCommand.type == UnitCommand.STUN || currentCommand.type == UnitCommand.LIGHTNING_STUN || currentCommand.type == UnitCommand.POISON_DART)
+            {
+               return;
+            }
+            if(!this.commandQueue.isEmpty())
+            {
+               nextMove(game);
+            }
+            baseUpdate(game);
+            return;
+         }
+         if(this.tryFinishInitialSpawnMove(game))
+         {
+            return;
+         }
+         if(currentCommand.type == UnitCommand.CURE)
+         {
+            unit.autoCastMode = currentCommand.realX;
+            restoreMove(game);
+            baseUpdate(game);
+         }
+         else if(currentCommand.type == UnitCommand.NUKE || currentCommand.type == UnitCommand.NUKE_2 || currentCommand.type == UnitCommand.STUN || currentCommand.type == UnitCommand.LIGHTNING_STUN || currentCommand.type == UnitCommand.POISON_DART)
+         {
+            if(this.shouldRestoreAutoSpellCommand && !this.isAutoSpellTargetStillValid(game))
+            {
+               this.finishSpellCommand(game);
+               return;
+            }
+            this.updateSpellCommandTargetPosition(game);
+            if(!currentCommand.inRange(unit))
+            {
+               unit.mayWalkThrough = true;
+               unit.isBusyForSpell = true;
+               unit.walk((currentCommand.realX - unit.px) / 100,(currentCommand.realY - unit.py) / 100,(currentCommand.realX - unit.px) / 100);
+            }
+            else if(currentCommand.type == UnitCommand.NUKE || currentCommand.type == UnitCommand.NUKE_2)
+            {
+               unit.nukeSpell(currentCommand.realX,currentCommand.realY);
+               this.finishSpellCommand(game);
+            }
+            else if(currentCommand.type == UnitCommand.STUN || currentCommand.type == UnitCommand.LIGHTNING_STUN)
+            {
+               unit.stunSpell(currentCommand.realX,currentCommand.realY);
+               this.finishSpellCommand(game);
+            }
+            else if(currentCommand.type == UnitCommand.POISON_DART)
+            {
+               unit.poisonDartSpell(currentCommand.realX,currentCommand.realY);
+               this.finishSpellCommand(game);
+            }
+         }
+         else
+         {
+            this.shouldRestoreAutoSpellCommand = false;
+            if(unit.team.isAi && magikill.allowAiAutoCast)
+            {
+               this.tryAiAutoCast(game,magikill);
+            }
+            else if(this.commandQueue.isEmpty())
+            {
+               this.tryAutoCast(game);
+            }
+            if(currentCommand.type == UnitCommand.NUKE || currentCommand.type == UnitCommand.NUKE_2 || currentCommand.type == UnitCommand.STUN || currentCommand.type == UnitCommand.LIGHTNING_STUN || currentCommand.type == UnitCommand.POISON_DART)
+            {
+               return;
+            }
+            baseUpdate(game);
+         }
       }
-
+      
       private function updateSpellCommandTargetPosition(game:StickWar) : void
       {
          var target:Unit = null;
@@ -245,7 +246,7 @@ package com.brockw.stickwar.engine.Ai
          {
             return;
          }
-         target = Unit(game.units[currentCommand.targetId]);
+         target = game.units[currentCommand.targetId];
          if(target == null || !target.isAlive() || target.team == null || target.team.id == unit.team.id || !target.isTargetable())
          {
             return;
@@ -253,7 +254,7 @@ package com.brockw.stickwar.engine.Ai
          currentCommand.realX = target.px;
          currentCommand.realY = target.py;
       }
-
+      
       private function tryReaperControlSpell(game:StickWar, magikill:Magikill) : Boolean
       {
          var target:Unit = null;
@@ -298,10 +299,10 @@ package com.brockw.stickwar.engine.Ai
          }
          return false;
       }
-
+      
       override public function setCommand(game:StickWar, c:UnitCommand) : void
       {
-         if(Magikill(unit).isBoss && Magikill(unit).isBusy() && this.shouldDeferBossCommand(c))
+         if(unit.isBoss && unit.isBusy() && this.shouldDeferBossCommand(c))
          {
             this.bossAttackIntent = false;
             this.bossCommandAfterSummon = c;
@@ -309,13 +310,13 @@ package com.brockw.stickwar.engine.Ai
             this.commandQueue.push(c);
             return;
          }
-         if(Magikill(unit).isBoss && this.shouldDeferBossCommand(c))
+         if(unit.isBoss && this.shouldDeferBossCommand(c))
          {
             this.bossAttackIntent = false;
          }
          super.setCommand(game,c);
       }
-
+      
       private function tryAiAutoCast(game:StickWar, magikill:Magikill) : void
       {
          var target:Unit = this.getNearestEnemyTarget(this.nukeCommand,false);
@@ -359,7 +360,7 @@ package com.brockw.stickwar.engine.Ai
          this.attackMoveCommand.type = UnitCommand.ATTACK_MOVE;
          this.setCommand(game,this.attackMoveCommand);
       }
-
+      
       private function updateBossGenericCasting(game:StickWar, magikill:Magikill) : void
       {
          var target:Unit = null;
@@ -470,7 +471,7 @@ package com.brockw.stickwar.engine.Ai
          }
          this.updateBossCasterSpacing(game,magikill,target);
       }
-
+      
       private function tryBossSummonAndCacheCommand(game:StickWar, magikill:Magikill) : Boolean
       {
          if(!magikill.tryBossSummonGuards(game))
@@ -484,7 +485,7 @@ package com.brockw.stickwar.engine.Ai
          }
          return true;
       }
-
+      
       private function restoreBossCommandAfterSummon(game:StickWar) : Boolean
       {
          var command:UnitCommand = null;
@@ -509,12 +510,12 @@ package com.brockw.stickwar.engine.Ai
          this.bossAttackIntent = false;
          return true;
       }
-
+      
       private function hasBossSpellReady(magikill:Magikill) : Boolean
       {
          return magikill.nukeCooldown() == 0 || unit.team.tech.isResearched(Tech.MAGIKILL_WALL) && magikill.stunCooldown() == 0 || unit.team.tech.isResearched(Tech.MAGIKILL_POISON) && magikill.poisonDartCooldown() == 0;
       }
-
+      
       private function canBossCastAnyReadySpell(magikill:Magikill, target:Unit) : Boolean
       {
          if(magikill.nukeCooldown() == 0)
@@ -546,12 +547,12 @@ package com.brockw.stickwar.engine.Ai
          }
          return false;
       }
-
+      
       private function distanceToTarget(target:Unit) : Number
       {
          return Math.abs(target.px - unit.px);
       }
-
+      
       private function updateBossCasterSpacing(game:StickWar, magikill:Magikill, target:Unit) : void
       {
          var distance:Number = Math.abs(target.px - unit.px);
@@ -589,12 +590,12 @@ package com.brockw.stickwar.engine.Ai
          }
          unit.faceDirection(target.px - unit.px);
       }
-
+      
       private function canBossMoveToSpellRange() : Boolean
       {
          return this.mayMoveToAttack && this.isBossAttackIntent();
       }
-
+      
       private function updateBossAttackIntentFromTarget(target:Unit) : void
       {
          if(!this.mayMoveToAttack || target == null || unit.isGarrisoned)
@@ -606,7 +607,7 @@ package com.brockw.stickwar.engine.Ai
             this.bossAttackIntent = true;
          }
       }
-
+      
       private function isDefensiveFormationMove() : Boolean
       {
          if(currentCommand.type != UnitCommand.MOVE && currentCommand.type != UnitCommand.ATTACK_MOVE)
@@ -615,12 +616,12 @@ package com.brockw.stickwar.engine.Ai
          }
          return Math.abs(currentCommand.goalX - (unit.team.homeX + unit.team.direction * 600)) < 80;
       }
-
+      
       private function isBossAttackIntent() : Boolean
       {
          return this.bossAttackIntent;
       }
-
+      
       private function shouldDeferBossCommand(c:UnitCommand) : Boolean
       {
          return c.type == UnitCommand.MOVE || c.type == UnitCommand.ATTACK_MOVE || c.type == UnitCommand.GARRISON || c.type == UnitCommand.STAND || c.type == UnitCommand.HOLD;
@@ -641,58 +642,58 @@ package com.brockw.stickwar.engine.Ai
          var directTarget:Unit = null;
          var totalWeight:int = 0;
          var roll:int = 0;
-          if(unit.team == null || unit.team.isAi || unit.isGarrisoned || unit.isBusy())
-          {
-             return;
-          }
-           magikill = Magikill(unit);
-            defendMode = this.isDefendMode();
-           if(!defendMode && currentCommand.type == UnitCommand.MOVE && currentCommand.targetId == -1)
-           {
-              defendMode = true;
-           }
-           if(!defendMode && !this.isAttackMode(game))
-          {
-             return;
-          }
-            if(defendMode && unit.isFeetMoving())
-           {
-              return;
-           }
-             if(!magikill.isAutoCastEnabled)
-           {
-              return;
-           }
-            if(magikill.isBoss && magikill.summonCooldown() == 0 && magikill.canBossSummonAnyGuardType() && (!magikill.isSummonUpgradeActive() || magikill.team.mana >= 70))
-           {
-              magikill.tryBossSummonGuards(game);
-           }
-            nukeReady = this.isSpellReadyForAutoCast(game,this.nukeCommand,magikill.nukeCooldown());
-           stunReady = unit.team.tech.isResearched(Tech.MAGIKILL_WALL) && this.isSpellReadyForAutoCast(game,this.stunCommand,magikill.stunCooldown());
-           poisonReady = unit.team.tech.isResearched(Tech.MAGIKILL_POISON) && this.isSpellReadyForAutoCast(game,this.poisonDartCommand,magikill.poisonDartCooldown());
-          if(magikill.isMeteorOnlyToggled)
-          {
-             if(!nukeReady)
-             {
-                return;
-             }
-             if(defendMode)
-             {
-                defendTarget = this.getNearestEnemyTarget(this.nukeCommand,false);
-             }
-             this.tryStartAutoSpell(game,this.nukeCommand,magikill.nukeCooldown(),this.getAutoCastTargetForSpell(game,this.nukeCommand,defendMode,defendTarget));
-             return;
-          }
-           if(!nukeReady && !stunReady && !poisonReady)
-          {
-             return;
-          }
-          if(defendMode)
-          {
-             defendTarget = this.getNearestEnemyTarget(this.nukeCommand,false);
-          }
-          directTarget = this.getDirectAutoCastTarget(game);
-          if(directTarget != null)
+         if(unit.team == null || unit.team.isAi || unit.isGarrisoned || unit.isBusy())
+         {
+            return;
+         }
+         magikill = unit;
+         defendMode = this.isDefendMode();
+         if(!defendMode && currentCommand.type == UnitCommand.MOVE && currentCommand.targetId == -1)
+         {
+            defendMode = true;
+         }
+         if(!defendMode && !this.isAttackMode(game))
+         {
+            return;
+         }
+         if(defendMode && unit.isFeetMoving())
+         {
+            return;
+         }
+         if(!magikill.isAutoCastEnabled)
+         {
+            return;
+         }
+         if(magikill.isBoss && magikill.summonCooldown() == 0 && magikill.canBossSummonAnyGuardType() && (!magikill.isSummonUpgradeActive() || magikill.team.mana >= 70))
+         {
+            magikill.tryBossSummonGuards(game);
+         }
+         nukeReady = this.isSpellReadyForAutoCast(game,this.nukeCommand,magikill.nukeCooldown());
+         stunReady = unit.team.tech.isResearched(Tech.MAGIKILL_WALL) && this.isSpellReadyForAutoCast(game,this.stunCommand,magikill.stunCooldown());
+         poisonReady = unit.team.tech.isResearched(Tech.MAGIKILL_POISON) && this.isSpellReadyForAutoCast(game,this.poisonDartCommand,magikill.poisonDartCooldown());
+         if(magikill.isMeteorOnlyToggled)
+         {
+            if(!nukeReady)
+            {
+               return;
+            }
+            if(defendMode)
+            {
+               defendTarget = this.getNearestEnemyTarget(this.nukeCommand,false);
+            }
+            this.tryStartAutoSpell(game,this.nukeCommand,magikill.nukeCooldown(),this.getAutoCastTargetForSpell(game,this.nukeCommand,defendMode,defendTarget));
+            return;
+         }
+         if(!nukeReady && !stunReady && !poisonReady)
+         {
+            return;
+         }
+         if(defendMode)
+         {
+            defendTarget = this.getNearestEnemyTarget(this.nukeCommand,false);
+         }
+         directTarget = this.getDirectAutoCastTarget(game);
+         if(directTarget != null)
          {
             sharedTarget = directTarget;
          }
@@ -781,7 +782,7 @@ package com.brockw.stickwar.engine.Ai
          {
             if(game.units[currentCommand.targetId] is Unit)
             {
-               return Unit(game.units[currentCommand.targetId]).team != null && Unit(game.units[currentCommand.targetId]).team.id != unit.team.id;
+               return game.units[currentCommand.targetId].team != null && game.units[currentCommand.targetId].team.id != unit.team.id;
             }
          }
          return false;
@@ -793,11 +794,11 @@ package com.brockw.stickwar.engine.Ai
          {
             if(game.units[currentCommand.targetId] is Unit)
             {
-               if(this.isDirectAutoCastTarget(Unit(game.units[currentCommand.targetId])))
+               if(this.isDirectAutoCastTarget(game.units[currentCommand.targetId]))
                {
-                  if(!defendMode || this.canCastWithoutMoving(command,Unit(game.units[currentCommand.targetId])))
+                  if(!defendMode || this.canCastWithoutMoving(command,game.units[currentCommand.targetId]))
                   {
-                     return Unit(game.units[currentCommand.targetId]);
+                     return game.units[currentCommand.targetId];
                   }
                   return null;
                }
@@ -813,27 +814,27 @@ package com.brockw.stickwar.engine.Ai
          }
          return this.getNearestEnemyTarget(command,false);
       }
-
+      
       private function getDirectAutoCastTarget(game:StickWar) : Unit
       {
          if(currentCommand.targetId in game.units)
          {
             if(game.units[currentCommand.targetId] is Unit)
             {
-               if(this.isDirectAutoCastTarget(Unit(game.units[currentCommand.targetId])))
+               if(this.isDirectAutoCastTarget(game.units[currentCommand.targetId]))
                {
-                  return Unit(game.units[currentCommand.targetId]);
+                  return game.units[currentCommand.targetId];
                }
             }
          }
          return null;
       }
-
+      
       private function isDirectAutoCastTarget(target:Unit) : Boolean
       {
          return target != null && target.team != null && target.team.id != unit.team.id && target.isAlive() && !target.isGarrisoned;
       }
-
+      
       private function isAutoCastScanTarget(target:Unit) : Boolean
       {
          if(target == null)
@@ -852,7 +853,7 @@ package com.brockw.stickwar.engine.Ai
          var candidate:Unit = null;
          var wall:Wall = null;
          var closest:Unit = null;
-         var distance:Number = NaN;
+         var distance:Number = Number(NaN);
          var minDistance:Number = Number.POSITIVE_INFINITY;
          if(mustBeInRange)
          {
@@ -867,40 +868,35 @@ package com.brockw.stickwar.engine.Ai
          }
          for each(candidate in unit.team.enemyTeam.units)
          {
-            if(candidate == null || !this.isAutoCastScanTarget(candidate))
+            if(!(candidate == null || !this.isAutoCastScanTarget(candidate)))
             {
-               continue;
-            }
-            if(candidate.pz != 0 && !unit.canAttackAir())
-            {
-               continue;
-            }
-            if(mustBeInRange && !this.canCastWithoutMoving(command,candidate))
-            {
-               continue;
-            }
-            distance = unit.sqrDistanceToTarget(candidate);
-            if(distance < minDistance)
-            {
-               minDistance = distance;
-               closest = candidate;
+               if(!(candidate.pz != 0 && !unit.canAttackAir()))
+               {
+                  if(!(mustBeInRange && !this.canCastWithoutMoving(command,candidate)))
+                  {
+                     distance = unit.sqrDistanceToTarget(candidate);
+                     if(distance < minDistance)
+                     {
+                        minDistance = distance;
+                        closest = candidate;
+                     }
+                  }
+               }
             }
          }
          for each(wall in unit.team.enemyTeam.walls)
          {
-            if(wall == null || !wall.isTargetable())
+            if(!(wall == null || !wall.isTargetable()))
             {
-               continue;
-            }
-            if(mustBeInRange && !this.canCastWithoutMoving(command,wall))
-            {
-               continue;
-            }
-            distance = unit.sqrDistanceToTarget(wall);
-            if(distance < minDistance)
-            {
-               minDistance = distance;
-               closest = wall;
+               if(!(mustBeInRange && !this.canCastWithoutMoving(command,wall)))
+               {
+                  distance = unit.sqrDistanceToTarget(wall);
+                  if(distance < minDistance)
+                  {
+                     minDistance = distance;
+                     closest = wall;
+                  }
+               }
             }
          }
          if(closest != null)
@@ -916,7 +912,7 @@ package com.brockw.stickwar.engine.Ai
          this.cacheNearestEnemyTarget(null,mustBeInRange);
          return null;
       }
-
+      
       private function cacheNearestEnemyTarget(target:Unit, mustBeInRange:Boolean) : void
       {
          if(mustBeInRange)
@@ -930,14 +926,14 @@ package com.brockw.stickwar.engine.Ai
             this.cachedNearestTargetAnyFrame = unit.team.game.frame;
          }
       }
-
+      
       private function canCastWithoutMoving(command:UnitCommand, target:Unit) : Boolean
       {
          command.realX = target.px;
          command.realY = target.py;
          return command.inRange(unit);
       }
-
+      
       private function tryStartAutoSpell(game:StickWar, command:UnitCommand, cooldown:Number, target:Unit) : void
       {
          if(!this.isSpellAutoCastReady(game,command,cooldown,target))
@@ -946,27 +942,27 @@ package com.brockw.stickwar.engine.Ai
          }
          this.startAutoSpell(game,command,target);
       }
-
+      
       private function isSpellAutoCastReady(game:StickWar, command:UnitCommand, cooldown:Number, target:Unit) : Boolean
       {
          return cooldown == 0 && target != null && this.canAffordSpell(game,command);
       }
-
+      
       private function isSpellReadyForAutoCast(game:StickWar, command:UnitCommand, cooldown:Number) : Boolean
       {
          return cooldown == 0 && this.canAffordSpell(game,command);
       }
-
+      
       private function canAffordSpell(game:StickWar, command:UnitCommand) : Boolean
       {
          if(command.type == UnitCommand.NUKE)
          {
             return unit.team.mana >= int(game.xml.xml.Order.Units.magikill.nuke.mana);
          }
-          if(command.type == UnitCommand.STUN || command.type == UnitCommand.LIGHTNING_STUN)
-          {
-             return unit.team.mana >= int(game.xml.xml.Order.Units.magikill.electricWall.mana);
-          }
+         if(command.type == UnitCommand.STUN || command.type == UnitCommand.LIGHTNING_STUN)
+         {
+            return unit.team.mana >= int(game.xml.xml.Order.Units.magikill.electricWall.mana);
+         }
          if(command.type == UnitCommand.POISON_DART)
          {
             return unit.team.mana >= int(game.xml.xml.Order.Units.magikill.poisonSpray.mana);
@@ -976,9 +972,9 @@ package com.brockw.stickwar.engine.Ai
       
       private function startAutoSpell(game:StickWar, command:UnitCommand, target:Unit) : void
       {
-         if(Magikill(unit).isOnInitialSpawnMove)
+         if(unit.isOnInitialSpawnMove)
          {
-            Magikill(unit).isOnInitialSpawnMove = false;
+            unit.isOnInitialSpawnMove = false;
          }
          command.realX = target.px;
          command.realY = target.py;
@@ -999,7 +995,7 @@ package com.brockw.stickwar.engine.Ai
             nextMove(game);
          }
       }
-
+      
       private function isAutoSpellTargetStillValid(game:StickWar) : Boolean
       {
          if(currentCommand.targetId == -1)
@@ -1014,7 +1010,7 @@ package com.brockw.stickwar.engine.Ai
          {
             return false;
          }
-         return Unit(game.units[currentCommand.targetId]).team != null && Unit(game.units[currentCommand.targetId]).team.id != unit.team.id && Unit(game.units[currentCommand.targetId]).isTargetable();
+         return game.units[currentCommand.targetId].team != null && game.units[currentCommand.targetId].team.id != unit.team.id && game.units[currentCommand.targetId].isTargetable();
       }
       
       private function ensureCommands(game:StickWar) : void
@@ -1031,16 +1027,16 @@ package com.brockw.stickwar.engine.Ai
          {
             this.stunCommand = new StunCommand(game);
          }
-          if(this.poisonDartCommand == null)
-          {
-             this.poisonDartCommand = new PoisonDartCommand(game);
-          }
-          if(this.attackMoveCommand == null)
-          {
-             this.attackMoveCommand = new AttackMoveCommand(game);
-          }
-       }
-
+         if(this.poisonDartCommand == null)
+         {
+            this.poisonDartCommand = new PoisonDartCommand(game);
+         }
+         if(this.attackMoveCommand == null)
+         {
+            this.attackMoveCommand = new AttackMoveCommand(game);
+         }
+      }
+      
       private function getSharedAutoCastTarget(game:StickWar, defendMode:Boolean, defendTarget:Unit, useNuke:Boolean, useStun:Boolean, usePoison:Boolean) : Unit
       {
          var target:Unit = null;
@@ -1048,7 +1044,7 @@ package com.brockw.stickwar.engine.Ai
          {
             if(game.units[currentCommand.targetId] is Unit)
             {
-               target = Unit(game.units[currentCommand.targetId]);
+               target = game.units[currentCommand.targetId];
                if(target.team != null && target.team.id != unit.team.id && target.isTargetable() && this.canCastAllWithoutMoving(target,useNuke,useStun,usePoison))
                {
                   return target;
@@ -1065,13 +1061,13 @@ package com.brockw.stickwar.engine.Ai
          }
          return this.getNearestEnemySharedTarget(useNuke,useStun,usePoison);
       }
-
+      
       private function getNearestEnemySharedTarget(useNuke:Boolean, useStun:Boolean, usePoison:Boolean) : Unit
       {
          var candidate:Unit = null;
          var wall:Wall = null;
          var closest:Unit = null;
-         var distance:Number = NaN;
+         var distance:Number = Number(NaN);
          var minDistance:Number = Number.POSITIVE_INFINITY;
          var mask:int = (useNuke ? 1 : 0) | (useStun ? 2 : 0) | (usePoison ? 4 : 0);
          if(this.cachedNearestSharedTargetFrame == unit.team.game.frame && this.cachedNearestSharedTargetMask == mask)
@@ -1080,40 +1076,35 @@ package com.brockw.stickwar.engine.Ai
          }
          for each(candidate in unit.team.enemyTeam.units)
          {
-            if(candidate == null || !candidate.isTargetable())
+            if(!(candidate == null || !candidate.isTargetable()))
             {
-               continue;
-            }
-            if(candidate.pz != 0 && !unit.canAttackAir())
-            {
-               continue;
-            }
-            if(!this.canCastAllWithoutMoving(candidate,useNuke,useStun,usePoison))
-            {
-               continue;
-            }
-            distance = unit.sqrDistanceToTarget(candidate);
-            if(distance < minDistance)
-            {
-               minDistance = distance;
-               closest = candidate;
+               if(!(candidate.pz != 0 && !unit.canAttackAir()))
+               {
+                  if(this.canCastAllWithoutMoving(candidate,useNuke,useStun,usePoison))
+                  {
+                     distance = unit.sqrDistanceToTarget(candidate);
+                     if(distance < minDistance)
+                     {
+                        minDistance = distance;
+                        closest = candidate;
+                     }
+                  }
+               }
             }
          }
          for each(wall in unit.team.enemyTeam.walls)
          {
-            if(wall == null || !wall.isTargetable())
+            if(!(wall == null || !wall.isTargetable()))
             {
-               continue;
-            }
-            if(!this.canCastAllWithoutMoving(wall,useNuke,useStun,usePoison))
-            {
-               continue;
-            }
-            distance = unit.sqrDistanceToTarget(wall);
-            if(distance < minDistance)
-            {
-               minDistance = distance;
-               closest = wall;
+               if(this.canCastAllWithoutMoving(wall,useNuke,useStun,usePoison))
+               {
+                  distance = unit.sqrDistanceToTarget(wall);
+                  if(distance < minDistance)
+                  {
+                     minDistance = distance;
+                     closest = wall;
+                  }
+               }
             }
          }
          if(closest != null)
@@ -1129,14 +1120,14 @@ package com.brockw.stickwar.engine.Ai
          this.cacheNearestSharedTarget(null,mask);
          return null;
       }
-
+      
       private function cacheNearestSharedTarget(target:Unit, mask:int) : void
       {
          this.cachedNearestSharedTarget = target;
          this.cachedNearestSharedTargetFrame = unit.team.game.frame;
          this.cachedNearestSharedTargetMask = mask;
       }
-
+      
       private function canCastAllWithoutMoving(target:Unit, useNuke:Boolean, useStun:Boolean, usePoison:Boolean) : Boolean
       {
          if(useNuke && !this.canCastWithoutMoving(this.nukeCommand,target))
@@ -1153,25 +1144,26 @@ package com.brockw.stickwar.engine.Ai
          }
          return true;
       }
-
+      
       private function tryFinishInitialSpawnMove(game:StickWar) : Boolean
       {
-         if(!Magikill(unit).isOnInitialSpawnMove)
+         if(!unit.isOnInitialSpawnMove)
          {
             return false;
          }
          if(currentCommand.type != UnitCommand.ATTACK_MOVE)
          {
-            Magikill(unit).isOnInitialSpawnMove = false;
+            unit.isOnInitialSpawnMove = false;
             return false;
          }
          if(!currentCommand.isFinished(unit))
          {
             return false;
          }
-         Magikill(unit).isOnInitialSpawnMove = false;
+         unit.isOnInitialSpawnMove = false;
          this.setCommand(game,this.holdCommand);
          return true;
       }
    }
 }
+

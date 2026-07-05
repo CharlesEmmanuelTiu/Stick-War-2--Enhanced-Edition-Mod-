@@ -7,9 +7,9 @@ package com.brockw.stickwar.engine.Ai
    
    public class SkelatorAi extends UnitAi
    {
-
+      
       private static const BOSS_PREFERRED_DISTANCE:Number = 240;
-
+      
       private static const BOSS_HOLD_DISTANCE:Number = 360;
       
       public function SkelatorAi(s:Skelator)
@@ -19,12 +19,12 @@ package com.brockw.stickwar.engine.Ai
          isNonAttackingMage = true;
       }
       
-       override public function update(game:StickWar) : void
-       {
-          var targetId:int = 0;
+      override public function update(game:StickWar) : void
+      {
+         var targetId:int = 0;
          var targ:Entity = null;
          unit.isBusyForSpell = false;
-         if(Skelator(unit).isBoss && currentCommand.type != UnitCommand.FIST_ATTACK && currentCommand.type != UnitCommand.REAPER)
+         if(unit.isBoss && currentCommand.type != UnitCommand.FIST_ATTACK && currentCommand.type != UnitCommand.REAPER)
          {
             if(this.updateBossCaster(game))
             {
@@ -46,18 +46,18 @@ package com.brockw.stickwar.engine.Ai
             }
             else if(currentCommand.type == UnitCommand.FIST_ATTACK)
             {
-               Skelator(unit).fistAttack(FistAttackCommand(currentCommand).realX,FistAttackCommand(currentCommand).realY);
+               unit.fistAttack(currentCommand.realX,currentCommand.realY);
                nextMove(game);
             }
             else if(currentCommand.type == UnitCommand.REAPER)
             {
-               targetId = ReaperCommand(currentCommand).targetId;
+               targetId = currentCommand.targetId;
                if(targetId in game.units)
                {
                   targ = game.units[targetId];
-                  if(targ is Unit && Unit(targ).team != unit.team)
+                  if(targ is Unit && targ.team != unit.team)
                   {
-                     Skelator(unit).reaperAttack(Unit(targ));
+                     unit.reaperAttack(targ);
                      nextMove(game);
                   }
                   else
@@ -76,21 +76,21 @@ package com.brockw.stickwar.engine.Ai
             baseUpdate(game);
          }
       }
-
+      
       private function updateBossCaster(game:StickWar) : Boolean
       {
          var target:Unit = null;
-         var skelator:Skelator = Skelator(unit);
-         var dx:Number = NaN;
-         var dy:Number = NaN;
-         var distance:Number = NaN;
+         var skelator:Skelator = unit;
+         var dx:Number = Number(NaN);
+         var dy:Number = Number(NaN);
+         var distance:Number = Number(NaN);
          var isDistancing:Boolean = false;
          var retreatDirection:int = 0;
          var fistReady:Boolean = false;
          var fistCanCast:Boolean = false;
          var reaperReady:Boolean = false;
          var reaperTarget:Unit = null;
-         var reaperDistance:Number = NaN;
+         var reaperDistance:Number = Number(NaN);
          var reaperRange:Number = Number(game.xml.xml.Chaos.Units.skelator.reaper.range);
          var fistRange:Number = Number(game.xml.xml.Chaos.Units.skelator.fist.range);
          if(unit.isBusy() || unit.isIncapacitated())
@@ -166,32 +166,30 @@ package com.brockw.stickwar.engine.Ai
          unit.faceDirection(dx);
          return false;
       }
-
+      
       private function getBossReaperControlTarget(reaperRange:Number) : Unit
       {
          var enemy:Unit = null;
          var best:Unit = null;
-         var distance:Number = NaN;
+         var distance:Number = Number(NaN);
          var bestDistance:Number = Number.MAX_VALUE;
          for each(enemy in unit.team.enemyTeam.units)
          {
-            if(enemy == null || !enemy.isAlive() || !enemy.isTargetable() || enemy.isGarrisoned || enemy.isBossUnit || enemy.type == Unit.U_STATUE)
+            if(!(enemy == null || !enemy.isAlive() || !enemy.isTargetable() || enemy.isGarrisoned || enemy.isBossUnit || enemy.type == Unit.U_STATUE))
             {
-               continue;
-            }
-            distance = Math.sqrt(Math.pow(enemy.px - unit.px,2) + Math.pow(enemy.py - unit.py,2));
-            if(distance > reaperRange)
-            {
-               continue;
-            }
-            if(enemy.type == Unit.U_MAGIKILL)
-            {
-               return enemy;
-            }
-            if(distance < bestDistance)
-            {
-               bestDistance = distance;
-               best = enemy;
+               distance = Math.sqrt(Math.pow(enemy.px - unit.px,2) + Math.pow(enemy.py - unit.py,2));
+               if(distance <= reaperRange)
+               {
+                  if(enemy.type == Unit.U_MAGIKILL)
+                  {
+                     return enemy;
+                  }
+                  if(distance < bestDistance)
+                  {
+                     bestDistance = distance;
+                     best = enemy;
+                  }
+               }
             }
          }
          return best;

@@ -4,8 +4,8 @@ package com.brockw.stickwar.campaign
    import flash.display.MovieClip;
    import flash.events.Event;
    import flash.events.IOErrorEvent;
-   import flash.net.URLRequest;
    import flash.events.SecurityErrorEvent;
+   import flash.net.URLRequest;
    import flash.system.Security;
    
    public class YoutubeLoader extends MovieClip

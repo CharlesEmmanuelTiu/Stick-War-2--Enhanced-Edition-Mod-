@@ -53,7 +53,7 @@ package com.brockw.stickwar.engine.projectile
             this.mc.gotoAndStop(3);
          }
       }
-
+      
       override public function isReadyForCleanup() : Boolean
       {
          return this.framesDead > 45;

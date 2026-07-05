@@ -13,9 +13,9 @@ package com.brockw.stickwar.campaign.controllers
       private var message:InGameMessage;
       
       private var frames:int;
-
+      
       private var openingRushIssued:Boolean;
-
+      
       public function CampaignKnight(gameScreen:GameScreen)
       {
          super(gameScreen);
@@ -48,7 +48,7 @@ package com.brockw.stickwar.campaign.controllers
             }
          }
       }
-
+      
       private function tryOpeningRush(gameScreen:GameScreen) : void
       {
          var unitId:String = null;

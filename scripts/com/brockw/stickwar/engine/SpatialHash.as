@@ -9,7 +9,7 @@ package com.brockw.stickwar.engine
       private var partitions:Vector.<Vector.<Entity>>;
       
       private var partitionSizes:Vector.<int>;
-
+      
       private var activePartitions:Vector.<int>;
       
       private var width:Number;
@@ -27,7 +27,7 @@ package com.brockw.stickwar.engine
       internal var visited:Dictionary;
       
       internal var game:StickWar;
-
+      
       private var visitToken:int;
       
       public function SpatialHash(game:StickWar, width:Number, height:Number, boxWidth:Number, boxHeight:Number, maxEntitys:int)
@@ -46,13 +46,17 @@ package com.brockw.stickwar.engine
          this.boxHeight = boxHeight;
          this.rows = height / boxHeight;
          this.cols = width / boxWidth;
-         for(var y:int = 0; y < this.rows; y++)
+         var y:int = 0;
+         while(y < this.rows)
          {
-            for(x = 0; x < this.cols; x++)
+            x = 0;
+            while(x < this.cols)
             {
                this.partitions[this.cols * y + x] = new Vector.<Entity>(maxEntitys,false);
                this.partitionSizes[this.cols * y + x] = 0;
+               x++;
             }
+            y++;
          }
       }
       
@@ -60,16 +64,22 @@ package com.brockw.stickwar.engine
       {
          var x:int = 0;
          var i:int = 0;
-         for(var y:int = 0; y < this.rows; y++)
+         var y:int = 0;
+         while(y < this.rows)
          {
-            for(x = 0; x < this.cols; x++)
+            x = 0;
+            while(x < this.cols)
             {
-               for(i = 0; i < this.partitions[this.cols * y + x].length; i++)
+               i = 0;
+               while(i < this.partitions[this.cols * y + x].length)
                {
                   this.partitions[this.cols * y + x][i] = null;
+                  i++;
                }
                this.partitions[this.cols * y + x] = null;
+               x++;
             }
+            y++;
          }
          this.partitions = null;
          this.partitionSizes = null;
@@ -156,12 +166,15 @@ package com.brockw.stickwar.engine
             this.visitToken = 1;
             this.visited = new Dictionary();
          }
-         for(var x:int = startX; x < endX; x++)
+         var x:int = startX;
+         while(x < endX)
          {
-            for(var y:int = startY; y < endY; y++)
+            var y:int = startY;
+            while(y < endY)
             {
                cellIndex = this.cols * y + x;
-               for(i = 0; i < this.partitionSizes[cellIndex]; i++)
+               i = 0;
+               while(i < this.partitionSizes[cellIndex])
                {
                   entity = this.partitions[cellIndex][i];
                   if(this.visited[entity.id] !== this.visitToken)
@@ -169,8 +182,11 @@ package com.brockw.stickwar.engine
                      f(entity);
                      this.visited[entity.id] = this.visitToken;
                   }
+                  i++;
                }
+               y++;
             }
+            x++;
          }
       }
       
@@ -221,13 +237,15 @@ package com.brockw.stickwar.engine
       public function clear() : void
       {
          var i:int = 0;
-         for(i = 0; i < this.activePartitions.length; i++)
+         i = 0;
+         while(i < this.activePartitions.length)
          {
             this.partitionSizes[this.activePartitions[i]] = 0;
+            i++;
          }
          this.activePartitions.length = 0;
       }
-
+      
       private function addToCell(cellIndex:int, entity:Entity) : void
       {
          if(this.partitionSizes[cellIndex] == 0)

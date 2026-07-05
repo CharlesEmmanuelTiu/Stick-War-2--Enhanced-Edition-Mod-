@@ -7,15 +7,16 @@ package com.brockw.stickwar.engine.Ai.command
    import com.brockw.stickwar.engine.units.*;
    import flash.display.*;
    import flash.geom.ColorTransform;
-
+   
    public class Nuke2Command extends UnitCommand
    {
+      
       public static var actualButtonBitmap:Bitmap;
-
+      
       private var nukeArea:Number;
-
+      
       private var nukeRange:Number;
-
+      
       public function Nuke2Command(game:StickWar)
       {
          super();
@@ -30,8 +31,8 @@ package com.brockw.stickwar.engine.Ai.command
          {
             var bmd:BitmapData = new MagikillFireballs();
             var ct:ColorTransform = new ColorTransform();
-            ct.color = 0xFFD700;
-            bmd.draw(bmd, null, ct, BlendMode.MULTIPLY);
+            ct.color = 16766720;
+            bmd.draw(bmd,null,ct,BlendMode.MULTIPLY);
             actualButtonBitmap = new Bitmap(bmd);
          }
          buttonBitmap = actualButtonBitmap;
@@ -43,7 +44,7 @@ package com.brockw.stickwar.engine.Ai.command
             this.nukeRange = game.xml.xml.Order.Units.magikill.nuke.range;
             var techXml:XMLList = game.xml.xml.Order.Tech.magikillNuke2;
             var statsXml:XMLList = game.xml.xml.Order.Units.magikill.nuke;
-             var customXml:XML = <nuke2>
+            var customXml:XML = <nuke2>
                 <name>{techXml.child("name").text()}</name>
                 <info>{techXml.child("tip").text()}</info>
                 <cooldown>{statsXml.cooldown}</cooldown>
@@ -54,7 +55,7 @@ package com.brockw.stickwar.engine.Ai.command
             this.xmlInfo = new XMLList(customXml);
          }
       }
-
+      
       override public function cleanUpPreClick(canvas:Sprite) : void
       {
          super.cleanUpPreClick(canvas);
@@ -63,7 +64,7 @@ package com.brockw.stickwar.engine.Ai.command
             canvas.removeChild(cursor);
          }
       }
-
+      
       override public function drawCursorPreClick(canvas:Sprite, gameScreen:GameScreen) : Boolean
       {
          while(canvas.numChildren != 0)
@@ -87,26 +88,27 @@ package com.brockw.stickwar.engine.Ai.command
          this.drawRangeIndicators(canvas,this.nukeRange,true,gameScreen);
          return true;
       }
-
+      
       override public function drawCursorPostClick(canvas:Sprite, game:GameScreen) : Boolean
       {
          super.drawCursorPostClick(canvas,game);
          return true;
       }
-
+      
       override public function coolDownTime(entity:Entity) : Number
       {
-         return Magikill(entity).nukeCooldown();
+         return entity.nukeCooldown();
       }
-
+      
       override public function isFinished(unit:Unit) : Boolean
       {
-         return Magikill(unit).nukeCooldown() == 0;
+         return unit.nukeCooldown() == 0;
       }
-
+      
       override public function inRange(entity:Entity) : Boolean
       {
          return Math.pow(realX - entity.px,2) + Math.pow(realY - entity.py,2) < Math.pow(this.nukeRange,2);
       }
    }
 }
+

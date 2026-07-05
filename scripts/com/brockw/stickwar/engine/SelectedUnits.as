@@ -50,18 +50,20 @@ package com.brockw.stickwar.engine
          {
             if(game.gameScreen.hasEffects)
             {
-               for(i = 0; i < this.profilePic.numChildren; i++)
+               i = 0;
+               while(i < this.profilePic.numChildren)
                {
                   d = this.profilePic.getChildAt(i);
                   if(d is MovieClip)
                   {
-                     m = MovieClip(d);
+                     m = d;
                      if(m.currentFrame == m.totalFrames)
                      {
                         m.gotoAndStop(1);
                      }
                      m.nextFrame();
                   }
+                  i++;
                }
             }
          }
@@ -139,11 +141,11 @@ package com.brockw.stickwar.engine
       {
          if(this.profilePic != null)
          {
-            MovieClip(this.gameScreen.userInterface.hud.hud.profile).removeChild(this.profilePic);
+            this.gameScreen.userInterface.hud.hud.profile.removeChild(this.profilePic);
          }
          if(pic != null)
          {
-            MovieClip(this.gameScreen.userInterface.hud.hud.profile).addChild(pic);
+            this.gameScreen.userInterface.hud.hud.profile.addChild(pic);
          }
          this.profilePic = pic;
       }
@@ -168,7 +170,7 @@ package com.brockw.stickwar.engine
          this.unitTypeKeys.splice(0,this.unitTypeKeys.length);
          this.setProfilePic(null);
       }
-
+      
       private function removeUnselectableUnits() : void
       {
          var i:int = 0;
@@ -201,7 +203,8 @@ package com.brockw.stickwar.engine
          }
          this.unitTypeKeys.splice(0,this.unitTypeKeys.length);
          this.selected.splice(0,this.selected.length);
-         for(i = 0; i < oldSelection.length; i++)
+         i = 0;
+         while(i < oldSelection.length)
          {
             unit = oldSelection[i];
             this.selected.push(unit);
@@ -214,6 +217,7 @@ package com.brockw.stickwar.engine
                this._interactsWith |= unit.interactsWith;
             }
             this.unitTypes[unit.type].push(unit);
+            i++;
          }
          if(this.currentUnitType == -1)
          {

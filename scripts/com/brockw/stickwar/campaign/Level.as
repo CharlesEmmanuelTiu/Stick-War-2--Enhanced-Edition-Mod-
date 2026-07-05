@@ -1,4 +1,4 @@
-﻿package com.brockw.stickwar.campaign
+package com.brockw.stickwar.campaign
 {
    import com.brockw.stickwar.campaign.controllers.*;
    import com.brockw.stickwar.market.ItemMap;
@@ -86,18 +86,14 @@
          {
             this.controller = CampaignArcher;
          }
-          else if(controllerName == "CampaignAmbush")
-          {
-             this.controller = CampaignAmbush;
-          }
-          else if(controllerName == "CampaignHordeCenter")
-          {
-             this.controller = CampaignHordeCenter;
-          }
+         else if(controllerName == "CampaignAmbush")
+         {
+            this.controller = CampaignAmbush;
+         }
          this.unlocks = [];
          for each(x in xml.unlock)
          {
-            this.unlocks.push(int(ItemMap.unitNameToType(x)));
+            this.unlocks.push(ItemMap.unitNameToType(x));
          }
          this.player = new Player(xml.player);
          this.oponent = new Player(xml.oponent);
@@ -111,7 +107,6 @@
             this.normalDamageModifier = x;
          }
          this.tip = xml.tip;
-
          this.totalTime = 0;
          this.bestTime = -1;
          this.retries = 0;
@@ -230,5 +225,4 @@
       }
    }
 }
-
 

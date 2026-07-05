@@ -196,7 +196,7 @@ package com.brockw.stickwar.campaign
                return [Unit.U_WINGIDON,Unit.U_KNIGHT];
             case "Bone Pile: Marrowkai summon war":
                return [Unit.U_SKELATOR,Unit.U_DEAD,Unit.U_KNIGHT];
-            case "Medusa's Gates: The Chaos Capital is in sight. ":
+            case "Medusa\'s Gates: The Chaos Capital is in sight. ":
                return [Unit.U_MEDUSA,Unit.U_KNIGHT,Unit.U_DEAD,Unit.U_SKELATOR,Unit.U_WINGIDON,Unit.U_GIANT,Unit.U_CAT,Unit.U_BOMBER];
             default:
                return [];
@@ -211,7 +211,7 @@ package com.brockw.stickwar.campaign
                return [Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_NINJA,Unit.U_MAGIKILL,Unit.U_MONK];
             case "Explosive War: Bombers Attack":
                return [Unit.U_BOMBER,Unit.U_GIANT];
-            case "Medusa's Gates: The Chaos Capital is in sight. ":
+            case "Medusa\'s Gates: The Chaos Capital is in sight. ":
                return [Unit.U_MEDUSA,Unit.U_KNIGHT,Unit.U_DEAD,Unit.U_SKELATOR,Unit.U_WINGIDON,Unit.U_GIANT,Unit.U_CAT,Unit.U_BOMBER,Unit.U_ENSLAVED_GIANT];
             default:
                return [];
@@ -219,3 +219,4 @@ package com.brockw.stickwar.campaign
       }
    }
 }
+

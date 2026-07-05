@@ -92,33 +92,33 @@ package com.brockw.stickwar.engine.Ai.command
       public static const REMOVE_WALL_COMMAND:int = 47;
       
       public static const REMOVE_TOWER_COMMAND:int = 48;
-
+      
       public static const SPEARTON_BOSS_BRACE:int = 49;
-
+      
       public static const ARCHER_BOSS_TRIPLE_SHOT:int = 50;
-
+      
       public static const ARCHER_BOSS_POISON_EXECUTE:int = 51;
-
+      
       public static const ARCHER_BOSS_ARROW_STORM:int = 52;
-
+      
       public static const ARCHER_BOSS_EXPLOSION:int = 53;
-
+      
       public static const ARCHER_BOSS_AUTO_TOGGLE:int = 54;
-
+      
       public static const NINJA_CLOAK3:int = 55;
-
+      
       public static const NINJA_SHADOW_CLONE:int = 56;
-
+      
       public static const MONK_BOSS_REVIVE:int = 57;
-
+      
       public static const MONK_BOSS_AUTO_REVIVE_TOGGLE:int = 58;
-
+      
       public static const MAGIKILL_SUMMON:int = 59;
-
+      
       public static const NUKE_2:int = 60;
-
+      
       public static const LIGHTNING_STUN:int = 61;
-
+      
       public static const actualButtonBitmap:* = new Bitmap(new CommandMove());
       
       protected var game:StickWar;
@@ -148,8 +148,6 @@ package com.brockw.stickwar.engine.Ai.command
       private var _isToggle:Boolean;
       
       private var _cursor:MovieClip;
-      
-      public var fromStance:Boolean;
       
       protected var _hasCoolDown:Boolean;
       
@@ -249,8 +247,8 @@ package com.brockw.stickwar.engine.Ai.command
       protected function drawRangeIndicators(canvas:Sprite, range:Number, showAll:Boolean, gameScreen:GameScreen) : void
       {
          var unit:Unit = null;
-         var topPoint:Number = NaN;
-         var bottomPoint:Number = NaN;
+         var topPoint:Number = Number(NaN);
+         var bottomPoint:Number = Number(NaN);
          var signature:String = this.getRangeIndicatorSignature(range,gameScreen);
          if(signature == this.lastRangeIndicatorSignature)
          {
@@ -277,7 +275,7 @@ package com.brockw.stickwar.engine.Ai.command
       private function getRangeIndicatorSignature(range:Number, gameScreen:GameScreen) : String
       {
          var unit:Unit = null;
-         var signature:String = String(range) + ":" + gameScreen.game.map.height + ":" + gameScreen.userInterface.selectedUnits.getSelectedType();
+         var signature:String = range + ":" + gameScreen.game.map.height + ":" + gameScreen.userInterface.selectedUnits.getSelectedType();
          for each(unit in gameScreen.userInterface.selectedUnits.selected)
          {
             if(unit.type == gameScreen.userInterface.selectedUnits.getSelectedType())
@@ -407,13 +405,13 @@ package com.brockw.stickwar.engine.Ai.command
       public function prepareNetworkedMove(gameScreen:GameScreen) : *
       {
          var unit:String = null;
-         var posX:Number = NaN;
-         var posY:Number = NaN;
+         var posX:Number = Number(NaN);
+         var posY:Number = Number(NaN);
          var p:Point = null;
-         var dposX:Number = NaN;
-         var dposY:Number = NaN;
+         var dposX:Number = Number(NaN);
+         var dposY:Number = Number(NaN);
          var c:UnitCommand = null;
-         var distanceNew:Number = NaN;
+         var distanceNew:Number = Number(NaN);
          this.playSound(gameScreen.game);
          var u:UnitMove = new UnitMove();
          u.moveType = this.type;
@@ -423,10 +421,10 @@ package com.brockw.stickwar.engine.Ai.command
          {
             if(this._isSingleSpell)
             {
-               c = UnitCommand(gameScreen.game.commandFactory.createCommand(gameScreen.game,this.type,0,0,0,0,0,0,0));
-               if((this.intendedEntityType == -1 || this.intendedEntityType == gameScreen.team.units[unit].type) && Unit(gameScreen.team.units[unit]).selected && (!c.hasCoolDown || c.hasCoolDown && c.coolDownTime(gameScreen.team.units[unit]) == 0) && !Unit(gameScreen.team.units[unit]).isBusy())
+               c = gameScreen.game.commandFactory.createCommand(gameScreen.game,this.type,0,0,0,0,0,0,0);
+               if((this.intendedEntityType == -1 || this.intendedEntityType == gameScreen.team.units[unit].type) && gameScreen.team.units[unit].selected && (!c.hasCoolDown || c.hasCoolDown && c.coolDownTime(gameScreen.team.units[unit]) == 0) && !gameScreen.team.units[unit].isBusy())
                {
-                  distanceNew = Unit(gameScreen.team.units[unit]).px - this.realX * Unit(gameScreen.team.units[unit]).px - this.realX + Unit(gameScreen.team.units[unit]).py - this.realY * Unit(gameScreen.team.units[unit]).py - this.realY;
+                  distanceNew = gameScreen.team.units[unit].px - this.realX * gameScreen.team.units[unit].px - this.realX + gameScreen.team.units[unit].py - this.realY * gameScreen.team.units[unit].py - this.realY;
                   if(bestUnit == null)
                   {
                      bestUnit = gameScreen.team.units[unit];
@@ -438,7 +436,7 @@ package com.brockw.stickwar.engine.Ai.command
                   }
                }
             }
-            else if(Unit(gameScreen.team.units[unit]).selected)
+            else if(gameScreen.team.units[unit].selected)
             {
                if(this.intendedEntityType == -1 || this.intendedEntityType == gameScreen.team.units[unit].type)
                {
@@ -454,7 +452,7 @@ package com.brockw.stickwar.engine.Ai.command
          {
             if(this._isSingleSpell)
             {
-               if(Unit(gameScreen.team.walls[unit]).selected)
+               if(gameScreen.team.walls[unit].selected)
                {
                   if(this.intendedEntityType == -1 || this.intendedEntityType == gameScreen.team.walls[unit].type)
                   {

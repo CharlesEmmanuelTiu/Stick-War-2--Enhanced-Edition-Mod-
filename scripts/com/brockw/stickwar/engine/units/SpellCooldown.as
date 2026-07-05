@@ -10,7 +10,7 @@ package com.brockw.stickwar.engine.units
       private var cooldownTime:int = 0;
       
       private var effect:int = 0;
-
+      
       private var activeEffectOverride:int = -1;
       
       private var mana:int = 0;
@@ -28,44 +28,50 @@ package com.brockw.stickwar.engine.units
       {
          if(this.counter >= this.cooldownTime && (team.bypassMana || this.mana <= team.mana))
          {
-            if(!team.bypassMana) team.mana -= this.mana;
+            if(!team.bypassMana)
+            {
+               team.mana -= this.mana;
+            }
             this.counter = 0;
             this.activeEffectOverride = -1;
             return true;
          }
          return false;
       }
-
+      
       public function spellActivateWithEffect(team:Team, effectFrames:int) : Boolean
       {
          if(this.counter >= this.cooldownTime && (team.bypassMana || this.mana <= team.mana))
          {
-            if(!team.bypassMana) team.mana -= this.mana;
+            if(!team.bypassMana)
+            {
+               team.mana -= this.mana;
+            }
             this.counter = 0;
             this.activeEffectOverride = effectFrames;
             return true;
          }
          return false;
       }
-
+      
       public function forceActivate() : void
       {
          this.counter = 0;
          this.activeEffectOverride = -1;
       }
-
+      
       public function forceActivateWithEffect(effectFrames:int) : void
       {
          this.counter = 0;
          this.activeEffectOverride = effectFrames;
       }
-
+      
       public function clearCooldown() : void
       {
          this.counter = this.cooldownTime;
          this.activeEffectOverride = -1;
       }
-
+      
       public function endEffect() : void
       {
          if(this.counter < this.currentEffectFrames())
@@ -98,7 +104,7 @@ package com.brockw.stickwar.engine.units
          }
          return t;
       }
-
+      
       private function currentEffectFrames() : int
       {
          if(this.activeEffectOverride >= 0)

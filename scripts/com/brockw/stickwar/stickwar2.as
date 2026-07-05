@@ -14,6 +14,7 @@ package com.brockw.stickwar
    [SWF(frameRate="30",width="850",height="700")]
    public class stickwar2 extends BaseMain
    {
+      
       public static var instObj:*;
       
       private var campaignMenuScreen:CampaignMenuScreen;
@@ -54,7 +55,7 @@ package com.brockw.stickwar
          }
          if(xml.xml.isKongregate == 1)
          {
-            paramObj = LoaderInfo(stage.root.loaderInfo).parameters;
+            paramObj = stage.root.loaderInfo.parameters;
             apiPath = paramObj.kongregate_api_path || "http://www.kongregate.com/flash/API_AS3_Local.swf";
             isKongregate = true;
             Security.allowDomain(apiPath);

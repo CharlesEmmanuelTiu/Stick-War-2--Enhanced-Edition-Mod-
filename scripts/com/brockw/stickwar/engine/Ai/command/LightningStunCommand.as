@@ -7,15 +7,16 @@ package com.brockw.stickwar.engine.Ai.command
    import com.brockw.stickwar.engine.units.*;
    import flash.display.*;
    import flash.geom.ColorTransform;
-
+   
    public class LightningStunCommand extends UnitCommand
    {
+      
       public static var actualButtonBitmap:Bitmap;
-
+      
       private var area:Number;
-
+      
       private var range:Number;
-
+      
       public function LightningStunCommand(game:StickWar)
       {
          super();
@@ -30,8 +31,8 @@ package com.brockw.stickwar.engine.Ai.command
          {
             var bmd:BitmapData = new MagikillWall();
             var ct:ColorTransform = new ColorTransform();
-            ct.color = 0xFFD700;
-            bmd.draw(bmd, null, ct, BlendMode.MULTIPLY);
+            ct.color = 16766720;
+            bmd.draw(bmd,null,ct,BlendMode.MULTIPLY);
             actualButtonBitmap = new Bitmap(bmd);
          }
          this.buttonBitmap = actualButtonBitmap;
@@ -43,7 +44,7 @@ package com.brockw.stickwar.engine.Ai.command
             this.range = game.xml.xml.Order.Units.magikill.electricWall.range;
             var techXml:XMLList = game.xml.xml.Order.Tech.magikillLightningStun;
             var statsXml:XMLList = game.xml.xml.Order.Units.magikill.electricWall;
-             var customXml:XML = <lightningStun>
+            var customXml:XML = <lightningStun>
                 <name>{techXml.child("name").text()}</name>
                 <info>{techXml.child("tip").text()}</info>
                 <cooldown>{statsXml.cooldown}</cooldown>
@@ -54,7 +55,7 @@ package com.brockw.stickwar.engine.Ai.command
             this.xmlInfo = new XMLList(customXml);
          }
       }
-
+      
       override public function cleanUpPreClick(canvas:Sprite) : void
       {
          super.cleanUpPreClick(canvas);
@@ -63,7 +64,7 @@ package com.brockw.stickwar.engine.Ai.command
             canvas.removeChild(cursor);
          }
       }
-
+      
       override public function drawCursorPreClick(canvas:Sprite, gameScreen:GameScreen) : Boolean
       {
          while(canvas.numChildren != 0)
@@ -87,13 +88,13 @@ package com.brockw.stickwar.engine.Ai.command
          this.drawRangeIndicators(canvas,this.range,true,gameScreen);
          return true;
       }
-
+      
       override public function drawCursorPostClick(canvas:Sprite, game:GameScreen) : Boolean
       {
          super.drawCursorPostClick(canvas,game);
          return true;
       }
-
+      
       override public function prepareNetworkedMove(gameScreen:GameScreen) : *
       {
          var unit:String = null;
@@ -101,7 +102,7 @@ package com.brockw.stickwar.engine.Ai.command
          u.moveType = this.type;
          for(unit in gameScreen.team.units)
          {
-            if(Unit(gameScreen.team.units[unit]).selected && gameScreen.team.units[unit] is Magikill && Magikill(gameScreen.team.units[unit]).stunCooldown() == 0)
+            if(gameScreen.team.units[unit].selected && gameScreen.team.units[unit] is Magikill && gameScreen.team.units[unit].stunCooldown() == 0)
             {
                if(this.intendedEntityType == -1 || this.intendedEntityType == gameScreen.team.units[unit].type)
                {
@@ -118,20 +119,21 @@ package com.brockw.stickwar.engine.Ai.command
          }
          gameScreen.doMove(u,team.id);
       }
-
+      
       override public function coolDownTime(entity:Entity) : Number
       {
-         return Magikill(entity).stunCooldown();
+         return entity.stunCooldown();
       }
-
+      
       override public function isFinished(unit:Unit) : Boolean
       {
          return false;
       }
-
+      
       override public function inRange(entity:Entity) : Boolean
       {
          return Math.pow(realX - entity.px,2) + Math.pow(realY - entity.py,2) < Math.pow(this.range,2);
       }
    }
 }
+

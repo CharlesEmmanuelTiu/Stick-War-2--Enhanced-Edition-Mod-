@@ -9,11 +9,11 @@ package com.brockw.stickwar.engine.projectile
    {
       
       private var mc:arrowMc;
-
+      
       private var explosionOnHit:Boolean;
-
+      
       private var explosionDamage:Number;
-
+      
       private var explosionTriggered:Boolean;
       
       public function Arrow(game:StickWar)
@@ -28,7 +28,7 @@ package com.brockw.stickwar.engine.projectile
          this.explosionDamage = 0;
          this.explosionTriggered = false;
       }
-
+      
       public function setExplosionOnHit(damage:Number) : void
       {
          this.explosionOnHit = damage > 0;
@@ -92,7 +92,7 @@ package com.brockw.stickwar.engine.projectile
             this.mc.gotoAndStop(3);
          }
       }
-
+      
       override public function isReadyForCleanup() : Boolean
       {
          return this.framesDead > 45;

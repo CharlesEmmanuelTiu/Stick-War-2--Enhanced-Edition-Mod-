@@ -112,11 +112,11 @@ package com.brockw.stickwar.campaign.controllers
       private var hasShownBuildSwordwrath:Boolean;
       
       private var hasSpawnedSpearton:Boolean;
-
+      
       private var hasIssuedPostTutorialAttack:Boolean;
-
+      
       private var lastState:int;
-
+      
       private var speartonAttackRefreshCounter:int;
       
       public function CampaignTutorial(gameScreen:GameScreen)
@@ -167,11 +167,11 @@ package com.brockw.stickwar.campaign.controllers
          this._gameScreen.team.gold = 500;
          this._gameScreen.team.enemyTeam.gold = 150;
          this._gameScreen.userInterface.isSlowCamera = false;
-         CampaignGameScreen(this._gameScreen).doAiUpdates = true;
+         this._gameScreen.doAiUpdates = true;
          this._gameScreen.userInterface.isGlobalsEnabled = true;
          this._gameScreen.team.tech.isResearchedMap[Tech.CASTLE_ARCHER_1] = 1;
       }
-
+      
       private function hasEnteredState() : Boolean
       {
          if(this.lastState == this.state)
@@ -182,7 +182,7 @@ package com.brockw.stickwar.campaign.controllers
          this.speartonAttackRefreshCounter = 0;
          return true;
       }
-
+      
       private function commandTutorialSpeartonAttack(gameScreen:GameScreen) : void
       {
          var u:UnitMove = null;
@@ -198,7 +198,7 @@ package com.brockw.stickwar.campaign.controllers
          u.arg1 = gameScreen.team.game.map.height / 2;
          u.execute(gameScreen.team.game);
       }
-
+      
       private function shouldRefreshTutorialSpeartonAttack() : Boolean
       {
          ++this.speartonAttackRefreshCounter;
@@ -209,7 +209,7 @@ package com.brockw.stickwar.campaign.controllers
          this.speartonAttackRefreshCounter = 0;
          return true;
       }
-
+      
       private function commandSwordwrathMoveNearBase(gameScreen:GameScreen) : void
       {
          var moveUnits:UnitMove = null;
@@ -226,7 +226,7 @@ package com.brockw.stickwar.campaign.controllers
          moveUnits.units.push(this.s2.id);
          moveUnits.execute(gameScreen.game);
       }
-
+      
       private function finishSpeartonTutorialFight(gameScreen:GameScreen) : void
       {
          var game:StickWar = null;
@@ -311,14 +311,14 @@ package com.brockw.stickwar.campaign.controllers
          gameScreen.userInterface.isSlowCamera = false;
          if(this.state == S_SET_UP)
          {
-            CampaignGameScreen(gameScreen).doAiUpdates = false;
+            gameScreen.doAiUpdates = false;
             gameScreen.userInterface.isGlobalsEnabled = false;
             gameScreen.team.gold = 0;
             gameScreen.team.mana = 0;
             gameScreen.team.enemyTeam.gold = 0;
             game = gameScreen.game;
-            u1 = Swordwrath(game.unitFactory.getUnit(Unit.U_SWORDWRATH));
-            u2 = Swordwrath(game.unitFactory.getUnit(Unit.U_SWORDWRATH));
+            u1 = game.unitFactory.getUnit(Unit.U_SWORDWRATH);
+            u2 = game.unitFactory.getUnit(Unit.U_SWORDWRATH);
             gameScreen.team.spawn(u1,game);
             gameScreen.team.spawn(u2,game);
             u1.px = gameScreen.team.homeX + 2000 * gameScreen.team.direction;
@@ -341,7 +341,7 @@ package com.brockw.stickwar.campaign.controllers
             gameScreen.addChild(this.message);
             this.arrow = new tutorialArrow();
             gameScreen.addChild(this.arrow);
-            this.m1 = Miner(game.unitFactory.getUnit(Unit.U_MINER));
+            this.m1 = game.unitFactory.getUnit(Unit.U_MINER);
             gameScreen.team.spawn(this.m1,game);
             this.m1.px = gameScreen.team.homeX + 400;
             this.m1.py = game.map.height / 2;
@@ -605,8 +605,8 @@ package com.brockw.stickwar.campaign.controllers
             this.message.y = gameScreen.game.stage.stageHeight / 4 - 75;
             this.message.setMessage("Click the icon below to build a Castle Archer.","Step #12",0,"voiceTutorial17",true);
             gameScreen.game.targetScreenX = 0;
-            gameScreen.userInterface.selectedUnits.add(Unit(gameScreen.team.buildings["ArcheryBuilding"]));
-            Unit(gameScreen.team.buildings["ArcheryBuilding"]).selected = true;
+            gameScreen.userInterface.selectedUnits.add(gameScreen.team.buildings["ArcheryBuilding"]);
+            gameScreen.team.buildings["ArcheryBuilding"].selected = true;
             this.arrow.x = gameScreen.game.stage.stageWidth - 170;
             this.arrow.y = gameScreen.game.stage.stageHeight - 100;
             this.arrow.visible = true;
@@ -657,13 +657,13 @@ package com.brockw.stickwar.campaign.controllers
          {
             this.message.setMessage("For a full list of commands, hit \'ESC\' or \'P\' for pause menu.","",0,"voiceTutorial21");
             this.arrow.visible = false;
-            CampaignGameScreen(gameScreen).doAiUpdates = true;
+            gameScreen.doAiUpdates = true;
          }
          else if(this.state == S_GOOD_LUCK_2)
          {
             this.message.setMessage("Your objective is to destroy the enemy statue before they destroy yours. Good luck.","",0,"voiceTutorial22");
             this.arrow.visible = false;
-            CampaignGameScreen(gameScreen).doAiUpdates = true;
+            gameScreen.doAiUpdates = true;
             gameScreen.userInterface.isGlobalsEnabled = true;
             this.spawnSpeartonCounter = 30 * 60 * 2;
          }
@@ -673,7 +673,7 @@ package com.brockw.stickwar.campaign.controllers
          }
          if(!this.hasSpawnedSpearton && gameScreen.game.team.enemyTeam.statue.health / gameScreen.game.team.enemyTeam.statue.maxHealth < 0.75)
          {
-            spearton2 = Spearton(gameScreen.game.unitFactory.getUnit(Unit.U_SPEARTON));
+            spearton2 = gameScreen.game.unitFactory.getUnit(Unit.U_SPEARTON);
             gameScreen.team.enemyTeam.spawn(spearton2,gameScreen.game);
             gameScreen.team.enemyTeam.population += 3;
             spearton2.x = spearton2.px = spearton2.team.homeX;
@@ -706,7 +706,7 @@ package com.brockw.stickwar.campaign.controllers
             if(this.message.hasFinishedPlayingSound() && this.s1.px < 2500 && this.s2.px < 2500)
             {
                this.state = S_MOVE_SCREEN;
-               this.o1 = Swordwrath(gameScreen.game.unitFactory.getUnit(Unit.U_SWORDWRATH));
+               this.o1 = gameScreen.game.unitFactory.getUnit(Unit.U_SWORDWRATH);
                gameScreen.team.enemyTeam.spawn(this.o1,gameScreen.game);
                this.o1.x = this.o1.px = 3350;
                this.o1.y = this.o1.py = gameScreen.game.map.height / 2;
@@ -744,7 +744,7 @@ package com.brockw.stickwar.campaign.controllers
          }
          else if(this.state == S_PRAY)
          {
-            if(this.message.hasFinishedPlayingSound() && MinerAi(this.m1.ai).targetOre == gameScreen.game.team.statue)
+            if(this.message.hasFinishedPlayingSound() && this.m1.ai.targetOre == gameScreen.game.team.statue)
             {
                this.state = CampaignTutorial.S_PRAY_INFO;
                this.counter = 0;
@@ -759,14 +759,14 @@ package com.brockw.stickwar.campaign.controllers
          }
          else if(this.state == S_SELECT_MINER_2)
          {
-            if(this.message.hasFinishedPlayingSound() && MinerAi(this.m1.ai).targetOre != null && MinerAi(this.m1.ai).targetOre != gameScreen.game.team.statue)
+            if(this.message.hasFinishedPlayingSound() && this.m1.ai.targetOre != null && this.m1.ai.targetOre != gameScreen.game.team.statue)
             {
                this.state = CampaignTutorial.S_START_MINING;
             }
          }
          else if(this.state == S_START_MINING)
          {
-            if(this.message.hasFinishedPlayingSound() && MinerAi(this.m1.ai).targetOre != null && MinerAi(this.m1.ai).targetOre != gameScreen.game.team.statue)
+            if(this.message.hasFinishedPlayingSound() && this.m1.ai.targetOre != null && this.m1.ai.targetOre != gameScreen.game.team.statue)
             {
                this.state = S_GOLD_INFO;
                gameScreen.team.gold = 150;
@@ -799,7 +799,7 @@ package com.brockw.stickwar.campaign.controllers
                   this.arrow.visible = false;
                   this.state = S_SHOW_ENEMY;
                   gameScreen.userInterface.isGlobalsEnabled = true;
-                  this.spearton1 = Spearton(gameScreen.game.unitFactory.getUnit(Unit.U_SPEARTON));
+                  this.spearton1 = gameScreen.game.unitFactory.getUnit(Unit.U_SPEARTON);
                   gameScreen.team.enemyTeam.spawn(this.spearton1,gameScreen.game);
                   gameScreen.team.enemyTeam.population += 3;
                   this.spearton1.x = this.spearton1.px = this.spearton1.team.homeX - 200;
@@ -838,7 +838,7 @@ package com.brockw.stickwar.campaign.controllers
          }
          else if(this.state == S_CLICK_ON_ARCHERY_RANGE)
          {
-            if(this.message.hasFinishedPlayingSound() && Unit(gameScreen.team.buildings["ArcheryBuilding"]).selected)
+            if(this.message.hasFinishedPlayingSound() && gameScreen.team.buildings["ArcheryBuilding"].selected)
             {
                this.state = S_UPGRADE_CASTLE_ARCHER;
             }
@@ -987,7 +987,7 @@ package com.brockw.stickwar.campaign.controllers
          }
          if(Boolean(this.message))
          {
-            if(!this.message.isMessageShowing() || Boolean(this.miniMessage) && Boolean(!this.miniMessage.isMessageShowing()))
+            if(!this.message.isMessageShowing() || Boolean(this.miniMessage) && !this.miniMessage.isMessageShowing())
             {
                if(Boolean(this.arrow))
                {

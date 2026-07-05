@@ -5,21 +5,12 @@ package com.brockw.stickwar.engine.Ai.command
    import com.brockw.stickwar.engine.units.*;
    import flash.display.*;
    import flash.geom.ColorTransform;
-   import flash.display.BlendMode;
-
+   
    public class ArcherBossPoisonExecuteCommand extends UnitCommand
    {
-      private static function createButtonBitmap() : Bitmap
-      {
-         var bmd:BitmapData = new ArchidonFire();
-         var ct:ColorTransform = new ColorTransform();
-         ct.color = 0x00FF00;
-         bmd.draw(bmd, null, ct, BlendMode.MULTIPLY);
-         return new Bitmap(bmd);
-      }
-
+      
       public static const actualButtonBitmap:Bitmap = createButtonBitmap();
-
+      
       public function ArcherBossPoisonExecuteCommand(game:StickWar)
       {
          super();
@@ -32,15 +23,25 @@ package com.brockw.stickwar.engine.Ai.command
             this.loadXML(game.xml.xml.Order.Units.archer.poisonExecute);
          }
       }
-
+      
+      private static function createButtonBitmap() : Bitmap
+      {
+         var bmd:BitmapData = new ArchidonFire();
+         var ct:ColorTransform = new ColorTransform();
+         ct.color = 65280;
+         bmd.draw(bmd,null,ct,BlendMode.MULTIPLY);
+         return new Bitmap(bmd);
+      }
+      
       override public function coolDownTime(entity:Entity) : Number
       {
-         return Archer(entity).getBossAbilityCooldownFraction(UnitCommand.ARCHER_BOSS_POISON_EXECUTE);
+         return entity.getBossAbilityCooldownFraction(UnitCommand.ARCHER_BOSS_POISON_EXECUTE);
       }
-
+      
       override public function isFinished(unit:Unit) : Boolean
       {
          return false;
       }
    }
 }
+

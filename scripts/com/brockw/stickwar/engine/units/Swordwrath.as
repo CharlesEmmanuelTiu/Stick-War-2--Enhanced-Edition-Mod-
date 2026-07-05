@@ -1,14 +1,14 @@
 package com.brockw.stickwar.engine.units
 {
-import com.brockw.game.Util;
-import com.brockw.stickwar.engine.ActionInterface;
-import com.brockw.stickwar.engine.Ai.SwordwrathAi;
-import com.brockw.stickwar.engine.Ai.command.*;
-import com.brockw.stickwar.engine.StickWar;
-import com.brockw.stickwar.engine.Team.Tech;
-import com.brockw.stickwar.market.*;
-import flash.display.MovieClip;
-import flash.filters.GlowFilter;
+   import com.brockw.game.Util;
+   import com.brockw.stickwar.engine.ActionInterface;
+   import com.brockw.stickwar.engine.Ai.SwordwrathAi;
+   import com.brockw.stickwar.engine.Ai.command.*;
+   import com.brockw.stickwar.engine.StickWar;
+   import com.brockw.stickwar.engine.Team.Tech;
+   import com.brockw.stickwar.market.*;
+   import flash.display.MovieClip;
+   import flash.filters.GlowFilter;
    
    public class Swordwrath extends Unit
    {
@@ -32,7 +32,7 @@ import flash.filters.GlowFilter;
       private var rageMaxVelocity:Number;
       
       private var lastWasStanding:Boolean;
-
+      
       private var forcedWeaponSkin:String = "";
       
       public function Swordwrath(game:StickWar)
@@ -53,7 +53,7 @@ import flash.filters.GlowFilter;
       
       public static function setItem(mc:MovieClip, weapon:String, armor:String, misc:String) : void
       {
-         var m:_swordwrath = _swordwrath(mc);
+         var m:_swordwrath = mc;
          if(Boolean(m.mc.sword))
          {
             if(weapon != "")
@@ -95,8 +95,8 @@ import flash.filters.GlowFilter;
          _mc.width *= _scale;
          _mc.height *= _scale;
          _state = S_RUN;
-         MovieClip(_mc.mc.gotoAndPlay(1));
-         MovieClip(_mc.gotoAndStop(1));
+         _mc.mc.gotoAndPlay(1);
+         _mc.gotoAndStop(1);
          drawShadow();
       }
       
@@ -113,11 +113,11 @@ import flash.filters.GlowFilter;
          }
          return damageToDeal;
       }
-
+      
       public function forceSkin(weapon:String) : void
       {
          this.forcedWeaponSkin = weapon;
-         Swordwrath.setItem(_swordwrath(mc),this.forcedWeaponSkin,"","");
+         Swordwrath.setItem(mc,this.forcedWeaponSkin,"","");
       }
       
       override public function update(game:StickWar) : void
@@ -143,7 +143,7 @@ import flash.filters.GlowFilter;
             {
                _mc.gotoAndStop(_currentDual.attackLabel);
                moveDualPartner(_dualPartner,_currentDual.xDiff);
-               if(MovieClip(_mc.mc).currentFrame == MovieClip(_mc.mc).totalFrames)
+               if(_mc.mc.currentFrame == _mc.mc.totalFrames)
                {
                   _mc.gotoAndStop("run");
                   _isDualing = false;
@@ -187,9 +187,9 @@ import flash.filters.GlowFilter;
                }
                if(this.rageSpell.inEffect())
                {
-                  MovieClip(_mc.mc).nextFrame();
+                  _mc.mc.nextFrame();
                }
-               if(MovieClip(_mc.mc).totalFrames == MovieClip(_mc.mc).currentFrame)
+               if(_mc.mc.totalFrames == _mc.mc.currentFrame)
                {
                   _state = S_RUN;
                }
@@ -201,7 +201,7 @@ import flash.filters.GlowFilter;
             if(_isDualing)
             {
                _mc.gotoAndStop(_currentDual.defendLabel);
-               if(MovieClip(_mc.mc).currentFrame == MovieClip(_mc.mc).totalFrames)
+               if(_mc.mc.currentFrame == _mc.mc.totalFrames)
                {
                   isDualing = false;
                   mc.filters = [];
@@ -222,19 +222,19 @@ import flash.filters.GlowFilter;
          }
          else
          {
-            if(MovieClip(_mc.mc).currentFrame == MovieClip(_mc.mc).totalFrames)
+            if(_mc.mc.currentFrame == _mc.mc.totalFrames)
             {
-               MovieClip(_mc.mc).gotoAndStop(1);
+               _mc.mc.gotoAndStop(1);
             }
-            MovieClip(_mc.mc).nextFrame();
+            _mc.mc.nextFrame();
          }
          if(this.forcedWeaponSkin != "")
          {
-            Swordwrath.setItem(_swordwrath(mc),this.forcedWeaponSkin,"","");
+            Swordwrath.setItem(mc,this.forcedWeaponSkin,"","");
          }
          else if(!hasDefaultLoadout)
          {
-            Swordwrath.setItem(_swordwrath(mc),team.loadout.getItem(this.type,MarketItem.T_WEAPON),"","");
+            Swordwrath.setItem(mc,team.loadout.getItem(this.type,MarketItem.T_WEAPON),"","");
          }
       }
       
@@ -307,17 +307,17 @@ import flash.filters.GlowFilter;
          {
             id = team.game.random.nextInt() % this._attackLabels.length;
             _mc.gotoAndStop("attack_" + this._attackLabels[id]);
-            MovieClip(_mc.mc).gotoAndStop(1);
+            _mc.mc.gotoAndStop(1);
             _state = S_ATTACK;
             hasHit = false;
             attackStartFrame = team.game.frame;
             if(this.rageSpell.inEffect())
             {
-               framesInAttack = MovieClip(_mc.mc).totalFrames / 2;
+               framesInAttack = _mc.mc.totalFrames / 2;
             }
             else
             {
-               framesInAttack = MovieClip(_mc.mc).totalFrames;
+               framesInAttack = _mc.mc.totalFrames;
             }
          }
       }

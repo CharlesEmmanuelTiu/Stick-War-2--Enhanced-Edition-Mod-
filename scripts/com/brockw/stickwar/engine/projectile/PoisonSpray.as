@@ -16,7 +16,7 @@ package com.brockw.stickwar.engine.projectile
       public var endX:Number;
       
       public var endY:Number;
-
+      
       public var controlledFriendlyFire:Boolean;
       
       public function PoisonSpray(game:StickWar)
@@ -50,15 +50,17 @@ package com.brockw.stickwar.engine.projectile
          }
          var rx:Number = r * (this.endX - this.startX) + this.startX;
          var ry:Number = r * (this.endY - this.startY) + this.startY;
-         for(var i:int = 0; i < n; i++)
+         var i:int = 0;
+         while(i < n)
          {
-            if(units[i] is Unit && (!this.controlledFriendlyFire && Unit(units[i]).team != this.team || this.controlledFriendlyFire && Unit(units[i]).team == this.team && Unit(units[i]) != this.inflictor && !Unit(units[i]).isBossUnit && Unit(units[i]).type != Unit.U_STATUE))
+            if(units[i] is Unit && (!this.controlledFriendlyFire && units[i].team != this.team || this.controlledFriendlyFire && units[i].team == this.team && units[i] != this.inflictor && !units[i].isBossUnit && units[i].type != Unit.U_STATUE))
             {
-               if(Math.pow(Unit(units[i]).px - rx,2) + Math.pow(Unit(units[i]).py - ry,2) < Math.pow(game.xml.xml.Order.Units.magikill.poisonSpray.area,2))
+               if(Math.pow(units[i].px - rx,2) + Math.pow(units[i].py - ry,2) < Math.pow(game.xml.xml.Order.Units.magikill.poisonSpray.area,2))
                {
-                  Unit(units[i]).poison(this.poisonDamage);
+                  units[i].poison(this.poisonDamage);
                }
             }
+            i++;
          }
       }
       

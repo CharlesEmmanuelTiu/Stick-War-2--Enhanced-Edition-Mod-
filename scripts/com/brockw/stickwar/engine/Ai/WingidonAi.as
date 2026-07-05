@@ -16,12 +16,12 @@ package com.brockw.stickwar.engine.Ai
          unit = s;
       }
       
-       override public function update(game:StickWar) : void
-       {
-          checkNextMove(game);
-          if(Wingidon(unit).isBoss)
+      override public function update(game:StickWar) : void
+      {
+         checkNextMove(game);
+         if(unit.isBoss)
          {
-            Wingidon(unit).tryBossAbilities(game);
+            unit.tryBossAbilities(game);
          }
          if(this.tryMarkedPreyFocus(game))
          {
@@ -29,30 +29,30 @@ package com.brockw.stickwar.engine.Ai
          }
          super.update(game);
       }
-
+      
       private function tryMarkedPreyFocus(game:StickWar) : Boolean
       {
-         var target:Unit = Wingidon(unit).getMarkedPreyTarget(game);
-         var walkX:Number = NaN;
-         if(target == null || (!mayAttack && !mayMoveToAttack))
+         var target:Unit = unit.getMarkedPreyTarget(game);
+         var walkX:Number = Number(NaN);
+         if(target == null || !mayAttack && !mayMoveToAttack)
          {
             return false;
          }
          currentTarget = target;
-         RangedUnit(unit).aim(currentTarget);
-         if(RangedUnit(unit).mayAttack(currentTarget) && currentCommand.type != UnitCommand.MOVE)
+         unit.aim(currentTarget);
+         if(unit.mayAttack(currentTarget) && currentCommand.type != UnitCommand.MOVE)
          {
             unit.faceDirection(Util.sgn(currentTarget.px - unit.px));
          }
          if(mayAttack && unit.mayAttack(currentTarget))
          {
             unit.faceDirection(Util.sgn(currentTarget.px - unit.px));
-            RangedUnit(unit).shoot(game,currentTarget);
+            unit.shoot(game,currentTarget);
          }
          else if(mayMoveToAttack && unit.sqrDistanceTo(currentTarget) < 150000 && !unit.isGarrisoned)
          {
             walkX = currentTarget.px - unit.px - 100 * unit.team.direction;
-            if(RangedUnit(unit).inRange(currentTarget) || Util.sgn(walkX) != Util.sgn(currentTarget.px - unit.px))
+            if(unit.inRange(currentTarget) || Util.sgn(walkX) != Util.sgn(currentTarget.px - unit.px))
             {
                unit.faceDirection(Util.sgn(currentTarget.px - unit.px));
             }

@@ -86,7 +86,7 @@ package com.brockw.stickwar.campaign.controllers
          this.updateCaptainAttackRefresh(gameScreen);
          if(this.state == this.S_BEFORE)
          {
-            if(Boolean(gameScreen.game.frame > 30) && Boolean(gameScreen.userInterface.selectedUnits.interactsWith & Unit.I_ENEMY) && !(gameScreen.userInterface.selectedUnits.interactsWith & Unit.I_MINE))
+            if(gameScreen.game.frame > 30 && Boolean(gameScreen.userInterface.selectedUnits.interactsWith & Unit.I_ENEMY) && !(gameScreen.userInterface.selectedUnits.interactsWith & Unit.I_MINE))
             {
                this.state = this.S_SELECT;
                this.message = new InGameMessage("",gameScreen.game);
@@ -188,9 +188,10 @@ package com.brockw.stickwar.campaign.controllers
          var total:int = CAPTAIN_SUPPORT_ARCHERS + 1;
          var xPos:Number = 0;
          var yPos:Number = 0;
-         for(i = 0; i < total; i++)
+         i = 0;
+         while(i < total)
          {
-            archer = Archer(gameScreen.game.unitFactory.getUnit(Unit.U_ARCHER));
+            archer = gameScreen.game.unitFactory.getUnit(Unit.U_ARCHER);
             gameScreen.team.enemyTeam.spawn(archer,gameScreen.game);
             if(i == 0)
             {
@@ -203,6 +204,7 @@ package com.brockw.stickwar.campaign.controllers
             gameScreen.team.enemyTeam.population += archer.population;
             this.issueCaptainAttackCommand(gameScreen,archer);
             spawnedArchers.push(archer);
+            i++;
          }
          this.pendingCaptainAttackRefresh = [gameScreen.game.frame + CAPTAIN_ATTACK_REFRESH_DELAY_FRAMES,spawnedArchers];
       }
@@ -249,3 +251,4 @@ package com.brockw.stickwar.campaign.controllers
       }
    }
 }
+

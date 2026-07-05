@@ -4,9 +4,9 @@ package com.brockw.stickwar.engine.units
    import com.brockw.stickwar.engine.*;
    import com.brockw.stickwar.engine.Ai.*;
    import com.brockw.stickwar.engine.Ai.command.*;
+   import com.brockw.stickwar.engine.Team.Chaos.*;
    import com.brockw.stickwar.engine.Team.Team;
    import com.brockw.stickwar.engine.Team.Tech;
-   import com.brockw.stickwar.engine.Team.Chaos.*;
    import com.brockw.stickwar.market.MarketItem;
    import flash.display.MovieClip;
    import flash.filters.GlowFilter;
@@ -16,39 +16,39 @@ package com.brockw.stickwar.engine.units
    {
       
       private static var WEAPON_REACH:int;
-
+      
       private static const BOSS_HEAD_SKIN:String = "Demon Mask";
-
+      
       private static const BOSS_QUIVER_SKIN:String = "Demon Quiver";
-
+      
       private static const BOSS_HEALTH_MULTIPLIER:Number = 2.4;
-
+      
       private static const BOSS_DAMAGE_MULTIPLIER:Number = 1.25;
-
+      
       private static const BOSS_MARK_DURATION_FRAMES:int = 30 * 12;
-
+      
       private static const BOSS_MARK_COOLDOWN_FRAMES:int = 30 * 12;
-
+      
       private static const BOSS_BURST_COOLDOWN_FRAMES:int = 30 * 16;
-
+      
       private static const BOSS_AURA_DURATION_FRAMES:int = 30 * 10;
-
+      
       private static const BOSS_AURA_COOLDOWN_FRAMES:int = 30 * 24;
-
+      
       private static const BOSS_BURST_STUN_FRAMES:int = 30 * 3;
-
+      
       private static const BOSS_SPECIAL_HIT_WINDOW_FRAMES:int = 30 * 4;
-
+      
       private static const BOSS_AURA_RADIUS:Number = 650;
-
+      
       private static const BOSS_MARK_FOCUS_RADIUS:Number = 750;
-
+      
       private static const BOSS_ARROW_RETREAT_THRESHOLD:Number = 120;
-
+      
       private static const BOSS_PROJECTILE_RESISTANCE_FRAMES:int = 30 * 4;
-
+      
       private static const BOSS_PROJECTILE_RESISTANCE:Number = 0.6;
-
+      
       private static const BOSS_RETREAT_FRAMES:int = 30;
       
       private var wingidonSpeedSpell:SpellCooldown;
@@ -56,41 +56,41 @@ package com.brockw.stickwar.engine.units
       private var normalVelocity:Number;
       
       private var windStrength:Number;
-
+      
       private var _isBoss:Boolean;
-
+      
       private var eclipseMarkCooldownFrames:int;
-
+      
       private var demonBurstCooldownFrames:int;
-
+      
       private var skyCommanderCooldownFrames:int;
-
+      
       private var skyCommanderAuraFrames:int;
-
+      
       private var pendingEclipseMarkHits:int;
-
+      
       private var eclipseMarkHitWindowFrames:int;
-
+      
       private var pendingEclipseMarkTargetId:int;
-
+      
       private var pendingEclipseMarkDamage:Number;
-
+      
       private var pendingDemonBurstHits:int;
-
+      
       private var demonBurstHitWindowFrames:int;
-
+      
       private var pendingDemonBurstDamage:Number;
-
+      
       private var demonBurstStunnedIds:Object;
-
+      
       private var eclipseMarkedUnitId:int;
-
+      
       private var eclipseMarkUntilFrame:int;
-
+      
       private var projectileResistanceFrames:int;
-
+      
       private var arrowDamageTaken:Number;
-
+      
       private var bossRetreatFrames:int;
       
       public function Wingidon(game:StickWar)
@@ -124,7 +124,7 @@ package com.brockw.stickwar.engine.units
       
       public static function setItem(mc:MovieClip, weapon:String, armor:String, misc:String) : void
       {
-         var m:_wingidon = _wingidon(mc);
+         var m:_wingidon = mc;
          if(Boolean(m.mc.body))
          {
             if(Boolean(m.mc.body.head))
@@ -167,15 +167,15 @@ package com.brockw.stickwar.engine.units
          _mc.height *= _scale;
          _hitBoxWidth = 25;
          _state = S_RUN;
-         MovieClip(_mc.mc.gotoAndPlay(1));
-         MovieClip(_mc.gotoAndStop(1));
+         _mc.mc.gotoAndPlay(1); //unpopped
+         _mc.gotoAndStop(1); //unpopped
          py = 0;
          pz = -flyingHeight * (game.backScale + py / game.map.height * (game.frontScale - game.backScale));
          y = -100;
          if(game != null)
          {
-            MovieClip(mc.mc.body.wings1).gotoAndPlay(Math.floor(MovieClip(mc.mc.body.wings1).totalFrames * game.random.nextNumber()));
-            MovieClip(mc.mc.body.wings2).gotoAndPlay(MovieClip(mc.mc.body.wings1).currentFrame);
+            mc.mc.body.wings1.gotoAndPlay(Math.floor(mc.mc.body.wings1.totalFrames * game.random.nextNumber()));
+            mc.mc.body.wings2.gotoAndPlay(mc.mc.body.wings1.currentFrame);
          }
          drawShadow();
          this.healthBar.y = -mc.mc.height * 0.9;
@@ -215,29 +215,29 @@ package com.brockw.stickwar.engine.units
             if(_mc.mc.body.legs != null)
             {
                _mc.mc.body.legs.rotation = getDirection() * _dx / _maxVelocity * game.xml.xml.Chaos.Units.wingidon.legRotateAngleWhenFlying;
-               MovieClip(mc.mc.body.legs).nextFrame();
-               if(MovieClip(mc.mc.body.legs).currentFrame == MovieClip(mc.mc.body.legs).totalFrames)
+               mc.mc.body.legs.nextFrame();
+               if(mc.mc.body.legs.currentFrame == mc.mc.body.legs.totalFrames)
                {
-                  MovieClip(mc.mc.body.legs).gotoAndStop(1);
+                  mc.mc.body.legs.gotoAndStop(1);
                }
             }
             if(mc.mc.body.wings1 != null)
             {
                if(this.wingidonSpeedSpell.inEffect())
                {
-                  MovieClip(mc.mc.body.wings1).nextFrame();
-                  MovieClip(mc.mc.body.wings2).nextFrame();
+                  mc.mc.body.wings1.nextFrame();
+                  mc.mc.body.wings2.nextFrame();
                   game.projectileManager.airEffects.push([px + team.direction * 100,py,team.direction * this.windStrength,team]);
                }
-               MovieClip(mc.mc.body.wings1).nextFrame();
-               MovieClip(mc.mc.body.wings2).nextFrame();
-               if(MovieClip(mc.mc.body.wings1).currentFrame == MovieClip(mc.mc.body.wings1).totalFrames)
+               mc.mc.body.wings1.nextFrame();
+               mc.mc.body.wings2.nextFrame();
+               if(mc.mc.body.wings1.currentFrame == mc.mc.body.wings1.totalFrames)
                {
-                  MovieClip(mc.mc.body.wings1).gotoAndStop(1);
+                  mc.mc.body.wings1.gotoAndStop(1);
                }
-               if(MovieClip(mc.mc.body.wings2).currentFrame == MovieClip(mc.mc.body.wings2).totalFrames)
+               if(mc.mc.body.wings2.currentFrame == mc.mc.body.wings2.totalFrames)
                {
-                  MovieClip(mc.mc.body.wings2).gotoAndStop(1);
+                  mc.mc.body.wings2.gotoAndStop(1);
                }
             }
             updateMotion(game);
@@ -262,7 +262,7 @@ package com.brockw.stickwar.engine.units
             {
                _mc.gotoAndStop(_currentDual.attackLabel);
                moveDualPartner(_dualPartner,_currentDual.xDiff);
-               if(MovieClip(_mc.mc).currentFrame == MovieClip(_mc.mc).totalFrames)
+               if(_mc.mc.currentFrame == _mc.mc.totalFrames)
                {
                   _isDualing = false;
                   _state = S_RUN;
@@ -279,11 +279,11 @@ package com.brockw.stickwar.engine.units
             }
             else if(_state == S_ATTACK)
             {
-               if(MovieClip(_mc.mc).currentFrame > MovieClip(_mc.mc).totalFrames / 2 && !hasHit)
+               if(_mc.mc.currentFrame > _mc.mc.totalFrames / 2 && !hasHit)
                {
                   hasHit = this.checkForHit();
                }
-               if(MovieClip(_mc.mc).totalFrames == MovieClip(_mc.mc).currentFrame)
+               if(_mc.mc.totalFrames == _mc.mc.currentFrame)
                {
                   _state = S_RUN;
                }
@@ -302,32 +302,32 @@ package com.brockw.stickwar.engine.units
             }
             this.team.removeUnit(this,game);
          }
-         if(!isDead && MovieClip(_mc.mc).currentFrame == MovieClip(_mc.mc).totalFrames)
+         if(!isDead && _mc.mc.currentFrame == _mc.mc.totalFrames)
          {
-            MovieClip(_mc.mc).gotoAndStop(1);
+            _mc.mc.gotoAndStop(1);
          }
          if(!isDead && _mc.mc != null)
          {
-            MovieClip(_mc.mc).nextFrame();
-            if(MovieClip(_mc.mc).currentFrame == MovieClip(_mc.mc).totalFrames)
+            _mc.mc.nextFrame();
+            if(_mc.mc.currentFrame == _mc.mc.totalFrames)
             {
-               MovieClip(_mc.mc).gotoAndStop(1);
+               _mc.mc.gotoAndStop(1);
             }
          }
          if(!isDead && _mc.mc.wings1 != null)
          {
-            MovieClip(_mc.mc).gotoAndStop(_mc.mc.wings1.currentFrame);
+            _mc.mc.gotoAndStop(_mc.mc.wings1.currentFrame);
          }
          if(isDead)
          {
             Util.animateMovieClip(_mc,3);
             if(_mc.mc.body != null && _mc.mc.body.quiver != null)
             {
-               MovieClip(_mc.mc.body.quiver).gotoAndStop(1);
+               _mc.mc.body.quiver.gotoAndStop(1);
             }
             else if(_mc.mc.quiver != null)
             {
-               MovieClip(_mc.mc.quiver).gotoAndStop(1);
+               _mc.mc.quiver.gotoAndStop(1);
             }
          }
          if(!hasDefaultLoadout)
@@ -342,7 +342,7 @@ package com.brockw.stickwar.engine.units
             }
          }
       }
-
+      
       private function updateBossTimers(game:StickWar) : void
       {
          if(!this.isBoss)
@@ -396,7 +396,7 @@ package com.brockw.stickwar.engine.units
          }
          this.updateBossGlow();
       }
-
+      
       private function updateBossGlow() : void
       {
          if(this.skyCommanderAuraFrames > 0)
@@ -412,9 +412,9 @@ package com.brockw.stickwar.engine.units
             this.filters = [];
          }
       }
-
-       override public function makeBoss(enableDeathBurst:Boolean = false) : void
-       {
+      
+      override public function makeBoss(enableDeathBurst:Boolean = false) : void
+      {
          if(this._isBoss)
          {
             return;
@@ -435,7 +435,7 @@ package com.brockw.stickwar.engine.units
             team.tech.isResearchedMap[Tech.WINGIDON_SPEED] = true;
          }
       }
-
+      
       public function tryBossAbilities(game:StickWar) : Boolean
       {
          var target:Unit = null;
@@ -479,12 +479,12 @@ package com.brockw.stickwar.engine.units
          }
          return false;
       }
-
+      
       private function chooseBossAbilityTarget() : Unit
       {
          var enemy:Unit = null;
          var best:Unit = null;
-         var score:Number = NaN;
+         var score:Number = Number(NaN);
          var bestScore:Number = Number.POSITIVE_INFINITY;
          if(team == null || team.enemyTeam == null)
          {
@@ -492,53 +492,52 @@ package com.brockw.stickwar.engine.units
          }
          for each(enemy in team.enemyTeam.units)
          {
-            if(enemy == null || !enemy.isAlive() || !enemy.isTargetable() || enemy.isGarrisoned || enemy.pz != 0 && !this.canAttackAir() || !this.inRange(enemy))
+            if(!(enemy == null || !enemy.isAlive() || !enemy.isTargetable() || enemy.isGarrisoned || enemy.pz != 0 && !this.canAttackAir() || !this.inRange(enemy)))
             {
-               continue;
-            }
-            score = this.sqrDistanceToTarget(enemy);
-            if(enemy.type == Unit.U_ARCHER || enemy.type == Unit.U_MONK || enemy.type == Unit.U_MAGIKILL || enemy.type == Unit.U_ENSLAVED_GIANT)
-            {
-               score *= 0.35;
-            }
-            if(score < bestScore)
-            {
-               bestScore = score;
-               best = enemy;
+               score = this.sqrDistanceToTarget(enemy);
+               if(enemy.type == Unit.U_ARCHER || enemy.type == Unit.U_MONK || enemy.type == Unit.U_MAGIKILL || enemy.type == Unit.U_ENSLAVED_GIANT)
+               {
+                  score *= 0.35;
+               }
+               if(score < bestScore)
+               {
+                  bestScore = score;
+                  best = enemy;
+               }
             }
          }
          return best;
       }
-
+      
       private function fireBossEclipseMark(game:StickWar, target:Unit) : Boolean
       {
          return this.fireBossBoltAtTarget(game,target,damageToDeal * 0.8,0,4,0);
       }
-
+      
       private function fireBossDemonBurst(game:StickWar, target:Unit) : Boolean
       {
          var fired:int = 0;
          if(this.fireBossBoltAtTarget(game,target,damageToDeal * 0.75,0,5,-4))
          {
-            ++fired;
+            fired++;
          }
          if(this.fireBossBoltAtTarget(game,target,damageToDeal * 0.75,0,5,0))
          {
-            ++fired;
+            fired++;
          }
          if(this.fireBossBoltAtTarget(game,target,damageToDeal * 0.75,0,5,4))
          {
-            ++fired;
+            fired++;
          }
          return fired > 0;
       }
-
+      
       private function fireBossBoltAtTarget(game:StickWar, target:Unit, damage:Number, slowFrames:int, boltStyle:int, dyOffset:Number = 0) : Boolean
       {
          var arms:MovieClip = null;
          var p:Point = null;
-         var angle:Number = NaN;
-         var rotation:Number = NaN;
+         var angle:Number = Number(NaN);
+         var rotation:Number = Number(NaN);
          if(target == null || !target.isAlive())
          {
             return false;
@@ -574,7 +573,7 @@ package com.brockw.stickwar.engine.units
          }
          return true;
       }
-
+      
       public function modifyBossProjectileDamage(target:Unit, type:int, damage:Number) : Number
       {
          if(target == null)
@@ -591,7 +590,7 @@ package com.brockw.stickwar.engine.units
          }
          return damage;
       }
-
+      
       public function onBossProjectileDamagedTarget(target:Unit, type:int, amount:int) : void
       {
          if(target == null || !target.isAlive())
@@ -622,7 +621,7 @@ package com.brockw.stickwar.engine.units
             }
          }
       }
-
+      
       public function getMarkedPreyTarget(game:StickWar) : Unit
       {
          var boss:Wingidon = null;
@@ -644,14 +643,14 @@ package com.brockw.stickwar.engine.units
          {
             return null;
          }
-         target = Unit(game.units[boss.eclipseMarkedUnitId]);
+         target = game.units[boss.eclipseMarkedUnitId];
          if(target == null || !target.isAlive() || !target.isTargetable() || target.isGarrisoned || this.sqrDistanceToTarget(target) > BOSS_MARK_FOCUS_RADIUS * BOSS_MARK_FOCUS_RADIUS)
          {
             return null;
          }
          return target;
       }
-
+      
       private function countNearbyWingidons() : int
       {
          var unit:Unit = null;
@@ -664,17 +663,17 @@ package com.brockw.stickwar.engine.units
          {
             if(unit != null && unit != this && unit is Wingidon && unit.isAlive() && !unit.isGarrisoned && this.sqrDistanceToTarget(unit) <= BOSS_AURA_RADIUS * BOSS_AURA_RADIUS)
             {
-               ++count;
+               count++;
             }
          }
          return count;
       }
-
+      
       private function hasNearbySkyCommanderAura() : Boolean
       {
          return this.getNearbySkyCommanderBoss(false) != null;
       }
-
+      
       private function getNearbySkyCommanderBoss(requireMark:Boolean) : Wingidon
       {
          var unit:Unit = null;
@@ -687,7 +686,7 @@ package com.brockw.stickwar.engine.units
          {
             if(unit is Wingidon)
             {
-               boss = Wingidon(unit);
+               boss = unit;
                if(boss.isBoss && boss.isAlive() && !boss.isGarrisoned && this.sqrDistanceToTarget(boss) <= BOSS_AURA_RADIUS * BOSS_AURA_RADIUS)
                {
                   if(!requireMark && boss.skyCommanderAuraFrames > 0)
@@ -716,10 +715,10 @@ package com.brockw.stickwar.engine.units
          }
          return super.mayAttack(target);
       }
-
+      
       override public function damage(type:int, amount:int, inflictor:Entity, modifier:Number = 1) : void
       {
-         var arrowDamage:Number = NaN;
+         var arrowDamage:Number = Number(NaN);
          if(this.isBoss && Boolean(type & Unit.D_ARROW))
          {
             arrowDamage = inflictor != null ? inflictor.getDamageToUnit(this) * modifier : amount * modifier;
@@ -772,7 +771,7 @@ package com.brockw.stickwar.engine.units
             baseWalk(x,y,intendedX);
          }
       }
-
+      
       public function get isBoss() : Boolean
       {
          return this._isBoss;

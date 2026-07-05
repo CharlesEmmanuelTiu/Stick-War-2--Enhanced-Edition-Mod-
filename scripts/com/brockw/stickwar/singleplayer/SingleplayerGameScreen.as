@@ -80,22 +80,21 @@ package com.brockw.stickwar.singleplayer
          var unit:Entity = null;
          var u:Unit = null;
          this.enemyTeamAi.update(game);
-          if(this.userInterface.keyBoardState.isPressed(82))
-          {
-             for each(unit in game.units)
-             {
-                if(unit is Unit && !(unit is Statue))
-                {
-                   u = Unit(unit);
-                   u.damage(0,u.maxHealth * 2,null);
-                }
-             }
-          }
-          if(this.userInterface.keyBoardState.isPressed(90))
-          {
-             team.enemyTeam.attack();
-          }
-
+         if(this.userInterface.keyBoardState.isPressed(82))
+         {
+            for each(unit in game.units)
+            {
+               if(unit is Unit && !(unit is Statue))
+               {
+                  u = unit;
+                  u.damage(0,u.maxHealth * 2,null);
+               }
+            }
+         }
+         if(this.userInterface.keyBoardState.isPressed(90))
+         {
+            team.enemyTeam.attack();
+         }
          super.update(evt,timeDiff);
       }
       
@@ -121,11 +120,11 @@ package com.brockw.stickwar.singleplayer
          e.winner = game.winner.id;
          e.turn = simulation.turn;
          simulation.processMove(e);
-         Main(main).postGameScreen.setReplayFile(simulation.gameReplay.toString(game));
-         Main(main).postGameScreen.setWinner(e.winner,team.type,team.realName,team.enemyTeam.realName,team.id);
-         Main(main).postGameScreen.setRecords(game.economyRecords,game.militaryRecords);
-         Main(main).postGameScreen.setMode(PostGameScreen.M_SINGLEPLAYER);
-         Main(main).showScreen("postGame");
+         main.postGameScreen.setReplayFile(simulation.gameReplay.toString(game));
+         main.postGameScreen.setWinner(e.winner,team.type,team.realName,team.enemyTeam.realName,team.id);
+         main.postGameScreen.setRecords(game.economyRecords,game.militaryRecords);
+         main.postGameScreen.setMode(PostGameScreen.M_SINGLEPLAYER);
+         main.showScreen("postGame");
       }
       
       override public function doMove(move:Move, id:int) : void

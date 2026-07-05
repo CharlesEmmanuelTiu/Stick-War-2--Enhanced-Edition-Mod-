@@ -7,23 +7,14 @@ package com.brockw.stickwar.engine.Ai.command
    import com.brockw.stickwar.engine.units.*;
    import flash.display.*;
    import flash.geom.ColorTransform;
-   import flash.display.BlendMode;
-
+   
    public class ArcherBossAutoToggleCommand extends UnitCommand
    {
-      private static function createButtonBitmap() : Bitmap
-      {
-         var bmd:BitmapData = new ArchidonFire();
-         var ct:ColorTransform = new ColorTransform();
-         ct.color = 0xFFFFFF;
-         bmd.draw(bmd, null, ct, BlendMode.MULTIPLY);
-         return new Bitmap(bmd);
-      }
-
+      
       public static const actualButtonBitmap:Bitmap = createButtonBitmap();
-
+      
       public var toggleTargetState:int = 0;
-
+      
       public function ArcherBossAutoToggleCommand(game:StickWar)
       {
          super();
@@ -39,7 +30,16 @@ package com.brockw.stickwar.engine.Ai.command
             this.loadXML(game.xml.xml.Order.Units.archer.autoToggle);
          }
       }
-
+      
+      private static function createButtonBitmap() : Bitmap
+      {
+         var bmd:BitmapData = new ArchidonFire();
+         var ct:ColorTransform = new ColorTransform();
+         ct.color = 16777215;
+         bmd.draw(bmd,null,ct,BlendMode.MULTIPLY);
+         return new Bitmap(bmd);
+      }
+      
       override public function prepareNetworkedMove(gameScreen:GameScreen) : *
       {
          var unit:String = null;
@@ -48,7 +48,7 @@ package com.brockw.stickwar.engine.Ai.command
          u.moveType = this.type;
          for(unit in gameScreen.team.units)
          {
-            if(Unit(gameScreen.team.units[unit]).selected)
+            if(gameScreen.team.units[unit].selected)
             {
                if(this.intendedEntityType == -1 || this.intendedEntityType == gameScreen.team.units[unit].type)
                {
@@ -65,25 +65,26 @@ package com.brockw.stickwar.engine.Ai.command
          }
          gameScreen.doMove(u,gameScreen.team.id);
       }
-
+      
       override public function isToggled(entity:Entity) : Boolean
       {
-         return Archer(entity).isAutoAbilityEnabled;
+         return entity.isAutoAbilityEnabled;
       }
-
+      
       override public function coolDownTime(entity:Entity) : Number
       {
          return 0;
       }
-
+      
       override public function isFinished(unit:Unit) : Boolean
       {
          return false;
       }
-
+      
       override public function inRange(entity:Entity) : Boolean
       {
          return true;
       }
    }
 }
+

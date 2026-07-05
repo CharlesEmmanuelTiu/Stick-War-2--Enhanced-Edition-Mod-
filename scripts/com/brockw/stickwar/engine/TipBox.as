@@ -44,7 +44,7 @@ package com.brockw.stickwar.engine
       
       public function displayTip(title:String, info:String, time:int = 0, gold:int = 0, mana:int = 0, population:int = 0, hideStats:Boolean = false) : void
       {
-         this.setField(info,this.toolBox.textBox);
+         this.setField(info,this.toolBox.textBox.text);
          this.setField(title,this.toolBox.title);
          if(!hideStats)
          {

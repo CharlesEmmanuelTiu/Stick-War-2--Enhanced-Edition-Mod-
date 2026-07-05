@@ -9,15 +9,15 @@ package com.brockw.stickwar.engine.projectile
    {
       
       private static const HEAVY_TICK_WALL_COUNT:int = 3;
-
+      
       private static const HEAVY_TICK_MULTIPLIER:int = 2;
-
+      
       private static var activeLightningWalls:int = 0;
-
+      
       private static var nextTickOffset:int = 0;
-
+      
       internal var spellMc:MovieClip;
-
+      
       public var controlledFriendlyFire:Boolean;
       
       private var wallArea:Number;
@@ -27,13 +27,13 @@ package com.brockw.stickwar.engine.projectile
       public var applyBossStun:Boolean;
       
       public var bossStunFrames:int;
-
+      
       private var bossStunnedUnits:Dictionary;
-
+      
       private var childClips:Array;
-
+      
       private var tickOffset:int;
-
+      
       private var countedActive:Boolean;
       
       public function ElectricWall(game:StickWar)
@@ -45,14 +45,16 @@ package com.brockw.stickwar.engine.projectile
          this.addChild(this.spellMc);
          this.controlledFriendlyFire = false;
          this.childClips = [];
-         for(var i:* = 0; i < this.spellMc.numChildren; i++)
+         var i:* = 0;
+         while(i < this.spellMc.numChildren)
          {
             mc = this.spellMc.getChildAt(i);
             if(mc is MovieClip)
             {
-               MovieClip(mc).gotoAndStop(Math.floor(game.random.nextNumber() * MovieClip(mc).totalFrames));
+               mc.gotoAndStop(Math.floor(game.random.nextNumber() * mc.totalFrames));
                this.childClips.push(mc);
             }
+            i++;
          }
          this.wallArea = game.xml.xml.Order.Units.magikill.electricWall.area;
          this.frequency = game.xml.xml.Order.Units.magikill.electricWall.frequency;
@@ -71,7 +73,7 @@ package com.brockw.stickwar.engine.projectile
          this.spellMc = null;
          this.childClips = null;
       }
-
+      
       public function resetForUse() : void
       {
          if(this.countedActive)
@@ -97,14 +99,16 @@ package com.brockw.stickwar.engine.projectile
          this.spellMc.nextFrame();
          if(activeLightningWalls < HEAVY_TICK_WALL_COUNT || game.frame % 2 == 0)
          {
-            for(var i:* = 0; i < this.childClips.length; i++)
+            var i:* = 0;
+            while(i < this.childClips.length)
             {
-               mc = MovieClip(this.childClips[i]);
+               mc = this.childClips[i];
                mc.nextFrame();
                if(mc.currentFrame == mc.totalFrames)
                {
                   mc.gotoAndStop(1);
                }
+               i++;
             }
          }
          if((game.frame + this.tickOffset) % effectiveFrequency == 0)
@@ -133,17 +137,17 @@ package com.brockw.stickwar.engine.projectile
             }
          }
       }
-
+      
       private function getEffectiveFrequency() : int
       {
          return Math.max(1,int(this.frequency)) * this.getDamageTickMultiplier();
       }
-
+      
       private function getDamageTickMultiplier() : int
       {
          return activeLightningWalls >= HEAVY_TICK_WALL_COUNT ? HEAVY_TICK_MULTIPLIER : 1;
       }
-
+      
       private function releaseActiveCount() : void
       {
          if(this.countedActive)

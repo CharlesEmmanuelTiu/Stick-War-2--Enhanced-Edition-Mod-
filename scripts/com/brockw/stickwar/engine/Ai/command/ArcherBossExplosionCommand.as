@@ -5,21 +5,12 @@ package com.brockw.stickwar.engine.Ai.command
    import com.brockw.stickwar.engine.units.*;
    import flash.display.*;
    import flash.geom.ColorTransform;
-   import flash.display.BlendMode;
-
+   
    public class ArcherBossExplosionCommand extends UnitCommand
    {
-      private static function createButtonBitmap() : Bitmap
-      {
-         var bmd:BitmapData = new ArchidonFire();
-         var ct:ColorTransform = new ColorTransform();
-         ct.color = 0xFF0000;
-         bmd.draw(bmd, null, ct, BlendMode.MULTIPLY);
-         return new Bitmap(bmd);
-      }
-
+      
       public static const actualButtonBitmap:Bitmap = createButtonBitmap();
-
+      
       public function ArcherBossExplosionCommand(game:StickWar)
       {
          super();
@@ -32,15 +23,25 @@ package com.brockw.stickwar.engine.Ai.command
             this.loadXML(game.xml.xml.Order.Units.archer.explosion);
          }
       }
-
+      
+      private static function createButtonBitmap() : Bitmap
+      {
+         var bmd:BitmapData = new ArchidonFire();
+         var ct:ColorTransform = new ColorTransform();
+         ct.color = 16711680;
+         bmd.draw(bmd,null,ct,BlendMode.MULTIPLY);
+         return new Bitmap(bmd);
+      }
+      
       override public function coolDownTime(entity:Entity) : Number
       {
-         return Archer(entity).getBossAbilityCooldownFraction(UnitCommand.ARCHER_BOSS_EXPLOSION);
+         return entity.getBossAbilityCooldownFraction(UnitCommand.ARCHER_BOSS_EXPLOSION);
       }
-
+      
       override public function isFinished(unit:Unit) : Boolean
       {
          return false;
       }
    }
 }
+

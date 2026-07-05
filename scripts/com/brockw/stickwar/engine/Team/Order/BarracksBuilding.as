@@ -49,19 +49,19 @@ package com.brockw.stickwar.engine.Team.Order
          {
             a.setAction(0,2,Tech.CLOAK);
          }
-          else if(!tech.isResearched(Tech.CLOAK_II))
-          {
-             a.setAction(0,2,Tech.CLOAK_II);
-          }
-            else if(!tech.isResearched(Tech.NINJA_CLOAK3) && !tech.isHideBossTechs())
-            {
-               a.setAction(0,2,Tech.NINJA_CLOAK3);
-            }
-            if(!tech.isResearched(Tech.NINJA_SHADOW_CLONE) && !tech.isHideBossTechs())
-            {
-               a.setAction(1,2,Tech.NINJA_SHADOW_CLONE);
-            }
-        }
+         else if(!tech.isResearched(Tech.CLOAK_II))
+         {
+            a.setAction(0,2,Tech.CLOAK_II);
+         }
+         else if(!tech.isResearched(Tech.NINJA_CLOAK3) && !tech.isHideBossTechs())
+         {
+            a.setAction(0,2,Tech.NINJA_CLOAK3);
+         }
+         if(!tech.isResearched(Tech.NINJA_SHADOW_CLONE) && !tech.isHideBossTechs())
+         {
+            a.setAction(1,2,Tech.NINJA_SHADOW_CLONE);
+         }
+      }
    }
 }
 

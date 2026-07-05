@@ -36,9 +36,9 @@ package com.brockw.stickwar.engine.units
          this.pools[new Medusa(game).type] = new Pool(1,Medusa,game);
          this.pools[new Giant(game).type] = new Pool(1,Giant,game);
          this.pools[new MinerChaos(game).type] = new Pool(1,MinerChaos,game);
-          this.pools[new ChaosTower(game).type] = new Pool(1,ChaosTower,game);
-          this.pools[new Undead(game).type] = new Pool(1,Undead,game);
-          this._profilePics = new Dictionary();
+         this.pools[new ChaosTower(game).type] = new Pool(1,ChaosTower,game);
+         this.pools[new Undead(game).type] = new Pool(1,Undead,game);
+         this._profilePics = new Dictionary();
          this._profilePics[new Miner(game).type] = new minerProfile();
          this._profilePics[new Swordwrath(game).type] = new profileSwordwrath();
          this._profilePics[new Archer(game).type] = new profileArchidon();
@@ -56,8 +56,8 @@ package com.brockw.stickwar.engine.units
          this._profilePics[new Knight(game).type] = new knightProfile();
          this._profilePics[new Medusa(game).type] = new medusaProfile();
          this._profilePics[new Giant(game).type] = new giantProfile();
-          this._profilePics[new MinerChaos(game).type] = new minerProfile();
-          this._profilePics[new Undead(game).type] = new deadProfile();
+         this._profilePics[new MinerChaos(game).type] = new minerProfile();
+         this._profilePics[new Undead(game).type] = new deadProfile();
       }
       
       public function cleanUp() : void
@@ -78,12 +78,12 @@ package com.brockw.stickwar.engine.units
       
       public function getUnit(type:int) : Unit
       {
-         return Unit(Pool(this.pools[type]).getItem());
+         return this.pools[type].getItem();
       }
       
       public function returnUnit(type:int, unit:Unit) : void
       {
-         Pool(this.pools[type]).returnItem(unit);
+         this.pools[type].returnItem(unit);
       }
       
       public function get profilePics() : Dictionary

@@ -15,11 +15,11 @@ package com.brockw.stickwar.engine.Ai
          unit = s;
       }
       
-        override public function update(game:StickWar) : void
-        {
-           checkNextMove(game);
-          var target:Unit = this.getClosestTarget();
-          if(currentCommand.type == UnitCommand.BOMBER_DETONATE)
+      override public function update(game:StickWar) : void
+      {
+         checkNextMove(game);
+         var target:Unit = this.getClosestTarget();
+         if(currentCommand.type == UnitCommand.BOMBER_DETONATE)
          {
             Bomber(unit).detonate();
          }

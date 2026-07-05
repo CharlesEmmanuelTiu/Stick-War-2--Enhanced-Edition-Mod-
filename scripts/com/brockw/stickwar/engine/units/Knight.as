@@ -13,27 +13,27 @@ package com.brockw.stickwar.engine.units
    public class Knight extends Unit
    {
       
-      public static const AUTO_CHARGE_LOCKED:Boolean = true;
-
-      private static const BOSS_WEAPON_SKIN:String = "Rusted Axe";
-
-      private static const BOSS_ARMOR_SKIN:String = "Rust Helmet";
-
-      private static const BOSS_MISC_SKIN:String = "Rusted Shield";
-
-      private static const BOSS_DAMAGE_MULTIPLIER:Number = 1.5;
-
-      private static const BOSS_DAMAGE_TAKEN_MULTIPLIER:Number = 0.7;
-
-      private static const BOSS_PROJECTILE_RESISTANCE:Number = 0.5;
-
-      private static const BOSS_SPELL_RESISTANCE:Number = 0.5;
-
-      private static const BOSS_ABILITY_COOLDOWN_FRAMES:int = 30 * 20;
-
-      private static const BOSS_CHARGE_ALLY_RADIUS:Number = 300;
-
       private static var WEAPON_REACH:int;
+      
+      public static const AUTO_CHARGE_LOCKED:Boolean = true;
+      
+      private static const BOSS_WEAPON_SKIN:String = "Rusted Axe";
+      
+      private static const BOSS_ARMOR_SKIN:String = "Rust Helmet";
+      
+      private static const BOSS_MISC_SKIN:String = "Rusted Shield";
+      
+      private static const BOSS_DAMAGE_MULTIPLIER:Number = 1.5;
+      
+      private static const BOSS_DAMAGE_TAKEN_MULTIPLIER:Number = 0.7;
+      
+      private static const BOSS_PROJECTILE_RESISTANCE:Number = 0.5;
+      
+      private static const BOSS_SPELL_RESISTANCE:Number = 0.5;
+      
+      private static const BOSS_ABILITY_COOLDOWN_FRAMES:int = 30 * 20;
+      
+      private static const BOSS_CHARGE_ALLY_RADIUS:Number = 300;
       
       private var chargeVelocity:Number;
       
@@ -58,9 +58,9 @@ package com.brockw.stickwar.engine.units
       private var stunEffect:Number;
       
       private var stunForce:Number;
-
+      
       private var _isBoss:Boolean;
-
+      
       private var bossAbilityCooldownFrames:int;
       
       public function Knight(game:StickWar)
@@ -82,7 +82,7 @@ package com.brockw.stickwar.engine.units
       
       public static function setItem(mc:MovieClip, weapon:String, armor:String, misc:String) : void
       {
-         var m:MovieClip = _knight(mc).mc;
+         var m:MovieClip = mc.mc;
          if(Boolean(m.knighthelm))
          {
             if(armor != "")
@@ -139,8 +139,8 @@ package com.brockw.stickwar.engine.units
          _mc.width *= _scale;
          _mc.height *= _scale;
          _state = S_RUN;
-         MovieClip(_mc.mc.gotoAndPlay(1));
-         MovieClip(_mc.gotoAndStop(1));
+         _mc.mc.gotoAndPlay(1);
+         _mc.gotoAndStop(1);
          drawShadow();
       }
       
@@ -158,7 +158,7 @@ package com.brockw.stickwar.engine.units
       {
          return this.chargeSpell.cooldown();
       }
-
+      
       public function canUseChargeAbility() : Boolean
       {
          return true;
@@ -218,7 +218,7 @@ package com.brockw.stickwar.engine.units
             {
                _mc.gotoAndStop(_currentDual.attackLabel);
                moveDualPartner(_dualPartner,_currentDual.xDiff);
-               if(MovieClip(_mc.mc).currentFrame == MovieClip(_mc.mc).totalFrames)
+               if(_mc.mc.currentFrame == _mc.mc.totalFrames)
                {
                   _mc.gotoAndStop("run");
                   _isDualing = false;
@@ -272,7 +272,7 @@ package com.brockw.stickwar.engine.units
                      game.soundManager.playSound("sword1",px,py);
                   }
                }
-               if(MovieClip(_mc.mc).totalFrames == MovieClip(_mc.mc).currentFrame)
+               if(_mc.mc.totalFrames == _mc.mc.currentFrame)
                {
                   _state = S_RUN;
                }
@@ -284,7 +284,7 @@ package com.brockw.stickwar.engine.units
             if(_isDualing)
             {
                _mc.gotoAndStop(_currentDual.defendLabel);
-               if(MovieClip(_mc.mc).currentFrame == MovieClip(_mc.mc).totalFrames)
+               if(_mc.mc.currentFrame == _mc.mc.totalFrames)
                {
                   isDualing = false;
                   mc.filters = [];
@@ -305,11 +305,11 @@ package com.brockw.stickwar.engine.units
          }
          else
          {
-            if(MovieClip(_mc.mc).currentFrame == MovieClip(_mc.mc).totalFrames)
+            if(_mc.mc.currentFrame == _mc.mc.totalFrames)
             {
-               MovieClip(_mc.mc).gotoAndStop(1);
+               _mc.mc.gotoAndStop(1);
             }
-            MovieClip(_mc.mc).nextFrame();
+            _mc.mc.nextFrame();
          }
          if(Boolean(_mc.mc.dust))
          {
@@ -317,14 +317,14 @@ package com.brockw.stickwar.engine.units
          }
          if(this.isBoss)
          {
-            Knight.setItem(_knight(mc),BOSS_WEAPON_SKIN,BOSS_ARMOR_SKIN,BOSS_MISC_SKIN);
+            Knight.setItem(mc,BOSS_WEAPON_SKIN,BOSS_ARMOR_SKIN,BOSS_MISC_SKIN);
          }
          else
          {
-            Knight.setItem(_knight(mc),team.loadout.getItem(this.type,MarketItem.T_WEAPON),team.loadout.getItem(this.type,MarketItem.T_ARMOR),team.loadout.getItem(this.type,MarketItem.T_MISC));
+            Knight.setItem(mc,team.loadout.getItem(this.type,MarketItem.T_WEAPON),team.loadout.getItem(this.type,MarketItem.T_ARMOR),team.loadout.getItem(this.type,MarketItem.T_MISC));
          }
       }
-
+      
       override public function damage(type:int, amount:int, inflictor:Entity, modifier:Number = 1) : void
       {
          if(this.isBoss)
@@ -368,10 +368,10 @@ package com.brockw.stickwar.engine.units
          {
             id = team.game.random.nextInt() % this._attackLabels.length;
             _mc.gotoAndStop("attack_" + this._attackLabels[id]);
-            MovieClip(_mc.mc).gotoAndStop(1);
+            _mc.mc.gotoAndStop(1);
             _state = S_ATTACK;
             hasHit = false;
-            framesInAttack = MovieClip(_mc.mc).totalFrames;
+            framesInAttack = _mc.mc.totalFrames;
             attackStartFrame = team.game.frame;
          }
       }
@@ -408,8 +408,8 @@ package com.brockw.stickwar.engine.units
       {
          return this._state == S_RUN && (!this.chargeSpell.inEffect() || this.isChargeSet);
       }
-
-       override public function makeBoss(enableDeathBurst:Boolean = false) : void
+      
+      override public function makeBoss(enableDeathBurst:Boolean = false) : void
       {
          if(this._isBoss)
          {
@@ -423,7 +423,7 @@ package com.brockw.stickwar.engine.units
          this._damageToNotArmour *= BOSS_DAMAGE_MULTIPLIER;
          this.hasDefaultLoadout = false;
       }
-
+      
       public function tryBossCharge() : void
       {
          var ally:Knight = null;
@@ -451,7 +451,7 @@ package com.brockw.stickwar.engine.units
          }
          this.bossAbilityCooldownFrames = BOSS_ABILITY_COOLDOWN_FRAMES;
       }
-
+      
       public function commandBossCharge(playSound:Boolean = true) : void
       {
          if(this._isDualing || this.isDieing || this.isDead || this.isGarrisoned || this.isIncapacitated())
@@ -465,7 +465,7 @@ package com.brockw.stickwar.engine.units
          this.chargeSpell.forceActivate();
          this.hasCharged = false;
       }
-
+      
       public function get isBoss() : Boolean
       {
          return this._isBoss;

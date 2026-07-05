@@ -17,7 +17,7 @@ package com.brockw.stickwar.campaign
          {
             return "chaosInGame";
          }
-         title = String(level.title);
+         title = level.title;
          switch(title)
          {
             case "Tutorial":
@@ -37,7 +37,7 @@ package com.brockw.stickwar.campaign
             case "Magic in the Air: Wizards and monks Declare War ":
             case "The Night is Dark: Juggerknights Attack":
             case " 4 legged Fury: Crawlers Attack":
-            case "Medusa's Gates: The Chaos Capital is in sight. ":
+            case "Medusa\'s Gates: The Chaos Capital is in sight. ":
                return "enteringTheStronghold";
             case "Massive Battle":
             case "Explosive War: Bombers Attack":
@@ -52,7 +52,7 @@ package com.brockw.stickwar.campaign
                return "chaosInGame";
          }
       }
-
+      
       public function shouldMusicLoop(level:Level) : Boolean
       {
          if(level == null || level.title == null)
@@ -67,3 +67,4 @@ package com.brockw.stickwar.campaign
       }
    }
 }
+

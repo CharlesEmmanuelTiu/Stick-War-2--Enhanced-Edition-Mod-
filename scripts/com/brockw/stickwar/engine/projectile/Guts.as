@@ -34,7 +34,7 @@ package com.brockw.stickwar.engine.projectile
          this.rotation = rot;
          rot += _drotation;
       }
-
+      
       override public function isReadyForCleanup() : Boolean
       {
          return this.framesDead > 45;

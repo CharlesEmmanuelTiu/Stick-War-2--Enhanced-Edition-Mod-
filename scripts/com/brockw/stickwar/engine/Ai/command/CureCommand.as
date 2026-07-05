@@ -43,7 +43,7 @@ package com.brockw.stickwar.engine.Ai.command
          u.moveType = this.type;
          for(unit in gameScreen.team.units)
          {
-            if(Unit(gameScreen.team.units[unit]).selected)
+            if(gameScreen.team.units[unit].selected)
             {
                if(this.intendedEntityType == -1 || this.intendedEntityType == gameScreen.team.units[unit].type)
                {
@@ -65,13 +65,13 @@ package com.brockw.stickwar.engine.Ai.command
       {
          if(entity is Magikill)
          {
-            return Magikill(entity).isAutoCastEnabled;
+            return entity.isAutoCastEnabled;
          }
          if(entity is Ninja)
          {
-            return Ninja(entity).isAutoCloakToggled;
+            return entity.isAutoCloakToggled;
          }
-         return Monk(entity).isCureToggled;
+         return entity.isCureToggled;
       }
       
       override public function coolDownTime(entity:Entity) : Number

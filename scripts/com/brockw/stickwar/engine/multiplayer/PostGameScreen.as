@@ -84,7 +84,7 @@ package com.brockw.stickwar.engine.multiplayer
       private var wasWin:Boolean;
       
       private var lastAddImage:MovieClip;
-
+      
       private var wasCampaignReplay:Boolean;
       
       public function PostGameScreen(main:BaseMain)
@@ -152,7 +152,7 @@ package com.brockw.stickwar.engine.multiplayer
             this.mc.unlockCard.alpha = 0;
             this.mc.unlockCard.description.text = nextUnit[1];
             this.mc.unlockCard.unitName.text = nextUnit[0];
-            m = MovieClip(this.mc.unlockCard.profilePictureBacking);
+            m = this.mc.unlockCard.profilePictureBacking;
             if(this.lastAddImage != null)
             {
                if(Boolean(this.mc.unlockCard.profilePictureBacking.contains(this.lastAddImage)))
@@ -229,7 +229,8 @@ package com.brockw.stickwar.engine.multiplayer
       {
          var gapSize:Number = this.D_WIDTH / (records.length / 2 - 1);
          var incrementSize:Number = this.D_HEIGHT / max;
-         for(var i:int = isEven ? 0 : 1; i < records.length; i += 2)
+         var i:int = isEven ? 0 : 1;
+         while(i < records.length)
          {
             if(i == 0 || i == 1)
             {
@@ -239,6 +240,7 @@ package com.brockw.stickwar.engine.multiplayer
             {
                canvas.graphics.lineTo(gapSize * Math.floor(i / 2),this.D_HEIGHT - incrementSize * records[i] + yOffset);
             }
+            i += 2;
          }
       }
       
@@ -267,19 +269,23 @@ package com.brockw.stickwar.engine.multiplayer
          this.displayGraphBackgroundHighlight.graphics.clear();
          var maxMiners:int = 0;
          var maxPopulation:int = 0;
-         for(i = 0; i < this.economyRecords.length; i++)
+         i = 0;
+         while(i < this.economyRecords.length)
          {
             if(this.economyRecords[i] > maxMiners)
             {
                maxMiners = int(this.economyRecords[i]);
             }
+            i++;
          }
-         for(i = 0; i < this.militaryRecords.length; i++)
+         i = 0;
+         while(i < this.militaryRecords.length)
          {
             if(this.militaryRecords[i] > maxPopulation)
             {
                maxPopulation = int(this.militaryRecords[i]);
             }
+            i++;
          }
          var max:int = Math.max(maxMiners,maxPopulation);
          var gapSize:Number = this.D_WIDTH / (this.economyRecords.length / 2 - 1);
@@ -294,7 +300,8 @@ package com.brockw.stickwar.engine.multiplayer
          }
          this.textBoxes = [];
          prevValue = "";
-         for(i = 0; i < this.D_WIDTH / TEXT_SPACING; i++)
+         i = 0;
+         while(i < this.D_WIDTH / TEXT_SPACING)
          {
             newTxt = new TextField();
             newTxt.y = this.D_HEIGHT + 3;
@@ -311,9 +318,11 @@ package com.brockw.stickwar.engine.multiplayer
             newTxt.mouseEnabled = false;
             this.displayGraph.addChild(newTxt);
             this.textBoxes.push(newTxt);
+            i++;
          }
          prevValue = "";
-         for(i = 0; i < this.D_HEIGHT / TEXT_SPACING + 1; i++)
+         i = 0;
+         while(i < this.D_HEIGHT / TEXT_SPACING + 1)
          {
             newTxt = new TextField();
             newTxt.y = this.D_HEIGHT - i * TEXT_SPACING - 6;
@@ -330,6 +339,7 @@ package com.brockw.stickwar.engine.multiplayer
             prevValue = newTxt.text;
             this.displayGraph.addChild(newTxt);
             this.textBoxes.push(newTxt);
+            i++;
          }
          this.mc.timer.text = getTimeFormat(this.militaryRecords.length);
       }
@@ -350,7 +360,7 @@ package com.brockw.stickwar.engine.multiplayer
                if(this.main.willSeeAdds())
                {
                   this.main.showScreen("lobby");
-                  Main(this.main).chatOverlay.addManager.showAdd();
+                  this.main.chatOverlay.addManager.showAdd();
                }
                else
                {
@@ -486,7 +496,7 @@ package com.brockw.stickwar.engine.multiplayer
          this.main.showScreen("profile");
          if(this.main is Main)
          {
-            Main(this.main).profileScreen.loadProfile(this.teamAName);
+            this.main.profileScreen.loadProfile(this.teamAName);
          }
       }
       
@@ -495,7 +505,7 @@ package com.brockw.stickwar.engine.multiplayer
          this.main.showScreen("profile");
          if(this.main is Main)
          {
-            Main(this.main).profileScreen.loadProfile(this.teamBName);
+            this.main.profileScreen.loadProfile(this.teamBName);
          }
       }
       

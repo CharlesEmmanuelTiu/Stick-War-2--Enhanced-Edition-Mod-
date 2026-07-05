@@ -105,8 +105,7 @@ package com.brockw.stickwar.engine
       
       private var wallHitPoint:Point;
       
-       public var pausedGameMc:gamePausedDisplay;
-       public var ignoreHomeXTargeting:Boolean;
+      public var pausedGameMc:gamePausedDisplay;
       
       private var _showGameOverAnimation:Boolean;
       
@@ -291,7 +290,7 @@ package com.brockw.stickwar.engine
          this.unitFactory = null;
          this._mouseOverUnit = null;
          this._tipBox = null;
-         Util.recursiveRemoval(Sprite(this));
+         Util.recursiveRemoval(this);
       }
       
       public function getNextUnitId() : int
@@ -348,7 +347,7 @@ package com.brockw.stickwar.engine
       
       private function determineIfBetterSelection(e:Entity) : Boolean
       {
-         if(e is Unit && Unit(e).isDead)
+         if(e is Unit && e.isDead)
          {
             return false;
          }
@@ -369,7 +368,7 @@ package com.brockw.stickwar.engine
          var isVisible:Boolean = false;
          for(unit in this.teamA.units)
          {
-            isVisible = Entity(this.teamA.units[unit]).onScreen(this);
+            isVisible = this.teamA.units[unit].onScreen(this);
             if(this.teamA.units[unit].visible != isVisible)
             {
                this.teamA.units[unit].visible = isVisible;
@@ -377,7 +376,7 @@ package com.brockw.stickwar.engine
          }
          for(unit in this.teamB.units)
          {
-            isVisible = Entity(this.teamB.units[unit]).onScreen(this);
+            isVisible = this.teamB.units[unit].onScreen(this);
             if(this.teamB.units[unit].visible != isVisible)
             {
                this.teamB.units[unit].visible = isVisible;
@@ -392,8 +391,8 @@ package com.brockw.stickwar.engine
          var gold:String = null;
          var wall:Wall = null;
          var unitObj:Unit = null;
-         var mouseX:Number = NaN;
-         var mouseY:Number = NaN;
+         var mouseX:Number = Number(NaN);
+         var mouseY:Number = Number(NaN);
          var isVisible:Boolean = false;
          this.teamA.updateStatue();
          this.teamB.updateStatue();
@@ -411,7 +410,7 @@ package com.brockw.stickwar.engine
          super.update(screen);
          this.mouseOverUnit = null;
          this._incomeDisplay.update(this);
-         var gameScreen:GameScreen = GameScreen(screen);
+         var gameScreen:GameScreen = screen;
          this._rain.update(this);
          if(this.teamA.statue.health <= 0)
          {
@@ -450,7 +449,7 @@ package com.brockw.stickwar.engine
             {
                this._spatialHash.add(unitObj);
             }
-            isVisible = Entity(unitObj).onScreen(this);
+            isVisible = unitObj.onScreen(this);
             if(unitObj.visible != isVisible)
             {
                unitObj.visible = isVisible;
@@ -474,7 +473,7 @@ package com.brockw.stickwar.engine
             {
                this._spatialHash.add(unitObj);
             }
-            isVisible = Entity(unitObj).onScreen(this);
+            isVisible = unitObj.onScreen(this);
             if(unitObj.visible != isVisible)
             {
                unitObj.visible = isVisible;
@@ -493,15 +492,15 @@ package com.brockw.stickwar.engine
          }
          for(gold in this.map.gold)
          {
-            Entity(this.map.gold[gold]).mouseIsOver = false;
-            if(Gold(this.map.gold[gold]).frontOre.hitTestPoint(mouseX,mouseY,true) || Gold(this.map.gold[gold]).ore.hitTestPoint(mouseX,mouseY,true))
+            this.map.gold[gold].mouseIsOver = false;
+            if(this.map.gold[gold].frontOre.hitTestPoint(mouseX,mouseY,true) || this.map.gold[gold].ore.hitTestPoint(mouseX,mouseY,true))
             {
-               if(this.determineIfBetterSelection(Entity(this.map.gold[gold])))
+               if(this.determineIfBetterSelection(this.map.gold[gold]))
                {
-                  this.mouseOverUnit = Entity(this.map.gold[gold]);
+                  this.mouseOverUnit = this.map.gold[gold];
                }
             }
-            Gold(this.map.gold[gold]).update(this);
+            this.map.gold[gold].update(this);
          }
          this.team.statue.mouseIsOver = false;
          if(this.team.statue.hitTestPoint(mouseX,mouseY,true) && this.determineIfBetterSelection(this.team.statue))
@@ -556,7 +555,8 @@ package com.brockw.stickwar.engine
          {
             return;
          }
-         for(i = 1; i < childCount; i++)
+         i = 1;
+         while(i < childCount)
          {
             j = i;
             while(j > 0)
@@ -567,15 +567,16 @@ package com.brockw.stickwar.engine
                {
                   break;
                }
-               entityA = Entity(childA);
-               entityB = Entity(childB);
+               entityA = childA;
+               entityB = childB;
                if(entityA.py <= entityB.py)
                {
                   break;
                }
                dParent.swapChildrenAt(j - 1,j);
-               --j;
+               j--;
             }
+            i++;
          }
       }
       
@@ -611,7 +612,7 @@ package com.brockw.stickwar.engine
          var move:Move = null;
          while(!turn.moves.isEmpty())
          {
-            move = Move(turn.moves.pop());
+            move = turn.moves.pop();
             move.execute(this);
          }
       }
@@ -625,7 +626,7 @@ package com.brockw.stickwar.engine
          var sum:int = 0;
          for(i in this.units)
          {
-            sum += Entity(this.units[i]).px + Entity(this.units[i]).py;
+            sum += this.units[i].px + this.units[i].py;
          }
          sum2 = 0;
          for each(p in this._projectileManager.projectiles)

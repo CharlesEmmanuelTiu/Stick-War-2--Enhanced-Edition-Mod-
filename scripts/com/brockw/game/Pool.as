@@ -23,16 +23,19 @@ package com.brockw.game
          this.poolClass = c;
          this.fIndex = 0;
          this.free = new Vector.<Object>(capacity,false);
-         for(var i:int = 0; i < capacity; i++)
+         var i:int = 0;
+         while(i < capacity)
          {
             this.free[i] = new c(game);
+            i++;
          }
          this.fIndex = 0;
       }
       
       public function cleanUp() : void
       {
-         for(var i:int = 0; i < this.free.length; i++)
+         var i:int = 0;
+         while(i < this.free.length)
          {
             if(this.free[i] != null)
             {
@@ -43,38 +46,40 @@ package com.brockw.game
             {
                trace("that things would have happened");
             }
+            i++;
          }
       }
       
-       public function getItem() : Object
-       {
-          var i:int = 0;
-          if(this.fIndex >= this.capacity)
-          {
-             var old:Vector.<Object> = this.free;
-             this.free = new Vector.<Object>(2 * this.capacity,false);
-             for(i = 0; i < this.capacity; i++)
-                this.free[i] = old[i];
-             for(i = this.capacity; i < 2 * this.capacity; i++)
-                this.free[i] = new this.poolClass(this.game);
-             this.capacity *= 2;
-          }
-          if(this.fIndex < this.capacity)
-          {
-             ++this.fIndex;
-             return this.free[this.fIndex - 1];
-          }
-          return null;
-       }
+      public function getItem() : Object
+      {
+         var i:int = 0;
+         if(this.fIndex >= this.capacity)
+         {
+            this.free = new Vector.<Object>(2 * this.capacity,false);
+            i = this.capacity;
+            while(i < 2 * this.capacity)
+            {
+               this.free[i] = new this.poolClass(this.game);
+               i++;
+            }
+            this.capacity *= 2;
+         }
+         if(this.fIndex < this.capacity)
+         {
+            ++this.fIndex;
+            return this.free[this.fIndex - 1];
+         }
+         return null;
+      }
       
-       public function returnItem(item:Object) : void
-       {
-          if(this.fIndex > 0)
-          {
-             --this.fIndex;
-             this.free[this.fIndex] = item;
-          }
-       }
+      public function returnItem(item:Object) : void
+      {
+         if(this.fIndex > 0)
+         {
+            --this.fIndex;
+            this.free[this.fIndex] = item;
+         }
+      }
    }
 }
 

@@ -11,9 +11,9 @@ package com.brockw.stickwar.engine.projectile
    public class Reaper extends DirectedProjectile
    {
       
-      private var spellMc:MovieClip;
-
       private static const BOSS_REAPER_CONTROL_FRAMES:int = 30 * 10;
+      
+      private var spellMc:MovieClip;
       
       public var target:Unit;
       
@@ -29,9 +29,9 @@ package com.brockw.stickwar.engine.projectile
       
       override public function update(game:StickWar) : void
       {
-         var dz:Number = NaN;
+         var dz:Number = Number(NaN);
          visible = true;
-         if(this.inflictor is Skelator && Skelator(this.inflictor).isBoss)
+         if(this.inflictor is Skelator && this.inflictor.isBoss)
          {
             this.spellMc.transform.colorTransform = new ColorTransform(0.35,1.35,0.35,1,20,120,20,0);
             this.spellMc.filters = [new GlowFilter(65280,1,12,12,4,1)];
@@ -43,9 +43,9 @@ package com.brockw.stickwar.engine.projectile
          }
          if(!this.target.isAlive())
          {
-            if(this.inflictor is Skelator && Skelator(this.inflictor).isBoss)
+            if(this.inflictor is Skelator && this.inflictor.isBoss)
             {
-               Skelator(this.inflictor).resolveBossReaperControl(false);
+               this.inflictor.resolveBossReaperControl(false);
             }
             this.visible = false;
             _inFlight = false;
@@ -78,11 +78,11 @@ package com.brockw.stickwar.engine.projectile
          {
             this.target.reaperCurse(inflictor);
             this.target.poison(this.poisonDamage);
-            if(this.inflictor is Skelator && Skelator(this.inflictor).isBoss)
+            if(this.inflictor is Skelator && this.inflictor.isBoss)
             {
                this.target.reaperControl(BOSS_REAPER_CONTROL_FRAMES);
                this.target.poison(this.target.team.game.xml.xml.Chaos.Units.medusa.poison.poison);
-               Skelator(this.inflictor).resolveBossReaperControl(true);
+               this.inflictor.resolveBossReaperControl(true);
             }
             this.target.damage(0,this.damageToDeal,null);
             this.target.stun(this.stunTime);

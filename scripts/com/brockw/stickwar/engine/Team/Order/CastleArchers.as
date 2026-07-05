@@ -9,13 +9,10 @@ package com.brockw.stickwar.engine.Team.Order
    public class CastleArchers extends CastleDefence
    {
       
-      private var facingDirection:int;
-      
-      public function CastleArchers(game:StickWar, team:Team, facingDirection:int = 0)
+      public function CastleArchers(game:StickWar, team:Team)
       {
          super(game,team);
          units = [];
-         this.facingDirection = facingDirection != 0 ? facingDirection : team.direction;
       }
       
       override public function update(game:StickWar) : void
@@ -41,11 +38,15 @@ package com.brockw.stickwar.engine.Team.Order
          {
             nArchers = 1;
          }
-          if(units.length < nArchers)
-          {
-             this.addUnit();
-          }
-          super.update(game);
+         if(units.length < nArchers)
+         {
+            this.addUnit();
+         }
+         for(var i:int = 0; i < units.length; i++)
+         {
+            units[i].faceDirection(team.direction);
+         }
+         super.update(game);
       }
       
       override public function addUnit() : void
@@ -54,16 +55,14 @@ package com.brockw.stickwar.engine.Team.Order
          newArcher = new Archer(game);
          newArcher.ai = new ArcherAi(newArcher);
          newArcher.team = team;
-          newArcher.isCastleArcher = true;
-          newArcher.assignedSide = 1;
-          newArcher.faceDirection(this.facingDirection);
-          newArcher.init(game);
+         newArcher.isCastleArcher = true;
+         newArcher.init(game);
          newArcher.flyingHeight = 390;
          newArcher.pz = -newArcher.flyingHeight;
          newArcher.ai.init();
          newArcher.py = game.map.height / 2 * units.length / game.xml.xml.Order.Tech.castleArchers.num;
-          newArcher.y = newArcher.py + newArcher.pz;
-         newArcher.px = team.homeX + this.facingDirection * 180 - this.facingDirection * units.length * 8;
+         newArcher.y = newArcher.py;
+         newArcher.px = team.homeX + team.direction * 180 - team.direction * units.length * 8;
          newArcher.x = newArcher.px;
          var m:HoldCommand = new HoldCommand(game);
          newArcher.ai.setCommand(game,m);
@@ -72,3 +71,4 @@ package com.brockw.stickwar.engine.Team.Order
       }
    }
 }
+

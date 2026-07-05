@@ -17,24 +17,25 @@ package com.brockw.stickwar.engine.units
    
    public class Medusa extends Unit
    {
+      
       private static const BOSS_CAPE_SKIN:String = "Snake Cape";
-
+      
       private static const BOSS_CROWN_SKIN:String = "Jewel Crown";
-
+      
       private static const BOSS_REGEN_DELAY_FRAMES:int = 30 * 3;
-
+      
       private static const BOSS_FALLBACK_DEFAULT_FRAMES:int = 30 * 2;
-
+      
       private static const BOSS_DISTANT_RETREAT_FRAMES:int = 15;
-
+      
       private static const LOOK_AT_ME_NORMAL_START_FRAME:int = 45;
-
+      
       private static const LOOK_AT_ME_HARD_START_FRAME:int = 30;
-
+      
       private static const LOOK_AT_ME_INSANE_START_FRAME:int = 21;
-
+      
       private static const LOOK_AT_ME_END_FRAME:int = 54;
-
+      
       private static const LOOK_AT_ME_NORMAL_TARGET_CAP:int = 3;
       
       private var WEAPON_REACH:int;
@@ -50,19 +51,19 @@ package com.brockw.stickwar.engine.units
       private var inStoneSpell:Boolean;
       
       private var targetUnit:Unit;
-
+      
       private var bossLookAtMeApplied:Boolean;
-
+      
       private var bossLookAtMeHitUnits:Dictionary;
-
+      
       private var bossLookAtMeHitCount:int;
-
+      
       private var bossRegenRate:Number;
-
+      
       private var lastDamageFrame:int;
-
+      
       private var bossFallbackUntilFrame:int;
-
+      
       private var bossDistantRetreatFrames:int;
       
       public function Medusa(game:StickWar)
@@ -82,7 +83,7 @@ package com.brockw.stickwar.engine.units
       
       public static function setItem(mc:MovieClip, weapon:String, armor:String, misc:String) : void
       {
-         var m:_medusaMc = _medusaMc(mc);
+         var m:_medusaMc = mc;
          if(Boolean(m.mc.medusacape))
          {
             if(armor != "")
@@ -129,20 +130,22 @@ package com.brockw.stickwar.engine.units
          _mc.width *= _scale;
          _mc.height *= _scale;
          _state = S_RUN;
-         MovieClip(_mc.mc.gotoAndPlay(1));
-         MovieClip(_mc.gotoAndStop(1));
+         _mc.mc.gotoAndPlay(1); //unpopped
+         _mc.gotoAndStop(1); //unpopped
          drawShadow();
          this.inPoisonSpell = this.inStoneSpell = false;
          this.bossLookAtMeApplied = false;
          this.bossLookAtMeHitUnits = new Dictionary();
          this.bossLookAtMeHitCount = 0;
-         for(var i:int = 0; i < _mc.mc.snakes.numChildren; i++)
+         var i:int = 0;
+         while(i < _mc.mc.snakes.numChildren)
          {
             d = _mc.mc.snakes.getChildAt(i);
             if(d is MovieClip)
             {
-               this.snakeFrames[d.name] = int(game.random.nextNumber() * MovieClip(d).totalFrames);
+               this.snakeFrames[d.name] = int(game.random.nextNumber() * d.totalFrames);
             }
+            i++;
          }
          this.poisonSpell = new SpellCooldown(game.xml.xml.Chaos.Units.medusa.poison.effect,game.xml.xml.Chaos.Units.medusa.poison.cooldown,game.xml.xml.Chaos.Units.medusa.poison.mana);
          this.stoneSpell = new SpellCooldown(game.xml.xml.Chaos.Units.medusa.stone.effect,game.xml.xml.Chaos.Units.medusa.stone.cooldown,game.xml.xml.Chaos.Units.medusa.stone.mana);
@@ -211,7 +214,7 @@ package com.brockw.stickwar.engine.units
             _state = S_ATTACK;
          }
       }
-
+      
       public function prepareBossRevealStone() : void
       {
          if(!this.isBossMedusa())
@@ -230,7 +233,7 @@ package com.brockw.stickwar.engine.units
          framesInAttack = 0;
          _state = S_RUN;
          _mc.gotoAndStop("stand");
-         MovieClip(_mc.mc).gotoAndStop(1);
+         _mc.mc.gotoAndStop(1);
          this.stoneSpell.clearCooldown();
       }
       
@@ -261,7 +264,7 @@ package com.brockw.stickwar.engine.units
             {
                _mc.gotoAndStop(_currentDual.attackLabel);
                moveDualPartner(_dualPartner,_currentDual.xDiff);
-               if(MovieClip(_mc.mc).currentFrame == MovieClip(_mc.mc).totalFrames)
+               if(_mc.mc.currentFrame == _mc.mc.totalFrames)
                {
                   _mc.gotoAndStop("run");
                   _isDualing = false;
@@ -274,11 +277,11 @@ package com.brockw.stickwar.engine.units
             else if(this.inPoisonSpell)
             {
                _mc.gotoAndStop("poisonAttack");
-               if(MovieClip(_mc.mc).currentFrame == 3)
+               if(_mc.mc.currentFrame == 3)
                {
                   game.projectileManager.initPoisonPool(this.px,this.py,this,0);
                }
-               if(MovieClip(_mc.mc).totalFrames == MovieClip(_mc.mc).currentFrame)
+               if(_mc.mc.totalFrames == _mc.mc.currentFrame)
                {
                   _state = S_RUN;
                   this.inPoisonSpell = false;
@@ -299,7 +302,7 @@ package com.brockw.stickwar.engine.units
                      this.applyStoneDamageToUnit(game,this.targetUnit);
                   }
                }
-               if(MovieClip(_mc.mc).totalFrames == MovieClip(_mc.mc).currentFrame)
+               if(_mc.mc.totalFrames == _mc.mc.currentFrame)
                {
                   _state = S_RUN;
                   this.inStoneSpell = false;
@@ -321,11 +324,11 @@ package com.brockw.stickwar.engine.units
             }
             else if(_state == S_ATTACK)
             {
-               if(MovieClip(_mc.mc).currentFrame > MovieClip(_mc.mc).totalFrames / 2 && !hasHit)
+               if(_mc.mc.currentFrame > _mc.mc.totalFrames / 2 && !hasHit)
                {
                   hasHit = this.checkForHit();
                }
-               if(MovieClip(_mc.mc).totalFrames == MovieClip(_mc.mc).currentFrame)
+               if(_mc.mc.totalFrames == _mc.mc.currentFrame)
                {
                   _state = S_RUN;
                }
@@ -337,7 +340,7 @@ package com.brockw.stickwar.engine.units
             if(_isDualing)
             {
                _mc.gotoAndStop(_currentDual.defendLabel);
-               if(MovieClip(_mc.mc).currentFrame == MovieClip(_mc.mc).totalFrames)
+               if(_mc.mc.currentFrame == _mc.mc.totalFrames)
                {
                   isDualing = false;
                   mc.filters = [];
@@ -354,14 +357,16 @@ package com.brockw.stickwar.engine.units
          }
          if(!isDead)
          {
-            for(i = 0; i < _mc.mc.snakes.numChildren; i++)
+            i = 0;
+            while(i < _mc.mc.snakes.numChildren)
             {
                d = _mc.mc.snakes.getChildAt(i);
                if(d is MovieClip)
                {
-                  this.snakeFrames[d.name] = (this.snakeFrames[d.name] + 1) % MovieClip(d).totalFrames;
-                  MovieClip(d).gotoAndStop(this.snakeFrames[d.name]);
+                  this.snakeFrames[d.name] = (this.snakeFrames[d.name] + 1) % d.totalFrames;
+                  d.gotoAndStop(this.snakeFrames[d.name]);
                }
+               i++;
             }
             if(_mc.mc.multisnakes2 != null)
             {
@@ -372,11 +377,11 @@ package com.brockw.stickwar.engine.units
          if(this.isBossMedusa())
          {
             hasDefaultLoadout = true;
-            Medusa.setItem(_medusaMc(mc),"",BOSS_CAPE_SKIN,BOSS_CROWN_SKIN);
+            Medusa.setItem(mc,"",BOSS_CAPE_SKIN,BOSS_CROWN_SKIN);
          }
          else if(!hasDefaultLoadout)
          {
-            Medusa.setItem(_medusaMc(mc),team.loadout.getItem(this.type,MarketItem.T_WEAPON),team.loadout.getItem(this.type,MarketItem.T_ARMOR),team.loadout.getItem(this.type,MarketItem.T_MISC));
+            Medusa.setItem(mc,team.loadout.getItem(this.type,MarketItem.T_WEAPON),team.loadout.getItem(this.type,MarketItem.T_ARMOR),team.loadout.getItem(this.type,MarketItem.T_MISC));
          }
       }
       
@@ -415,7 +420,7 @@ package com.brockw.stickwar.engine.units
          hasDefaultLoadout = true;
          this.cure();
       }
-
+      
       override public function poison(p:Number) : void
       {
          if(this.isBossMedusa())
@@ -428,7 +433,7 @@ package com.brockw.stickwar.engine.units
          }
          super.poison(p);
       }
-
+      
       override public function damage(type:int, amount:int, inflictor:Entity, modifier:Number = 1) : void
       {
          super.damage(type,amount,inflictor,modifier);
@@ -449,11 +454,11 @@ package com.brockw.stickwar.engine.units
          {
             id = team.game.random.nextInt() % this._attackLabels.length;
             _mc.gotoAndStop("attack_" + this._attackLabels[id]);
-            MovieClip(_mc.mc).gotoAndStop(1);
+            _mc.mc.gotoAndStop(1);
             _state = S_ATTACK;
             hasHit = false;
             attackStartFrame = team.game.frame;
-            framesInAttack = MovieClip(_mc.mc).totalFrames;
+            framesInAttack = _mc.mc.totalFrames;
          }
       }
       
@@ -494,7 +499,7 @@ package com.brockw.stickwar.engine.units
             this.inStoneSpell = false;
          }
       }
-
+      
       public function triggerBossFallback(frames:int = 0) : void
       {
          if(!this.isBossMedusa() || team == null || !this.isAlive() || this.isDualing)
@@ -521,14 +526,14 @@ package com.brockw.stickwar.engine.units
          framesInAttack = 0;
          _state = S_RUN;
          _mc.gotoAndStop("run");
-         MovieClip(_mc.mc).gotoAndPlay(1);
+         _mc.mc.gotoAndPlay(1);
       }
-
+      
       public function isBossFallbackActive() : Boolean
       {
          return this.isBossMedusa() && team != null && team.game.frame < this.bossFallbackUntilFrame;
       }
-
+      
       public function requestBossDistantRetreat() : void
       {
          if(this.isBossMedusa())
@@ -536,7 +541,7 @@ package com.brockw.stickwar.engine.units
             this.bossDistantRetreatFrames = Math.max(this.bossDistantRetreatFrames,BOSS_DISTANT_RETREAT_FRAMES);
          }
       }
-
+      
       public function updateBossDistantRetreat(game:StickWar) : Boolean
       {
          if(!this.isBossMedusa() || this.bossDistantRetreatFrames <= 0 || team == null || !this.isAlive() || this.isGarrisoned)
@@ -552,12 +557,12 @@ package com.brockw.stickwar.engine.units
          --this.bossDistantRetreatFrames;
          return true;
       }
-
+      
       private function isBossMedusa() : Boolean
       {
          return team != null && this.maxHealth >= team.game.xml.xml.Chaos.Units.medusa.superHealth;
       }
-
+      
       private function shouldApplyStoneHit(game:StickWar) : Boolean
       {
          if(this.isBossLookAtMeActive(game))
@@ -568,9 +573,9 @@ package com.brockw.stickwar.engine.units
          {
             return false;
          }
-         return MovieClip(_mc.mc).currentFrame == 20;
+         return _mc.mc.currentFrame == 20;
       }
-
+      
       private function isBossLookAtMeActive(game:StickWar) : Boolean
       {
          var campaignGameScreen:CampaignGameScreen = null;
@@ -582,18 +587,18 @@ package com.brockw.stickwar.engine.units
          {
             return false;
          }
-         campaignGameScreen = CampaignGameScreen(game.gameScreen);
+         campaignGameScreen = game.gameScreen;
          if(!(campaignGameScreen.campaignController is CampaignCutScene2))
          {
             return false;
          }
-         return CampaignCutScene2(campaignGameScreen.campaignController).isMedusaLookAtMeActive();
+         return campaignGameScreen.campaignController.isMedusaLookAtMeActive();
       }
-
+      
       private function isInLookAtMeWindow(game:StickWar) : Boolean
       {
-         var frame:int = MovieClip(_mc.mc).currentFrame;
-         var endFrame:int = Math.min(LOOK_AT_ME_END_FRAME,MovieClip(_mc.mc).totalFrames);
+         var frame:int = _mc.mc.currentFrame;
+         var endFrame:int = Math.min(LOOK_AT_ME_END_FRAME,_mc.mc.totalFrames);
          if(frame > endFrame)
          {
             return false;
@@ -608,12 +613,12 @@ package com.brockw.stickwar.engine.units
          }
          return frame >= LOOK_AT_ME_NORMAL_START_FRAME;
       }
-
+      
       private function applyBossLookAtMeStone(game:StickWar) : void
       {
          var key:* = undefined;
          var target:Unit = null;
-         var range:Number = game.xml.xml.Chaos.Units.medusa.stone.range;
+         var range:Number = Number(game.xml.xml.Chaos.Units.medusa.stone.range);
          var cap:int = this.getLookAtMeTargetCap(game);
          if(team == null || team.enemyTeam == null)
          {
@@ -633,12 +638,12 @@ package com.brockw.stickwar.engine.units
                this.applyStoneDamageToUnit(game,target);
                if(game.gameScreen is CampaignGameScreen)
                {
-                  CampaignGameScreen(game.gameScreen).showMedusaLookAtMeMessage();
+                  game.gameScreen.showMedusaLookAtMeMessage();
                }
             }
          }
       }
-
+      
       private function isLookAtMeTarget(target:Unit, range:Number) : Boolean
       {
          if(target == null || target is Statue || !target.isAlive() || target.isGarrisoned || target.team == team || target.id in this.bossLookAtMeHitUnits)
@@ -651,7 +656,7 @@ package com.brockw.stickwar.engine.units
          }
          return target.getDirection() == Util.sgn(this.px - target.px);
       }
-
+      
       private function getLookAtMeTargetCap(game:StickWar) : int
       {
          if(game.main.campaign.difficultyLevel == Campaign.D_NORMAL)
@@ -660,7 +665,7 @@ package com.brockw.stickwar.engine.units
          }
          return 0;
       }
-
+      
       private function applyStoneDamageToUnit(game:StickWar, target:Unit) : void
       {
          if(target.isArmoured)
