@@ -11,6 +11,7 @@ package com.brockw.stickwar.engine.units
    import com.brockw.stickwar.engine.Team.Tech;
    import com.brockw.stickwar.market.MarketItem;
    import flash.display.MovieClip;
+   import flash.geom.ColorTransform;
    import flash.geom.Point;
    
    public class Monk extends Unit
@@ -18,7 +19,7 @@ package com.brockw.stickwar.engine.units
       
       private static var WEAPON_REACH:int;
       
-      private static const BOSS_WEAPON_SKIN:String = "Spellbook";
+      private static const BOSS_WEAPON_SKIN:String = "Golden Staff";
       
       private static const BOSS_REVIVE_RANGE:Number = 180;
       
@@ -39,6 +40,12 @@ package com.brockw.stickwar.engine.units
       private static const BOSS_REVIVE_RETREAT_FRAMES:int = 30;
       
       private static const BOSS_DAMAGE_TAKEN_MULTIPLIER:Number = 1 / 1.65;
+      
+      private static const BOSS_FOG_REVEAL_COOLDOWN:int = 30 * 90;
+      
+      private static const BOSS_FOG_REVEAL_DURATION:int = 30 * 5;
+      
+      private static const BOSS_FOG_REVEAL_SPEED:Number = 10;
       
       private var cureSpellCooldown:SpellCooldown;
       
@@ -98,6 +105,16 @@ package com.brockw.stickwar.engine.units
       
       private var bossReviveCooldownMax:int;
       
+      private var bossFogRevealCooldownFrames:int;
+      
+      private var _fogRevealPhase:int;
+      
+      private var _fogRevealActiveFrames:int;
+      
+      private var _fogRevealTargetX:Number;
+      
+      private var _fogRevealTargetReachedX:Number;
+      
       public function Monk(game:StickWar)
       {
          super(game);
@@ -155,8 +172,8 @@ package com.brockw.stickwar.engine.units
          _mc.width *= _scale;
          _mc.height *= _scale;
          _state = S_RUN;
-         _mc.mc.gotoAndPlay(1); //unpopped
-         _mc.gotoAndStop(1); //unpopped
+         _mc.mc.gotoAndPlay(1);
+         _mc.gotoAndStop(1);
          drawShadow();
          this.healSpellCooldown = new SpellCooldown(game.xml.xml.Order.Units.monk.heal.effect,game.xml.xml.Order.Units.monk.heal.cooldown,game.xml.xml.Order.Units.monk.heal.mana);
          this.cureSpellCooldown = new SpellCooldown(game.xml.xml.Order.Units.monk.cure.effect,game.xml.xml.Order.Units.monk.cure.cooldown,game.xml.xml.Order.Units.monk.cure.mana);
@@ -181,6 +198,11 @@ package com.brockw.stickwar.engine.units
          this.autoReviveScanCooldown = 0;
          this.bossReviveRetreatFrames = 0;
          this.playerReviveIsManual = false;
+         this.bossFogRevealCooldownFrames = 0;
+         this._fogRevealPhase = 0;
+         this._fogRevealActiveFrames = 0;
+         this._fogRevealTargetX = 0;
+         this._fogRevealTargetReachedX = 0;
       }
       
       override public function setBuilding() : void
@@ -205,10 +227,15 @@ package com.brockw.stickwar.engine.units
          {
             --this.autoReviveScanCooldown;
          }
+         if(this.bossFogRevealCooldownFrames > 0)
+         {
+            --this.bossFogRevealCooldownFrames;
+         }
          this.updatePlayerReviveWalk(game);
          this.healSpellCooldown.update();
          this.cureSpellCooldown.update();
          this.slowSpellCooldown.update();
+         this.updateBossFogReveal(game);
          updateCommon(game);
          if(!isDieing)
          {
@@ -385,6 +412,7 @@ package com.brockw.stickwar.engine.units
          }
          if(this.isBoss && this._isPlayerBoss)
          {
+            a.setAction(0,1,UnitCommand.FOG_REVEAL);
             if(team.tech.isResearched(Tech.MONK_BOSS_REVIVE) && (team.techAllowed == null || Tech.BOSS_MONK_UNLOCK in team.techAllowed))
             {
                a.setAction(2,0,UnitCommand.MONK_BOSS_REVIVE);
@@ -586,6 +614,14 @@ package com.brockw.stickwar.engine.units
             this._isPlayerBoss = true;
             this._isAutoReviveToggled = true;
          }
+         var ct:ColorTransform = new ColorTransform();
+         ct.redMultiplier = 1.18;
+         ct.greenMultiplier = 1.05;
+         ct.blueMultiplier = 1.28;
+         ct.redOffset = 15;
+         ct.greenOffset = 10;
+         ct.blueOffset = 35;
+         this._mc.transform.colorTransform = ct;
       }
       
       override public function damage(type:int, amount:int, inflictor:Entity, modifier:Number = 1) : void
@@ -888,6 +924,99 @@ package com.brockw.stickwar.engine.units
       public function getReviveCooldownFraction() : Number
       {
          return this.bossReviveCooldownFrames / this.bossReviveCooldownMax;
+      }
+      
+      public function getFogRevealCooldownFraction() : Number
+      {
+         return this.bossFogRevealCooldownFrames / BOSS_FOG_REVEAL_COOLDOWN;
+      }
+      
+      public function bossFogReveal(game:StickWar) : void
+      {
+         if(!this.isBoss || !this._isPlayerBoss || this.hasBossAbilitySpawnLock() || this.isBusy() || this.bossFogRevealCooldownFrames > 0)
+         {
+            return;
+         }
+         if(this._fogRevealPhase != 0)
+         {
+            game.gameScreen.userInterface.helpMessage.showMessage("Fog Reveal already casted");
+            return;
+         }
+         if(game.fogOfWar.isNightfallActive)
+         {
+            game.gameScreen.userInterface.helpMessage.showMessage("Nightfall is blocking your spell");
+            return;
+         }
+         if(game.gameScreen is CampaignGameScreen && game.main != null && game.main.campaign != null && game.main.campaign.getCurrentLevel() != null)
+         {
+            if(game.main.campaign.getCurrentLevel().title.indexOf("Ambush:") == 0)
+            {
+               game.gameScreen.userInterface.helpMessage.showMessage("Can\'t use Fog Reveal in Ambush levels");
+               return;
+            }
+         }
+         if(!game.team.bypassMana && game.team.mana < 80)
+         {
+            return;
+         }
+         if(!game.team.bypassMana)
+         {
+            game.team.mana -= 80;
+         }
+         this.isHealing = true;
+         _state = S_ATTACK;
+         hasHit = false;
+         this._fogRevealPhase = 1;
+         this._fogRevealActiveFrames = 0;
+         this._fogRevealTargetReachedX = game.team.getVisionRange();
+         this._fogRevealTargetX = this.team.enemyTeam.homeX;
+         game.fogOfWar.isForwardPositionLocked = true;
+         game.fogOfWar.lockedForwardPosition = this._fogRevealTargetReachedX;
+         this.bossFogRevealCooldownFrames = BOSS_FOG_REVEAL_COOLDOWN;
+         this.bossAbilitySpawnLockFrames = 30 * 2;
+      }
+      
+      private function updateBossFogReveal(game:StickWar) : void
+      {
+         if(this._fogRevealPhase == 0)
+         {
+            return;
+         }
+         if(game.fogOfWar.isNightfallActive)
+         {
+            this._fogRevealPhase = 0;
+            game.fogOfWar.isForwardPositionLocked = false;
+            return;
+         }
+         var naturalPos:Number = game.team.getVisionRange();
+         if(this._fogRevealPhase == 1)
+         {
+            this._fogRevealTargetReachedX = Math.min(this._fogRevealTargetReachedX + BOSS_FOG_REVEAL_SPEED,this._fogRevealTargetX);
+            game.fogOfWar.lockedForwardPosition = Math.max(naturalPos,this._fogRevealTargetReachedX);
+            if(this._fogRevealTargetReachedX >= this._fogRevealTargetX)
+            {
+               this._fogRevealPhase = 2;
+               this._fogRevealActiveFrames = BOSS_FOG_REVEAL_DURATION;
+            }
+         }
+         else if(this._fogRevealPhase == 2)
+         {
+            --this._fogRevealActiveFrames;
+            if(this._fogRevealActiveFrames <= 0)
+            {
+               this._fogRevealPhase = 3;
+            }
+         }
+         else if(this._fogRevealPhase == 3)
+         {
+            this._fogRevealTargetReachedX = Math.max(this._fogRevealTargetReachedX - BOSS_FOG_REVEAL_SPEED,naturalPos);
+            game.fogOfWar.lockedForwardPosition = this._fogRevealTargetReachedX;
+            if(this._fogRevealTargetReachedX <= naturalPos)
+            {
+               this._fogRevealPhase = 0;
+               game.fogOfWar.isForwardPositionLocked = false;
+            }
+         }
       }
       
       public function canPlayerBossReviveUnit(target:Unit) : Boolean

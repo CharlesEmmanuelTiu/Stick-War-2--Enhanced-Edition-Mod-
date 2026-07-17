@@ -2,7 +2,7 @@
 <debug>0</debug>
 <isKongregate>0</isKongregate>
 <campaignDebug>1</campaignDebug>
-<campaignVersion>1.24</campaignVersion>
+<campaignVersion>1.26</campaignVersion>
 <isAlpha>1</isAlpha>
 <hasArmory>1</hasArmory>
 <skipToLevel>6</skipToLevel>
@@ -1528,6 +1528,16 @@
 </autoRevive>
 
 <population>3</population>
+
+<fogReveal>
+<name>Fog Reveal</name>
+<info>Reveal the fog of war, exposing enemy territory for a short time.</info>
+<hotkey>0</hotkey>
+<gold>0</gold>
+<mana>80</mana>
+<effect>0</effect>
+<cooldown>2700</cooldown>
+</fogReveal>
 </monk>
 
 

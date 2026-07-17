@@ -8,7 +8,7 @@ package com.brockw.stickwar.engine.units
    import flash.display.MovieClip;
    import flash.geom.Point;
    
-   public class EnslavedGiant extends RangedUnit
+   public class EnslavedGiant extends com.brockw.stickwar.engine.units.RangedUnit
    {
       
       private static const WEAPON_REACH:int = 90;

@@ -1,5 +1,6 @@
 package com.brockw.stickwar.campaign
 {
+   import com.brockw.stickwar.campaign.controllers.CampaignAmbush;
    import com.brockw.stickwar.engine.units.Unit;
    import flash.text.TextField;
    import flash.text.TextFormat;
@@ -94,6 +95,20 @@ package com.brockw.stickwar.campaign
                this.screen.team.gold += 5000;
                this.screen.team.mana += 5000;
                this.showToast("+5000 Gold, +5000 Mana");
+               return;
+            }
+            if(this.screen.userInterface.keyBoardState.isPressed(80))
+            {
+               var ambush:CampaignAmbush = this.screen.campaignController as CampaignAmbush;
+               if(ambush != null)
+               {
+                  ambush.wavePaused = !ambush.wavePaused;
+                  this.showToast(ambush.wavePaused ? "Waves Paused" : "Waves Resumed");
+               }
+               else
+               {
+                  this.showToast("Wave pause not available");
+               }
                return;
             }
             this.trySpawnBosses();
@@ -218,11 +233,36 @@ package com.brockw.stickwar.campaign
          {
             this.screen.damageDebugEnemyStatue(250);
          }
+         else if(this.screen.userInterface.keyBoardState.isPressed(55))
+         {
+            this.screen.spawnDebugUndeadMagikill();
+         }
       }
       
       public function update() : void
       {
          this.updateToast();
+         if(this.debugModeEnabled && this.screen != null && this.screen.game != null && this.screen.enemyTeamAi != null && this.debugOverlay != null)
+         {
+            if(this.screen.game.frame % 60 == 0)
+            {
+               var metric:Number = this.screen.enemyTeamAi.getAggressionMetric();
+               if(metric < 0.4)
+               {
+                  var bandName:String = "Home";
+               }
+               else if(metric < 0.6)
+               {
+                  bandName = "Middle";
+               }
+               else
+               {
+                  bandName = "Attacking";
+               }
+               var strategyName:String = this.screen.enemyTeamAi.getLastStrategyOrder();
+               this.debugOverlay.text = "DEBUG ENABLED\nMetric: " + metric.toFixed(3) + " (" + bandName + ") | Strategy: " + strategyName;
+            }
+         }
       }
       
       public function showToast(message:String) : void
@@ -266,14 +306,14 @@ package com.brockw.stickwar.campaign
          this.debugOverlay.defaultTextFormat = format;
          this.debugOverlay.selectable = false;
          this.debugOverlay.mouseEnabled = false;
-         this.debugOverlay.multiline = false;
+         this.debugOverlay.multiline = true;
          this.debugOverlay.wordWrap = false;
          this.debugOverlay.background = true;
          this.debugOverlay.backgroundColor = 0;
          this.debugOverlay.border = true;
          this.debugOverlay.borderColor = 16776960;
-         this.debugOverlay.width = 120;
-         this.debugOverlay.height = 20;
+         this.debugOverlay.width = 400;
+         this.debugOverlay.height = 40;
          this.debugOverlay.x = 8;
          this.debugOverlay.y = 8;
          this.debugOverlay.text = "DEBUG ENABLED";

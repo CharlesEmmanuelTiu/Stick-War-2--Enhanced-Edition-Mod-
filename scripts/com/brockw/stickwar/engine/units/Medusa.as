@@ -36,8 +36,6 @@ package com.brockw.stickwar.engine.units
       
       private static const LOOK_AT_ME_END_FRAME:int = 54;
       
-      private static const LOOK_AT_ME_NORMAL_TARGET_CAP:int = 3;
-      
       private var WEAPON_REACH:int;
       
       private var snakeFrames:Dictionary;
@@ -57,6 +55,8 @@ package com.brockw.stickwar.engine.units
       private var bossLookAtMeHitUnits:Dictionary;
       
       private var bossLookAtMeHitCount:int;
+      
+      private var medusaVoicePlayed:Boolean;
       
       private var bossRegenRate:Number;
       
@@ -130,13 +130,14 @@ package com.brockw.stickwar.engine.units
          _mc.width *= _scale;
          _mc.height *= _scale;
          _state = S_RUN;
-         _mc.mc.gotoAndPlay(1); //unpopped
-         _mc.gotoAndStop(1); //unpopped
+         _mc.mc.gotoAndPlay(1);
+         _mc.gotoAndStop(1);
          drawShadow();
          this.inPoisonSpell = this.inStoneSpell = false;
          this.bossLookAtMeApplied = false;
          this.bossLookAtMeHitUnits = new Dictionary();
          this.bossLookAtMeHitCount = 0;
+         this.medusaVoicePlayed = false;
          var i:int = 0;
          while(i < _mc.mc.snakes.numChildren)
          {
@@ -597,7 +598,7 @@ package com.brockw.stickwar.engine.units
       
       private function isInLookAtMeWindow(game:StickWar) : Boolean
       {
-         var frame:int = _mc.mc.currentFrame;
+         var frame:int = int(_mc.mc.currentFrame);
          var endFrame:int = Math.min(LOOK_AT_ME_END_FRAME,_mc.mc.totalFrames);
          if(frame > endFrame)
          {
@@ -659,15 +660,16 @@ package com.brockw.stickwar.engine.units
       
       private function getLookAtMeTargetCap(game:StickWar) : int
       {
-         if(game.main.campaign.difficultyLevel == Campaign.D_NORMAL)
-         {
-            return LOOK_AT_ME_NORMAL_TARGET_CAP;
-         }
          return 0;
       }
       
       private function applyStoneDamageToUnit(game:StickWar, target:Unit) : void
       {
+         if(this.isBossMedusa() && !this.medusaVoicePlayed)
+         {
+            game.soundManager.playSound("medusaVoice1",this.px,this.py);
+            this.medusaVoicePlayed = true;
+         }
          if(target.isArmoured)
          {
             target.stoneAttack(game.xml.xml.Chaos.Units.medusa.stone.damageToArmour);

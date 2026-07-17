@@ -1,6 +1,7 @@
 package com.brockw.stickwar.campaign.controllers
 {
    import com.brockw.stickwar.GameScreen;
+   import com.brockw.stickwar.campaign.Campaign;
    import com.brockw.stickwar.campaign.CampaignBossMessages;
    import com.brockw.stickwar.campaign.InGameMessage;
    import com.brockw.stickwar.engine.Ai.command.AttackMoveCommand;
@@ -10,8 +11,6 @@ package com.brockw.stickwar.campaign.controllers
    
    public class CampaignArcher extends CampaignController
    {
-      
-      private static const CAPTAIN_SPAWN_FRAME:int = 30 * 180;
       
       private static const CAPTAIN_STATUE_HEALTH_TRIGGER:Number = 0.5;
       
@@ -55,6 +54,19 @@ package com.brockw.stickwar.campaign.controllers
          this.bossMessages = null;
          this.hasSpawnedCaptain = false;
          this.pendingCaptainAttackRefresh = null;
+      }
+      
+      private function getCaptainSpawnFrame(gameScreen:GameScreen) : int
+      {
+         if(gameScreen.game.main.campaign.difficultyLevel == Campaign.D_INSANE)
+         {
+            return 30 * 180;
+         }
+         if(gameScreen.game.main.campaign.difficultyLevel == Campaign.D_HARD)
+         {
+            return 30 * 240;
+         }
+         return 30 * 300;
       }
       
       override public function update(gameScreen:GameScreen) : void
@@ -169,7 +181,7 @@ package com.brockw.stickwar.campaign.controllers
       
       private function shouldSpawnCaptain(gameScreen:GameScreen) : Boolean
       {
-         if(gameScreen.game.frame >= CAPTAIN_SPAWN_FRAME)
+         if(gameScreen.game.frame >= this.getCaptainSpawnFrame(gameScreen))
          {
             return true;
          }

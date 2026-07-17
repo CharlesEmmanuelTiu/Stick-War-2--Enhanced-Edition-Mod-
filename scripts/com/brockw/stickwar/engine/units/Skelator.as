@@ -1,6 +1,7 @@
 package com.brockw.stickwar.engine.units
 {
    import com.brockw.game.Util;
+   import com.brockw.stickwar.campaign.Campaign;
    import com.brockw.stickwar.engine.ActionInterface;
    import com.brockw.stickwar.engine.Ai.SkelatorAi;
    import com.brockw.stickwar.engine.Ai.command.*;
@@ -35,9 +36,9 @@ package com.brockw.stickwar.engine.units
       
       private static const BOSS_REAPER_COOLDOWN_FRAMES:int = 30 * 18;
       
-      private static const BOSS_DEAD_RISING_COOLDOWN_FRAMES:int = 30 * 20;
+      private static const BOSS_DEAD_RISING_COOLDOWN_FRAMES:int = 30 * 60;
       
-      private static const BOSS_DEAD_RISING_MAX:int = 2;
+      private static const BOSS_DEAD_RISING_MAX:int = 8;
       
       private static const BOSS_DISTANCE_PHASE_HEALTH_RATIO:Number = 0.5;
       
@@ -60,10 +61,6 @@ package com.brockw.stickwar.engine.units
       public var spawnSpreadY:Number;
       
       private var isReaperSpell:Boolean;
-      
-      private var isDeadRisingSpell:Boolean;
-      
-      private var hasSummonedDeadRisingThisCast:Boolean;
       
       private var spellX:Number;
       
@@ -160,8 +157,6 @@ package com.brockw.stickwar.engine.units
          this.spawnSpreadX = 200;
          this.spawnSpreadY = 150;
          this.isReaperSpell = false;
-         this.isDeadRisingSpell = false;
-         this.hasSummonedDeadRisingThisCast = false;
          this.spellX = this.spellY = 0;
          this.fistAttackSpell = new SpellCooldown(game.xml.xml.Chaos.Units.skelator.fist.effect,game.xml.xml.Chaos.Units.skelator.fist.cooldown,game.xml.xml.Chaos.Units.skelator.fist.mana);
          this.reaperSpell = new SpellCooldown(game.xml.xml.Chaos.Units.skelator.reaper.effect,game.xml.xml.Chaos.Units.skelator.reaper.cooldown,game.xml.xml.Chaos.Units.skelator.reaper.mana);
@@ -169,8 +164,8 @@ package com.brockw.stickwar.engine.units
          _mc.width *= _scale;
          _mc.height *= _scale;
          _state = S_RUN;
-         _mc.mc.gotoAndPlay(1); //unpopped
-         _mc.gotoAndStop(1); //unpopped
+         _mc.mc.gotoAndPlay(1);
+         _mc.gotoAndStop(1);
          drawShadow();
          this.healthBar.y = -mc.mc.height * 1.1;
          this.target = null;
@@ -211,6 +206,10 @@ package com.brockw.stickwar.engine.units
          if(this.bossRecentHitDistanceFrames > 0)
          {
             --this.bossRecentHitDistanceFrames;
+         }
+         if(this._isBoss && this.bossDeadRisingSummons.length > 0)
+         {
+            this.pruneBossDeadRisingSummons();
          }
          updateCommon(game);
          if(!isDieing)
@@ -266,21 +265,6 @@ package com.brockw.stickwar.engine.units
                {
                   _state = S_RUN;
                   this.isReaperSpell = false;
-               }
-            }
-            else if(this.isDeadRisingSpell)
-            {
-               _mc.gotoAndStop("reaperAttack");
-               if(_mc.mc.currentFrame >= 42 && !this.hasSummonedDeadRisingThisCast)
-               {
-                  this.hasSummonedDeadRisingThisCast = true;
-                  this.summonBossDeadRising(game);
-               }
-               if(_mc.mc.currentFrame == _mc.mc.totalFrames)
-               {
-                  _state = S_RUN;
-                  this.isDeadRisingSpell = false;
-                  this.hasSummonedDeadRisingThisCast = false;
                }
             }
             else if(_state == S_RUN)
@@ -344,12 +328,11 @@ package com.brockw.stickwar.engine.units
       
       override public function stateFixForCutToWalk() : void
       {
-         if(!this.isFistAttacking && !this.isReaperSpell && !this.isDeadRisingSpell)
+         if(!this.isFistAttacking && !this.isReaperSpell)
          {
             super.stateFixForCutToWalk();
             this.isFistAttacking = false;
             this.isReaperSpell = false;
-            this.isDeadRisingSpell = false;
          }
       }
       
@@ -382,30 +365,7 @@ package com.brockw.stickwar.engine.units
       
       private function notInSpell() : Boolean
       {
-         return !this.isFistAttacking && !this.isReaperSpell && !this.isDeadRisingSpell;
-      }
-      
-      public function canBossDeadRising() : Boolean
-      {
-         return this.isBoss && !this.hasBossAbilitySpawnLock() && this.bossDeadRisingCooldownFrames == 0 && this.isBossDistancePhaseActive() && this.getBossDeadRisingSummonCount() < BOSS_DEAD_RISING_MAX && this.notInSpell();
-      }
-      
-      public function deadRising() : void
-      {
-         if(!this.canBossDeadRising())
-         {
-            return;
-         }
-         if(this.team != null && this.team.enemyTeam != null && this.team.enemyTeam.statue != null)
-         {
-            forceFaceDirection(this.team.enemyTeam.statue.px - this.px);
-         }
-         this.isDeadRisingSpell = true;
-         this.hasSummonedDeadRisingThisCast = false;
-         hasHit = false;
-         _state = S_ATTACK;
-         this.bossDeadRisingCooldownFrames = BOSS_DEAD_RISING_COOLDOWN_FRAMES;
-         team.game.soundManager.playSound("skeletalReaperSound",px,py);
+         return !this.isFistAttacking && !this.isReaperSpell;
       }
       
       public function isBossDistancePhaseActive() : Boolean
@@ -423,35 +383,9 @@ package com.brockw.stickwar.engine.units
          return this.bossDistanceRetreatDirection;
       }
       
-      private function summonBossDeadRising(game:StickWar) : void
+      public function canBossSummonUndead() : Boolean
       {
-         var dead:Unit = null;
-         var summonCount:int = 0;
-         if(game == null || this.team == null)
-         {
-            return;
-         }
-         this.pruneBossDeadRisingSummons();
-         summonCount = this.getBossDeadRisingSummonCount();
-         if(summonCount >= BOSS_DEAD_RISING_MAX)
-         {
-            return;
-         }
-         if(game.soundManager != null)
-         {
-            game.soundManager.playSoundRandom("GhostTower",2,this.px,this.py);
-         }
-         dead = game.unitFactory.getUnit(Unit.U_DEAD);
-         this.team.spawn(dead,game);
-         dead.isBossSummoned = true;
-         dead.isTowerSpawned = false;
-         dead.forceTowerSpawnVisual = true;
-         dead.x = dead.px = this.px - this.team.direction * (65 + summonCount * 40);
-         dead.y = dead.py = Math.max(70,Math.min(game.map.height - 70,this.py + (summonCount == 0 ? -35 : 35)));
-         this.team.population += dead.population;
-         game.projectileManager.initTowerSpawn(dead.px,dead.py,this.team,0.6);
-         game.projectileManager.initSpawnDrip(dead.px,dead.py,this.team);
-         this.bossDeadRisingSummons.push(dead);
+         return this.bossDeadRisingCooldownFrames == 0 && !this.hasBossAbilitySpawnLock() && this.notInSpell();
       }
       
       private function getBossDeadRisingSummonCount() : int
@@ -538,6 +472,34 @@ package com.brockw.stickwar.engine.units
          team.game.soundManager.playSound("skeltalFistsSound",px,py);
       }
       
+      public function bossSummonUndead(game:StickWar) : void
+      {
+         if(this.hasBossAbilitySpawnLock() || this.bossDeadRisingCooldownFrames > 0 || !this.notInSpell())
+         {
+            return;
+         }
+         this.bossDeadRisingCooldownFrames = BOSS_DEAD_RISING_COOLDOWN_FRAMES;
+         var count:int = 4;
+         if(game.main.campaign.difficultyLevel == Campaign.D_HARD)
+         {
+            count = 6;
+         }
+         else if(game.main.campaign.difficultyLevel == Campaign.D_INSANE)
+         {
+            count = 8;
+         }
+         this.suppressFistProjectiles = true;
+         this.bossUndeadSummonCount = count;
+         this.spellX = this.px + this.team.direction * 300;
+         this.spellY = this.py;
+         forceFaceDirection(this.spellX - this.px);
+         this.isFistAttacking = true;
+         hasHit = false;
+         _state = S_ATTACK;
+         team.game.soundManager.playSound("skeltalFistsSound",px,py);
+         team.game.soundManager.playSoundFullVolumeRandom("necromancer",3);
+      }
+      
       public function bossSummonFist(x:Number, y:Number) : void
       {
          this.suppressFistProjectiles = true;
@@ -553,14 +515,7 @@ package com.brockw.stickwar.engine.units
          }
          var count:int = this.bossUndeadSummonCount;
          this.bossUndeadSummonCount = 0;
-         if(game.soundManager != null)
-         {
-            game.soundManager.playSoundFullVolumeRandom("GhostTower",2);
-         }
-         if(!Boolean(this.team.unitGroups[Unit.U_UNDEAD]))
-         {
-            this.team.unitGroups[Unit.U_UNDEAD] = [];
-         }
+         var numVariants:int = Math.round(count * 0.2);
          var i:int = 0;
          while(i < count)
          {
@@ -579,6 +534,42 @@ package com.brockw.stickwar.engine.units
                cmd.goalX = this.team.enemyTeam.statue.px;
                cmd.goalY = undead.py;
                undead.ai.setCommand(game,cmd);
+               if(i < numVariants)
+               {
+                  undead.maxVelocity = game.xml.xml.Chaos.Units.dead.maxVelocity;
+                  undead.maxForce = game.xml.xml.Chaos.Units.dead.maxForce;
+                  var variantRoll:Number = game.random.nextNumber();
+                  if(variantRoll < 0.4)
+                  {
+                     undead.turnedHeadSkin = "Undead Spearton";
+                     undead.maxHealth = undead.health = game.xml.xml.Chaos.Units.dead.health;
+                  }
+                  else if(variantRoll < 0.7)
+                  {
+                     undead.turnedHeadSkin = "Undead Archer";
+                     undead._firstHitBonus = undead.damageToDeal;
+                  }
+                  else if(variantRoll < 0.9)
+                  {
+                     undead.turnedHeadSkin = "Undead Ninja";
+                     undead.maxHealth = undead.health = game.xml.xml.Order.Units.swordwrath.health;
+                     undead.maxVelocity *= 1.2;
+                     undead.maxForce *= 1.2;
+                  }
+                  else
+                  {
+                     undead.turnedHeadSkin = "Undead Magikill";
+                     undead.maxHealth = undead.health = game.xml.xml.Order.Units.swordwrath.health;
+                  }
+                  undead.healthBar.totalHealth = undead.maxHealth;
+                  undead.healthBar.health = undead.health;
+               }
+               undead.isBossSummoned = true;
+               undead.suppressTowerSpawnVisual = true;
+               undead.bossSummonFrame = game.frame;
+               undead.healthBar.totalHealth = undead.maxHealth;
+               undead.healthBar.health = undead.health;
+               this.bossDeadRisingSummons.push(undead);
             }
             i++;
          }

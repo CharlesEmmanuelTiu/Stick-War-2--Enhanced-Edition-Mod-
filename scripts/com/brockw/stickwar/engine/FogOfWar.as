@@ -1,5 +1,6 @@
 package com.brockw.stickwar.engine
 {
+   import com.brockw.stickwar.engine.units.Unit;
    import flash.display.*;
    import flash.geom.ColorTransform;
    
@@ -32,6 +33,10 @@ package com.brockw.stickwar.engine
       
       public var lockedForwardPosition:Number;
       
+      public var isNightfallActive:Boolean;
+      
+      public var fogFadeSpeed:Number;
+      
       private var blockMc:MovieClip;
       
       public function FogOfWar(game:StickWar)
@@ -41,6 +46,7 @@ package com.brockw.stickwar.engine
          this.isFogOn = true;
          this.isForwardPositionLocked = false;
          this.lockedForwardPosition = 0;
+         this.isNightfallActive = false;
          this.fog = new _fog();
          this.fog.y = 0;
          this.setTint(this.fog,0,0.9);
@@ -73,13 +79,14 @@ package com.brockw.stickwar.engine
          {
             forwardPosition = this.lockedForwardPosition;
          }
-         if(!this.isFogOn)
+         var targetAlpha:Number = this.isFogOn ? 1 : 0;
+         if(this.fogFadeSpeed > 0)
          {
-            this.alpha = 0;
+            this.alpha += (targetAlpha - this.alpha) * this.fogFadeSpeed;
          }
          else
          {
-            alpha = 1;
+            this.alpha = targetAlpha;
          }
          if(this.xPos == 0)
          {
@@ -166,6 +173,11 @@ package com.brockw.stickwar.engine
       public function unlockForwardPosition() : void
       {
          this.isForwardPositionLocked = false;
+      }
+      
+      public function isUnitHiddenByNightfall(unit:Unit) : Boolean
+      {
+         return this.isNightfallActive && unit.team == unit.team.game.teamB && !unit.onMap(unit.team.game);
       }
    }
 }

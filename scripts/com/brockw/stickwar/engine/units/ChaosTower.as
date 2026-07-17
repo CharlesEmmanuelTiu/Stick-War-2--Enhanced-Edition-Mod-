@@ -8,7 +8,7 @@ package com.brockw.stickwar.engine.units
    import flash.display.MovieClip;
    import flash.geom.Point;
    
-   public class ChaosTower extends RangedUnit
+   public class ChaosTower extends com.brockw.stickwar.engine.units.RangedUnit
    {
       
       private var _isCastleArcher:Boolean;

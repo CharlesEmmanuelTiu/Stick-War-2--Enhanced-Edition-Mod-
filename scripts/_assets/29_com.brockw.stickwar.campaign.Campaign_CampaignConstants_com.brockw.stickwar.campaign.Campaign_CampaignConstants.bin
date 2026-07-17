@@ -640,7 +640,7 @@
 </oponent>
 </level>
 
-<level title="Ambush: Giants and Eclipsors" number="17" map="6" story="Near Medusa's capital, the ground shakes beneath Giants while Eclipsors darken the sky. Medusa is trying to crush the army before it reaches the gates." controller="CampaignAmbush" points="1">
+<level title="Ambush: The Storm" number="17" map="6" story="Rain lashes the battlefield. In every flash of lightning, shadows move closer. Medusa's army is using the storm as cover — Giants, Eclipsors, and worse. Hold your ground or be swallowed by the dark." controller="CampaignAmbush" points="1">
 <hasInsaneWall>true</hasInsaneWall>
 <normal>1.55</normal>
 <hard>1.25</hard>
@@ -657,11 +657,18 @@
 <unit>Magikill</unit>
 <unit>Monk</unit>
 <unit>FlyingCrossbowman</unit>
+<unit>EnslavedGiant</unit>
+<startingUnit>Miner</startingUnit>
+<startingUnit>Miner</startingUnit>
+<startingUnit>Miner</startingUnit>
 <startingUnit>Miner</startingUnit>
 <startingUnit>Miner</startingUnit>
 <startingUnit>Miner</startingUnit>
 <startingUnit>FlyingCrossbowman</startingUnit>
 <startingUnit>Archidon</startingUnit>
+<startingUnit>Swordwrath</startingUnit>
+<startingUnit>Magikill</startingUnit>
+<startingUnit>Spearton</startingUnit>
 <startingUnit>Spearton</startingUnit>
 </player>
 
@@ -751,7 +758,7 @@
 <hard>1.4</hard>
 <insane>.78</insane>
 <normalHealthScale>.7</normalHealthScale>
-<tip>Tip: Use everything you have learned up to this point to fight the most difficult battle of all.</tip>
+<tip>Tip: Use everything you have learned up to this point to fight the most difficult battle of all. Try to use keybinds to react faster.</tip>
 
 <player race="Order" statueHealth="1500">
 <mana>1000</mana>
@@ -770,11 +777,13 @@
 <startingUnit>Miner</startingUnit>
 <startingUnit>Miner</startingUnit>     
 <startingUnit>Swordwrath</startingUnit>
+<startingUnit>Swordwrath</startingUnit>
 <startingUnit>Spearton</startingUnit>
 <startingUnit>Archidon</startingUnit>
 <startingUnit>Ninja</startingUnit>
 <startingUnit>Magikill</startingUnit>
 <startingUnit>Monk</startingUnit>
+<startingUnit>FlyingCrossbowman</startingUnit>
 <startingUnit>EnslavedGiant</startingUnit>
 </player>
 

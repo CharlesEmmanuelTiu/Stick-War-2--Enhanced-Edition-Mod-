@@ -257,11 +257,11 @@ package com.brockw.stickwar.engine
                      {
                         continue;
                      }
-                     min = this.actions[this.currentActions[i]].coolDownTime(gameScreen.userInterface.selectedUnits.unitTypes[this.currentEntity.type][0]);
+                     min = Number(this.actions[this.currentActions[i]].coolDownTime(gameScreen.userInterface.selectedUnits.unitTypes[this.currentEntity.type][0]));
                      j = 1;
                      while(j < gameScreen.userInterface.selectedUnits.unitTypes[this.currentEntity.type].length)
                      {
-                        v = this.actions[this.currentActions[i]].coolDownTime(gameScreen.userInterface.selectedUnits.unitTypes[this.currentEntity.type][j]);
+                        v = Number(this.actions[this.currentActions[i]].coolDownTime(gameScreen.userInterface.selectedUnits.unitTypes[this.currentEntity.type][j]));
                         if(v < min)
                         {
                            min = v;
@@ -689,6 +689,7 @@ package com.brockw.stickwar.engine
          this.actions[new MagikillSummonCommand(this._game).type] = new MagikillSummonCommand(this._game);
          this.actions[new Nuke2Command(this._game).type] = new Nuke2Command(this._game);
          this.actions[new LightningStunCommand(this._game).type] = new LightningStunCommand(this._game);
+         this.actions[new FogRevealCommand(this._game).type] = new FogRevealCommand(this._game);
       }
       
       public function get currentMove() : UnitCommand

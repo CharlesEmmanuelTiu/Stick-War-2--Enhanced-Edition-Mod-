@@ -19,6 +19,8 @@ package com.brockw.stickwar.engine.projectile
       
       private static const NUKE_VISUAL_CLUSTER_WINDOW_FRAMES:int = 3;
       
+      private static const MAX_DEFLECTED_ARROWS:int = 15;
+      
       private static const BOMBER_NUKE_VISUAL_CLUSTER_MAX:int = 2;
       
       private static const MAGIKILL_NUKE_VISUAL_CLUSTER_MAX:int = 5;
@@ -55,6 +57,8 @@ package com.brockw.stickwar.engine.projectile
       
       private var poisonFistEffects:Array;
       
+      private var deflectedArrows:Array;
+      
       public function ProjectileManager(game:StickWar)
       {
          super();
@@ -85,6 +89,7 @@ package com.brockw.stickwar.engine.projectile
          this.medusaPoisonAmount = game.xml.xml.Chaos.Units.medusa.poison.poison;
          this.recentNukeVisualSpawns = [];
          this.poisonFistEffects = [];
+         this.deflectedArrows = [];
       }
       
       public function cleanUp() : void
@@ -214,6 +219,7 @@ package com.brockw.stickwar.engine.projectile
          n.py = unit.py;
          n.inflictor = unit;
          n.controlledFriendlyFire = unit.isConfused();
+         n.isInfectionSpray = false;
          var p:Point = unit.mc.mc.wizstaff.localToGlobal(new Point(0,0));
          var r:Point = unit.team.game.battlefield.globalToLocal(p);
          n.team = unit.team;
@@ -227,6 +233,40 @@ package com.brockw.stickwar.engine.projectile
          n.poisonDamage = unit.team.game.xml.xml.Order.Units.magikill.poisonSpray.damage;
          n.spellMc.gotoAndStop(1);
          n.stunTime = 0;
+         n.spellMc.scaleX = 1;
+         n.spellMc.transform.colorTransform = new ColorTransform();
+         unit.team.game.battlefield.addChild(n);
+         this.projectiles.push(n);
+      }
+      
+      public function initInfectionSpray(x:Number, y:Number, unit:Unit) : void
+      {
+         var n:PoisonSpray = this._projectileMap[Projectile.POISON_SPRAY].getItem();
+         if(n == null)
+         {
+            return;
+         }
+         n.visible = false;
+         n.px = unit.px;
+         n.py = unit.py;
+         n.inflictor = unit;
+         n.controlledFriendlyFire = unit.isConfused();
+         n.isInfectionSpray = true;
+         n.team = unit.team;
+         n.x = unit.px;
+         n.y = unit.py + unit.pz;
+         n.startX = unit.px;
+         n.startY = unit.py + unit.pz;
+         n.endX = x;
+         n.endY = y;
+         n.rotation = 0;
+         n.poisonDamage = 0;
+         n.spellMc.gotoAndStop(1);
+         n.stunTime = 0;
+         n.spellMc.scaleX = unit.team.direction;
+         var ct:ColorTransform = new ColorTransform(1,0.3,0.3,1,50,0,0,0);
+         n.spellMc.transform.colorTransform = ct;
+         unit.team.game.soundManager.playSound("AcidSpraySound",unit.px,unit.py + unit.pz);
          unit.team.game.battlefield.addChild(n);
          this.projectiles.push(n);
       }
@@ -431,14 +471,9 @@ package com.brockw.stickwar.engine.projectile
             var magikill:Magikill = unit;
             if(!magikill.isPlayerBoss || unit.team.tech.isResearched(Tech.MAGIKILL_LIGHTNING_STUN))
             {
-               stunDamage = Math.max(1,int(stunDamage * 0.15));
-               n.applyBossStun = true;
-               n.bossStunFrames = 30 * 2;
+               stunDamage = Math.max(1,int(stunDamage * 0.3));
+               n.isStunZone = true;
             }
-         }
-         else
-         {
-            n.applyBossStun = false;
          }
          n.damageToDeal = stunDamage;
          n.px = x;
@@ -447,10 +482,27 @@ package com.brockw.stickwar.engine.projectile
          n.team = unit.team;
          n.x = n.px;
          n.y = n.py;
-         n.spellMc.gotoAndStop(1);
-         this.projectiles.push(n);
-         unit.team.game.battlefield.addChild(n);
+         ElectricWallManager.addWall(n,unit.team.game);
          unit.team.game.soundManager.playSound("ElectricWallSoundEffect",x,y);
+      }
+      
+      public function initDeflectedArrow(px:Number, py:Number, pz:Number, game:StickWar, vx:Number = -4, vy:Number = -10) : void
+      {
+         if(this.deflectedArrows.length >= MAX_DEFLECTED_ARROWS)
+         {
+            return;
+         }
+         var arrow:DeflectedArrow = new DeflectedArrow();
+         arrow.px = px;
+         arrow.py = py;
+         arrow.pz = pz;
+         arrow.vx = vx;
+         arrow.vy = vy;
+         arrow.x = px;
+         arrow.y = pz + py;
+         arrow.groundFrames = 0;
+         game.battlefield.addChild(arrow);
+         this.deflectedArrows.push(arrow);
       }
       
       public function initNuke(x:Number, y:Number, unit:Unit, damage:Number, clampToRange:Boolean = true) : void
@@ -802,6 +854,37 @@ package com.brockw.stickwar.engine.projectile
             readIndex++;
          }
          this.poisonFistEffects.length = writeIndex;
+         writeIndex = 0;
+         readIndex = 0;
+         var arrow:DeflectedArrow = null;
+         while(readIndex < this.deflectedArrows.length)
+         {
+            arrow = this.deflectedArrows[readIndex];
+            if(arrow != null)
+            {
+               arrow.update(game);
+               if(arrow.groundFrames > 5)
+               {
+                  if(game.battlefield.contains(arrow))
+                  {
+                     game.battlefield.removeChild(arrow);
+                  }
+               }
+               else
+               {
+                  this.deflectedArrows[writeIndex] = arrow;
+                  writeIndex++;
+               }
+            }
+            readIndex++;
+         }
+         this.deflectedArrows.length = writeIndex;
+         ElectricWallManager.update(game,game.frame);
+      }
+      
+      public function returnElectricWall(wall:ElectricWall) : void
+      {
+         this._projectileMap[Projectile.ELECTRIC_WALL].returnItem(wall);
       }
       
       public function get projectiles() : Array

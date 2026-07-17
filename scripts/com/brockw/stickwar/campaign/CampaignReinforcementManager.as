@@ -31,6 +31,8 @@ package com.brockw.stickwar.campaign
       
       private var hasTriggered:Boolean;
       
+      public var wingidonBossPreSpawned:Boolean;
+      
       private var shieldUntilFrame:int;
       
       private var shadowrathFlankUnits:Array;
@@ -43,6 +45,7 @@ package com.brockw.stickwar.campaign
          this.playerTeam = playerTeam;
          this.bossSpawner = bossSpawner;
          this.hasTriggered = false;
+         this.wingidonBossPreSpawned = false;
          this.shieldUntilFrame = 0;
          this.shadowrathFlankUnits = [];
       }
@@ -61,6 +64,7 @@ package com.brockw.stickwar.campaign
       public function reset() : void
       {
          this.hasTriggered = false;
+         this.wingidonBossPreSpawned = false;
          this.shieldUntilFrame = 0;
          this.shadowrathFlankUnits = [];
       }
@@ -77,6 +81,10 @@ package com.brockw.stickwar.campaign
          }
          level = this.main.campaign.getCurrentLevel();
          if(level == null || this.game.teamB.statue.health > level.oponent.statueHealth * 0.5)
+         {
+            return;
+         }
+         if(this.wingidonBossPreSpawned && level.title == "Shadow of the moon: Eclipsors Attack.")
          {
             return;
          }
@@ -319,6 +327,10 @@ package com.brockw.stickwar.campaign
                if(this.bossSpawner.shouldPromoteFactionBoss(currentLevelTitle,unitType,int(spawnedBossTypeCounts[unitType])))
                {
                   this.bossSpawner.configureFactionBoss(newUnit,currentLevelTitle);
+                  if(currentLevelTitle == "Shadow of the moon: Eclipsors Attack.")
+                  {
+                     this.wingidonBossPreSpawned = true;
+                  }
                }
             }
             row = int(i / 4);

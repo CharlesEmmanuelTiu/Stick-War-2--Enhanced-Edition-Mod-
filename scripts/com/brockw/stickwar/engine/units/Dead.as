@@ -10,7 +10,7 @@ package com.brockw.stickwar.engine.units
    import flash.display.MovieClip;
    import flash.geom.Point;
    
-   public class Dead extends RangedUnit
+   public class Dead extends com.brockw.stickwar.engine.units.RangedUnit
    {
       
       private var _isCastleArcher:Boolean;
@@ -33,6 +33,8 @@ package com.brockw.stickwar.engine.units
       
       private var lastShotFrame:int;
       
+      private var _lastAnimLabel:String;
+      
       public function Dead(game:StickWar)
       {
          super(game);
@@ -48,7 +50,7 @@ package com.brockw.stickwar.engine.units
       
       public static function setItem(mc:MovieClip, weapon:String, armor:String, misc:String) : void
       {
-         var m:_dead = _dead(mc);
+         var m:_dead = mc;
          if(Boolean(m.mc.head))
          {
             if(armor != "")
@@ -70,6 +72,7 @@ package com.brockw.stickwar.engine.units
       override public function init(game:StickWar) : void
       {
          initBase();
+         this._lastAnimLabel = "";
          _maximumRange = game.xml.xml.Chaos.Units.dead.maximumRange;
          population = game.xml.xml.Chaos.Units.dead.population;
          maxHealth = health = game.xml.xml.Chaos.Units.dead.health;
@@ -92,11 +95,15 @@ package com.brockw.stickwar.engine.units
             projectileVelocity += 10;
          }
          _mc.stop();
+         if(Boolean(_mc.mc.back))
+         {
+            _mc.mc.back.gotoAndStop("Default");
+         }
          _mc.width *= _scale;
          _mc.height *= _scale;
          _state = S_RUN;
-         MovieClip(_mc.mc.gotoAndPlay(1));
-         MovieClip(_mc.gotoAndStop(1));
+         _mc.mc.gotoAndPlay(1); //unpopped
+         _mc.gotoAndStop(1); //unpopped
          drawShadow();
          this.isPoison = false;
          this.isFire = false;
@@ -156,10 +163,18 @@ package com.brockw.stickwar.engine.units
          var p:Point = null;
          var v:int = 0;
          var damage:int = 0;
-         var poisonDamage:Number = NaN;
+         var poisonDamage:Number = Number(NaN);
          var realPoisonToggle:Boolean = false;
          super.update(game);
          updateCommon(game);
+         if(this._lastAnimLabel != _mc.currentLabel)
+         {
+            this._lastAnimLabel = _mc.currentLabel;
+            if(Boolean(_mc.mc.back))
+            {
+               _mc.mc.back.gotoAndStop("Default");
+            }
+         }
          if(!isDieing)
          {
             updateMotion(game);
@@ -167,7 +182,7 @@ package com.brockw.stickwar.engine.units
             {
                _mc.gotoAndStop(_currentDual.attackLabel);
                moveDualPartner(_dualPartner,_currentDual.xDiff);
-               if(MovieClip(_mc.mc).currentFrame == MovieClip(_mc.mc).totalFrames)
+               if(_mc.mc.currentFrame == _mc.mc.totalFrames)
                {
                   _isDualing = false;
                   _state = S_RUN;
@@ -189,7 +204,7 @@ package com.brockw.stickwar.engine.units
             }
             else if(_state == S_ATTACK)
             {
-               if(MovieClip(_mc.mc).currentFrame == 31 && !hasHit)
+               if(_mc.mc.currentFrame == 31 && !hasHit)
                {
                   p = mc.mc.localToGlobal(new Point(0,0));
                   p = game.battlefield.globalToLocal(p);
@@ -237,7 +252,7 @@ package com.brockw.stickwar.engine.units
                      hasHit = true;
                   }
                }
-               if(MovieClip(_mc.mc).totalFrames == MovieClip(_mc.mc).currentFrame)
+               if(_mc.mc.totalFrames == _mc.mc.currentFrame)
                {
                   _state = S_RUN;
                }
@@ -256,9 +271,9 @@ package com.brockw.stickwar.engine.units
             }
             this.team.removeUnit(this,game);
          }
-         if(!isDead && MovieClip(_mc.mc).currentFrame == MovieClip(_mc.mc).totalFrames)
+         if(!isDead && _mc.mc.currentFrame == _mc.mc.totalFrames)
          {
-            MovieClip(_mc.mc).gotoAndStop(1);
+            _mc.mc.gotoAndStop(1);
          }
          Util.animateMovieClip(_mc,0);
          if(this.isCastleArcher)

@@ -50,6 +50,8 @@ package com.brockw.stickwar.engine.Team
       
       public var medianPosition:Number;
       
+      public var forwardMilitaryPosition:Number;
+      
       public var attackingForcePopulation:int;
       
       private var _unitsAvailable:Dictionary;
@@ -207,6 +209,7 @@ package com.brockw.stickwar.engine.Team
          this.game = game;
          this.isEnemy = false;
          this.medianPosition = 0;
+         this.forwardMilitaryPosition = 0;
          this._unitProductionQueue = new Dictionary();
          this._buildings = new Dictionary();
          this.unitInfo = new Dictionary();
@@ -1307,6 +1310,10 @@ package com.brockw.stickwar.engine.Team
          {
             unit.makeBoss();
          }
+         if(!Boolean(this.unitGroups[unit.type]))
+         {
+            this.unitGroups[unit.type] = [];
+         }
          this.unitGroups[unit.type].push(unit);
          if(game.main.isKongregate)
          {
@@ -1355,10 +1362,13 @@ package com.brockw.stickwar.engine.Team
          {
             this._population -= unit.population;
          }
-         var unitGroupIndex:int = int(this.unitGroups[unit.type].indexOf(unit));
-         if(unitGroupIndex != -1)
+         if(Boolean(this.unitGroups[unit.type]))
          {
-            this.unitGroups[unit.type].splice(unitGroupIndex,1);
+            var unitGroupIndex:int = int(this.unitGroups[unit.type].indexOf(unit));
+            if(unitGroupIndex != -1)
+            {
+               this.unitGroups[unit.type].splice(unitGroupIndex,1);
+            }
          }
          if(unit.id in this.garrisonedUnits)
          {
@@ -1384,10 +1394,13 @@ package com.brockw.stickwar.engine.Team
          {
             game.battlefield.removeChild(unit);
          }
-         var index:int = int(this.unitGroups[unit.type].indexOf(unit));
-         if(index != -1)
+         if(Boolean(this.unitGroups[unit.type]))
          {
-            this.unitGroups[unit.type].splice(index,1);
+            var index:int = int(this.unitGroups[unit.type].indexOf(unit));
+            if(index != -1)
+            {
+               this.unitGroups[unit.type].splice(index,1);
+            }
          }
          game.unitFactory.returnUnit(unit.type,unit);
          if(unit.id in this.garrisonedUnits)
@@ -1794,7 +1807,7 @@ package com.brockw.stickwar.engine.Team
       
       private function countsAsHiddenMilitary(unit:Unit) : Boolean
       {
-         return unit is Miner && unit.isShadowrathDisguise;
+         return unit is Miner && Boolean(unit.isShadowrathDisguise);
       }
       
       private function isMilitaryFilter(unit:Unit, i:int, a:Array) : Boolean
@@ -1836,6 +1849,25 @@ package com.brockw.stickwar.engine.Team
          if(copyOfUnits.length > 0)
          {
             this.medianPosition = copyOfUnits[Math.floor(copyOfUnits.length / 2)].px;
+         }
+         this.forwardMilitaryPosition = NaN;
+         for each(var mUnit in copyOfUnits)
+         {
+            if(isNaN(this.forwardMilitaryPosition))
+            {
+               this.forwardMilitaryPosition = mUnit.px;
+            }
+            else if(this.direction == 1)
+            {
+               if(mUnit.px > this.forwardMilitaryPosition)
+               {
+                  this.forwardMilitaryPosition = mUnit.px;
+               }
+            }
+            else if(mUnit.px < this.forwardMilitaryPosition)
+            {
+               this.forwardMilitaryPosition = mUnit.px;
+            }
          }
       }
       

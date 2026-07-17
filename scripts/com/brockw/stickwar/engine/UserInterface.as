@@ -664,7 +664,7 @@ package com.brockw.stickwar.engine
          {
             this.clickFastForward(null);
          }
-         if(this.keyBoardState.isPressed(66) && Boolean(this.hud.hud.bossToggle) && this.hud.hud.bossToggle.visible)
+         if(this.keyBoardState.isPressed(188) && Boolean(this.hud.hud.bossToggle) && this.hud.hud.bossToggle.visible)
          {
             var bossToggleNewState:Boolean = this.team.toggleBossMode();
             this.hud.hud.bossToggle.gotoAndStop(bossToggleNewState ? 2 : 1);
@@ -990,30 +990,47 @@ package com.brockw.stickwar.engine
       
       private function selectPoisonedUnits() : void
       {
-         var poisoned:Unit = null;
+         var unit:Unit = null;
          this.selectedUnits.clear();
-         for each(poisoned in this.team.poisonedUnits)
+         for each(unit in this.team.poisonedUnits)
          {
-            if(this.isSelectablePoisonedUnit(poisoned))
+            if(this.isSelectablePoisonedUnit(unit))
             {
-               this.selectedUnits.add(poisoned);
-               poisoned.selected = true;
+               this.selectedUnits.add(unit);
+               unit.selected = true;
+            }
+         }
+         for each(unit in this.team.units)
+         {
+            if(unit.isInfected && !unit.selected && this.isSelectablePoisonedUnit(unit))
+            {
+               this.selectedUnits.add(unit);
+               unit.selected = true;
             }
          }
       }
       
       private function jumpToPoisonedUnitIfDoublePressed() : void
       {
-         var poisoned:Unit = null;
+         var unit:Unit = null;
          if(getTimer() - this.poisonedPressTimer >= 400)
          {
             return;
          }
-         for each(poisoned in this.team.poisonedUnits)
+         for each(unit in this.team.poisonedUnits)
          {
-            if(this.isSelectablePoisonedUnit(poisoned))
+            if(this.isSelectablePoisonedUnit(unit))
             {
-               this.gameScreen.game.targetScreenX = poisoned.px - this.gameScreen.game.map.screenWidth / 2;
+               this.gameScreen.game.targetScreenX = unit.px - this.gameScreen.game.map.screenWidth / 2;
+               this.isSlowCamera = false;
+               return;
+            }
+         }
+         for each(unit in this.team.units)
+         {
+            if(unit.isInfected && this.isSelectablePoisonedUnit(unit))
+            {
+               this.gameScreen.game.targetScreenX = unit.px - this.gameScreen.game.map.screenWidth / 2;
                this.isSlowCamera = false;
                return;
             }
@@ -1022,7 +1039,7 @@ package com.brockw.stickwar.engine
       
       private function isSelectablePoisonedUnit(poisoned:Unit) : Boolean
       {
-         return poisoned != null && !poisoned.isDead && !poisoned.isConfused() && poisoned.isPoisoned() && poisoned.team == this.team && !poisoned.isGarrisoned && poisoned.ai != null && poisoned.ai.currentCommand != null && poisoned.ai.currentCommand.type != UnitCommand.GARRISON;
+         return poisoned != null && !poisoned.isDead && !poisoned.isConfused() && (poisoned.isPoisoned() || poisoned.isInfected) && poisoned.team == this.team && !poisoned.isGarrisoned && poisoned.ai != null && poisoned.ai.currentCommand != null && poisoned.ai.currentCommand.type != UnitCommand.GARRISON;
       }
       
       private function tryUngarrisonSelectedUnits() : void

@@ -18,6 +18,10 @@ package com.brockw.stickwar.campaign
             return "chaosInGame";
          }
          title = level.title;
+         if(title == "Ambush: The Storm")
+         {
+            return "";
+         }
          switch(title)
          {
             case "Tutorial":
@@ -31,7 +35,7 @@ package com.brockw.stickwar.campaign
             case "Ambush: Rebels Last Stand":
             case "Ambush: Chaos Breaks the Rebels":
             case "Ambush: Undead Horde":
-            case "Ambush: Giants and Eclipsors":
+            case "Ambush: The Storm":
                return "fieldOfMemories";
             case "Blot out the sun: Archidons Declare War":
             case "Magic in the Air: Wizards and monks Declare War ":
@@ -59,7 +63,7 @@ package com.brockw.stickwar.campaign
          {
             return true;
          }
-         if(level.title == "Ambush: Rebels Last Stand")
+         if(level.title == "Ambush: Rebels Last Stand" || level.title == "Ambush: The Storm")
          {
             return false;
          }

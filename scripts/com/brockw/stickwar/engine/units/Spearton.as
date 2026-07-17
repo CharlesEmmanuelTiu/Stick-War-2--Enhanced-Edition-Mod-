@@ -8,6 +8,7 @@ package com.brockw.stickwar.engine.units
    import com.brockw.stickwar.engine.Entity;
    import com.brockw.stickwar.engine.StickWar;
    import com.brockw.stickwar.engine.Team.Tech;
+   import com.brockw.stickwar.engine.projectile.Projectile;
    import com.brockw.stickwar.market.MarketItem;
    import flash.display.MovieClip;
    import flash.geom.ColorTransform;
@@ -615,6 +616,17 @@ package com.brockw.stickwar.engine.units
       public function set inBlock(value:Boolean) : void
       {
          this._inBlock = value;
+      }
+      
+      override public function deflectArrow(projectile:Projectile) : Boolean
+      {
+         if(projectile.inflictor != null && this.isBlocking && Util.random() < 0.15)
+         {
+            var dir:int = Util.sgn(projectile.inflictor.px - this.px);
+            this.team.game.projectileManager.initDeflectedArrow(this.px,this.py,this.pz,this.team.game,dir * 4,-10);
+            return true;
+         }
+         return false;
       }
       
       override public function makeBoss(enableDeathBurst:Boolean = false) : void

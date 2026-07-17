@@ -23,6 +23,10 @@ package com.brockw.stickwar.campaign
       
       private static const ARCHIDON_CAPTAIN_VISIBLE_FRAMES:int = 30 * 4;
       
+      private static const DREADWING_SPAWN_MESSAGE:String = "Dreadwing has entered the battlefield.";
+      
+      private static const DREADWING_SPAWN_VISIBLE_FRAMES:int = 30 * 4;
+      
       private static const DEFAULT_MESSAGE_SCALE:Number = 1.3;
       
       private var owner:DisplayObjectContainer;
@@ -77,6 +81,16 @@ package com.brockw.stickwar.campaign
       public function showArchidonCaptain() : void
       {
          this.showWarning(ARCHIDON_CAPTAIN_MESSAGE,ARCHIDON_CAPTAIN_VISIBLE_FRAMES);
+      }
+      
+      public function showDreadwingSpawn() : void
+      {
+         this.showWarning(DREADWING_SPAWN_MESSAGE,DREADWING_SPAWN_VISIBLE_FRAMES);
+      }
+      
+      public function showNightfallMessage(text:String, visibleFrames:int = 210) : void
+      {
+         this.showWarning(text,visibleFrames);
       }
       
       public function update() : void

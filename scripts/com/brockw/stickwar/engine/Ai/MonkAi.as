@@ -78,6 +78,11 @@ package com.brockw.stickwar.engine.Ai
                monk.isAutoReviveToggled = !monk.isAutoReviveToggled;
                restoreMove(game);
             }
+            else if(currentCommand.type == UnitCommand.FOG_REVEAL)
+            {
+               monk.bossFogReveal(game);
+               restoreMove(game);
+            }
             if(currentCommand.type != UnitCommand.MONK_BOSS_REVIVE)
             {
                monk.playerBossCheckAutoRevive(game);

@@ -5,7 +5,7 @@ package com.brockw.stickwar.engine.units
    import com.brockw.stickwar.engine.Ai.UndeadAi;
    import com.brockw.stickwar.engine.Ai.command.*;
    import com.brockw.stickwar.engine.StickWar;
-   import flash.display.MovieClip;
+   import flash.filters.DropShadowFilter;
    import flash.geom.ColorTransform;
    
    public class Undead extends Unit
@@ -17,13 +17,21 @@ package com.brockw.stickwar.engine.units
       
       private var attackCooldownFrames:int;
       
-      private var undeadPoisonDamage:Number;
-      
-      private var poisonChance:Number;
+      private var infectionDamage:Number;
       
       private var _lastAnimLabel:String;
       
       private var _turnedHeadSkin:String;
+      
+      private var _glitchStealthFilter:DropShadowFilter;
+      
+      private var _glitchTimer:int;
+      
+      public var _firstHitBonus:Number;
+      
+      private var _infectionSprayCooldown:int;
+      
+      private var _hitFrame:int;
       
       public function Undead(game:StickWar)
       {
@@ -52,23 +60,48 @@ package com.brockw.stickwar.engine.units
          _dragForce = game.xml.xml.Chaos.Units.dead.dragForce;
          _scale = game.xml.xml.Chaos.Units.dead.scale;
          _maxVelocity = game.xml.xml.Chaos.Units.dead.maxVelocity;
-         maxHealth = health = game.xml.xml.Order.Units.archer.health;
          loadDamage(game.xml.xml.Chaos.Units.dead);
+         maxHealth = health = game.xml.xml.Order.Units.archer.health;
+         healthBar.totalHealth = maxHealth;
+         healthBar.health = health;
          type = Unit.U_UNDEAD;
          this.attackCooldownFrames = 25;
-         this.undeadPoisonDamage = 5;
-         this.poisonChance = 0.5;
+         this.infectionDamage = 10;
          this._lastAnimLabel = "";
          this._turnedHeadSkin = "";
+         if(Boolean(_mc.mc.back))
+         {
+            _mc.mc.back.gotoAndStop("Default");
+         }
+         this.mc.filters = [];
          _mc.stop();
-         _mc.width *= _scale;
-         _mc.height *= _scale;
+         _mc.scaleX = _scale;
+         _mc.scaleY = _scale;
          _state = S_RUN;
-         _mc.mc.gotoAndPlay(1);
+         _mc.mc.gotoAndStop(1);
          _mc.gotoAndStop(1);
          drawShadow();
          var ct:ColorTransform = new ColorTransform(0.7,1,0.5,1,30,0,0,0);
          _mc.transform.colorTransform = ct;
+         this._glitchStealthFilter = new DropShadowFilter();
+         this._glitchStealthFilter.knockout = true;
+         this._glitchStealthFilter.angle = 0;
+         this._glitchStealthFilter.distance = 0;
+         this._glitchStealthFilter.color = 0;
+         this._glitchTimer = game.frame;
+         this._firstHitBonus = 0;
+         this._infectionSprayCooldown = 0;
+         this._hitFrame = 0;
+      }
+      
+      public function get turnedHeadSkin() : String
+      {
+         return this._turnedHeadSkin;
+      }
+      
+      public function set turnedHeadSkin(value:String) : void
+      {
+         this._turnedHeadSkin = value;
       }
       
       override public function update(game:StickWar) : void
@@ -96,7 +129,7 @@ package com.brockw.stickwar.engine.units
             }
             else if(_state == S_ATTACK)
             {
-               if(!hasHit)
+               if(!hasHit && _mc.mc.currentFrame >= this._hitFrame)
                {
                   hasHit = this.checkForHit();
                }
@@ -106,6 +139,22 @@ package com.brockw.stickwar.engine.units
                }
             }
             updateMotion(game);
+            if(this._infectionSprayCooldown > 0)
+            {
+               --this._infectionSprayCooldown;
+            }
+            if(this._turnedHeadSkin == "Undead Ninja" && game.frame - this._glitchTimer > 0)
+            {
+               this._glitchTimer = game.frame + 5 + int(Math.random() * 20);
+               if(this.mc.filters.length == 0)
+               {
+                  this.mc.filters = [this._glitchStealthFilter];
+               }
+               else
+               {
+                  this.mc.filters = [];
+               }
+            }
          }
          else if(isDead == false)
          {
@@ -125,12 +174,31 @@ package com.brockw.stickwar.engine.units
             }
             _mc.mc.nextFrame();
          }
+         if(Boolean(_mc.mc.head) && this._turnedHeadSkin != "" && this._turnedHeadSkin != "Undead Archer")
+         {
+            _mc.mc.head.gotoAndStop(this._turnedHeadSkin);
+         }
          if(this._lastAnimLabel != _mc.currentLabel)
          {
             this._lastAnimLabel = _mc.currentLabel;
-            if(this._turnedHeadSkin != "")
+            if(this._turnedHeadSkin != "" && this._turnedHeadSkin != "Undead Archer")
             {
                Dead.setItem(_mc,"",this._turnedHeadSkin,"");
+            }
+            if(Boolean(_mc.mc.back))
+            {
+               if(this._turnedHeadSkin == "Undead Archer")
+               {
+                  _mc.mc.back.gotoAndStop("Archer");
+               }
+               else if(this._turnedHeadSkin == "Undead Ninja")
+               {
+                  _mc.mc.back.gotoAndStop("Ninja");
+               }
+               else
+               {
+                  _mc.mc.back.gotoAndStop("Default");
+               }
             }
          }
          if(game.frame % 30 == 0 && this.team != null && this.team.enemyTeam != null && Boolean(this.team.enemyTeam.deadUnits))
@@ -140,11 +208,18 @@ package com.brockw.stickwar.engine.units
             while(i >= 0)
             {
                var corpse:Unit = deadUnits[i];
-               if(corpse.isInfected && corpse.timeOfDeath >= 300)
+               if(corpse.isInfected && corpse.timeOfDeath >= 30 + Math.abs(corpse.id * 37 + 17) % 61)
                {
+                  if(corpse.type == Unit.U_WALL || corpse.type == Unit.U_STATUE || corpse.type == Unit.U_CHAOS_TOWER)
+                  {
+                     this.team.enemyTeam.removeDeadUnit(corpse,game);
+                     i--;
+                     continue;
+                  }
                   var undead:Undead = game.unitFactory.getUnit(Unit.U_UNDEAD);
                   if(undead != null)
                   {
+                     undead.init(game);
                      this.team.spawn(undead,game);
                      undead.px = corpse.px;
                      undead.x = undead.px;
@@ -156,6 +231,9 @@ package com.brockw.stickwar.engine.units
                         case Unit.U_SPEARTON:
                            headSkin = "Undead Spearton";
                            break;
+                        case Unit.U_ARCHER:
+                           headSkin = "Undead Archer";
+                           break;
                         case Unit.U_NINJA:
                            headSkin = "Undead Ninja";
                            break;
@@ -163,6 +241,24 @@ package com.brockw.stickwar.engine.units
                            headSkin = "Undead Magikill";
                      }
                      undead._turnedHeadSkin = headSkin;
+                     undead._maxVelocity = game.xml.xml.Chaos.Units.dead.maxVelocity;
+                     undead._maxForce = game.xml.xml.Chaos.Units.dead.maxForce;
+                     if(headSkin == "Undead Spearton")
+                     {
+                        undead.maxHealth = undead.health = game.xml.xml.Chaos.Units.dead.health;
+                     }
+                     else if(headSkin == "Undead Ninja")
+                     {
+                        undead.maxHealth = undead.health = game.xml.xml.Order.Units.swordwrath.health;
+                        undead._maxVelocity *= 1.2;
+                        undead._maxForce *= 1.2;
+                     }
+                     else if(headSkin == "Undead Magikill")
+                     {
+                        undead.maxHealth = undead.health = game.xml.xml.Order.Units.swordwrath.health;
+                     }
+                     undead.healthBar.totalHealth = undead.maxHealth;
+                     undead.healthBar.health = undead.health;
                      game.projectileManager.initTowerSpawn(undead.px,undead.py,this.team,0.6,6750054);
                      game.projectileManager.initSpawnDrip(undead.px,undead.py,this.team,6750054);
                      var cmd:AttackMoveCommand = new AttackMoveCommand(game);
@@ -209,6 +305,7 @@ package com.brockw.stickwar.engine.units
             var id:int = team.game.random.nextInt() % 2;
             _mc.gotoAndStop("melee_" + (id + 1));
             _mc.mc.gotoAndStop(1);
+            this._hitFrame = Math.max(1,int(_mc.mc.totalFrames * 0.55));
             _state = S_ATTACK;
             hasHit = false;
             lastAttackFrame = team.game.frame;
@@ -227,10 +324,24 @@ package com.brockw.stickwar.engine.units
          if(dx * dx + dy * dy < WEAPON_REACH * WEAPON_REACH * 3)
          {
             target.damage(0,this.damageToDeal,this);
-            target.isInfected = true;
-            if(team.game.random.nextNumber() < this.poisonChance)
+            if(this._firstHitBonus > 0)
             {
-               target.poison(this.undeadPoisonDamage);
+               target.damage(0,this._firstHitBonus,this);
+               this._firstHitBonus = 0;
+            }
+            if(target.type != Unit.U_WALL && target.type != Unit.U_STATUE && target.type != Unit.U_CHAOS_TOWER)
+            {
+               target.isInfected = true;
+               target.infectionDamage = this.infectionDamage;
+               target.infectionFramesLeft = 240;
+            }
+            if(this._turnedHeadSkin == "Undead Magikill" && this._infectionSprayCooldown <= 0 && team != null && team.game != null && team.game.random.nextNumber() < 0.9)
+            {
+               this._infectionSprayCooldown = 180;
+               if(Boolean(team.game.projectileManager))
+               {
+                  team.game.projectileManager.initInfectionSpray(target.px,target.py,this);
+               }
             }
             return true;
          }

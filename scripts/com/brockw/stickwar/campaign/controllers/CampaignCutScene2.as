@@ -87,6 +87,10 @@ package com.brockw.stickwar.campaign.controllers
       
       private var medusaDistantRetreatUntilFrame:int;
       
+      private var keybindTipStartFrame:int;
+      
+      private var keybindTipMessageFrame:int;
+      
       public function CampaignCutScene2(gameScreen:GameScreen)
       {
          super(gameScreen);
@@ -106,6 +110,8 @@ package com.brockw.stickwar.campaign.controllers
          this.isMedusaEngaged = false;
          this.nextEngagementCheckFrame = 0;
          this.medusaDistantRetreatUntilFrame = 0;
+         this.keybindTipStartFrame = -1;
+         this.keybindTipMessageFrame = -1;
       }
       
       override public function update(gameScreen:GameScreen) : void
@@ -117,9 +123,29 @@ package com.brockw.stickwar.campaign.controllers
          var spawn:Array = null;
          var numToSpawn:int = 0;
          var i:int = 0;
+         if(this.keybindTipStartFrame == -1)
+         {
+            this.keybindTipStartFrame = gameScreen.game.frame;
+         }
+         if(this.keybindTipStartFrame >= 0 && this.keybindTipMessageFrame == -1 && gameScreen.game.frame - this.keybindTipStartFrame >= 30 * 2)
+         {
+            this.keybindTipMessageFrame = gameScreen.game.frame;
+            this.message = new InGameMessage("",gameScreen.game);
+            this.message.x = gameScreen.game.stage.stageWidth / 2;
+            this.message.y = gameScreen.game.stage.stageHeight / 4 - 75;
+            this.message.scaleX *= 1.3;
+            this.message.scaleY *= 1.3;
+            this.message.setMessage("Press V to Garrison, B to Defend, N to Attack","");
+            gameScreen.addChild(this.message);
+         }
          if(Boolean(this.message))
          {
             this.message.update();
+            if(this.keybindTipMessageFrame >= 0 && gameScreen.game.frame - this.keybindTipMessageFrame >= 30 * 8)
+            {
+               gameScreen.removeChild(this.message);
+               this.message = null;
+            }
          }
          if(this.state != S_BEFORE_CUTSCENE)
          {
@@ -229,6 +255,14 @@ package com.brockw.stickwar.campaign.controllers
                gameScreen.game.soundManager.playSoundFullVolumeRandom("Rage",3);
                gameScreen.game.soundManager.playSoundFullVolumeRandom("Rage",3);
                gameScreen.game.soundManager.playSoundFullVolumeRandom("Rage",3);
+               this.keybindTipStartFrame = gameScreen.game.frame;
+               this.message = new InGameMessage("",gameScreen.game);
+               this.message.x = gameScreen.game.stage.stageWidth / 2;
+               this.message.y = gameScreen.game.stage.stageHeight / 4 - 75;
+               this.message.scaleX *= 1.3;
+               this.message.scaleY *= 1.3;
+               this.message.setMessage("Press V to Garrison, B to Defend, N to Attack","");
+               gameScreen.addChild(this.message);
             }
          }
          if(this.state == S_DONE)
@@ -452,9 +486,9 @@ package com.brockw.stickwar.campaign.controllers
          }
          if(this.gameScreen.main.campaign.difficultyLevel == Campaign.D_INSANE)
          {
-            return [Unit.U_KNIGHT,Unit.U_KNIGHT,Unit.U_KNIGHT,Unit.U_KNIGHT,Unit.U_SKELATOR,Unit.U_GIANT,Unit.U_WINGIDON,Unit.U_WINGIDON,Unit.U_DEAD,Unit.U_DEAD,Unit.U_BOMBER,Unit.U_BOMBER];
+            return [Unit.U_KNIGHT,Unit.U_KNIGHT,Unit.U_KNIGHT,Unit.U_KNIGHT,Unit.U_SKELATOR,Unit.U_WINGIDON,Unit.U_WINGIDON,Unit.U_DEAD,Unit.U_DEAD,Unit.U_BOMBER,Unit.U_BOMBER];
          }
-         return [Unit.U_KNIGHT,Unit.U_KNIGHT,Unit.U_KNIGHT,Unit.U_KNIGHT,Unit.U_SKELATOR,Unit.U_GIANT,Unit.U_WINGIDON,Unit.U_WINGIDON];
+         return [Unit.U_KNIGHT,Unit.U_KNIGHT,Unit.U_KNIGHT,Unit.U_KNIGHT,Unit.U_SKELATOR,Unit.U_WINGIDON,Unit.U_WINGIDON];
       }
       
       private function getLowPhaseRepeatWave() : Array

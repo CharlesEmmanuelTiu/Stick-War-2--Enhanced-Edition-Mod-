@@ -64,7 +64,7 @@ package com.brockw.stickwar.singleplayer
       {
          var key:int = 0;
          var levelTitle:String = main.campaign.getCurrentLevel().title;
-         var isLateMedusaLevel:Boolean = main.campaign.getCurrentLevel().controller == CampaignCutScene2 || int(main.campaign.getCurrentLevel().levelXml.attribute("number")) == 13;
+         var isLateMedusaLevel:Boolean = int(main.campaign.getCurrentLevel().levelXml.attribute("number")) == 13;
          this.fistAttackSpell = new FistAttackCommand(game);
          this.reaperSpell = new ReaperCommand(game);
          this.poisonPoolSpell = new PoisonPoolCommand(game);
@@ -173,6 +173,16 @@ package com.brockw.stickwar.singleplayer
             }
          }
          super(team,main,game,isCreatingUnits);
+      }
+      
+      override protected function getDefendPosition() : Number
+      {
+         var levelTitle:String = this.team.game.main.campaign.getCurrentLevel().title;
+         if(levelTitle == "Shadow of the moon: Eclipsors Attack.")
+         {
+            return this.team.homeX + this.team.direction * 1000;
+         }
+         return super.getDefendPosition();
       }
       
       override public function update(game:StickWar) : void
@@ -397,10 +407,6 @@ package com.brockw.stickwar.singleplayer
                   if(target != null && escortCount > 0 && medusa.isBossFallbackActive())
                   {
                      medusa.walk(-team.direction,0,-team.direction);
-                  }
-                  else if(shouldDistantRetreat && target != null)
-                  {
-                     medusa.requestBossDistantRetreat();
                   }
                   else if(Boolean(target))
                   {

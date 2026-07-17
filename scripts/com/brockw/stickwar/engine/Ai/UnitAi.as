@@ -89,6 +89,19 @@ package com.brockw.stickwar.engine.Ai
          this.goalY = 0;
       }
       
+      public function isNightfallCheckActive() : Boolean
+      {
+         if(this.unit.team.currentAttackState == Team.G_DEFEND || this.unit.team.currentAttackState == Team.G_GARRISON)
+         {
+            return false;
+         }
+         if(this.currentCommand != null && this.currentCommand.type == UnitCommand.MOVE)
+         {
+            return false;
+         }
+         return true;
+      }
+      
       public function update(game:StickWar) : void
       {
       }
@@ -504,6 +517,11 @@ package com.brockw.stickwar.engine.Ai
          {
             minDistance = this.unit.sqrDistanceToTarget(this.currentTarget);
          }
+         if(this.currentTarget != null && this.isNightfallCheckActive() && this.unit.team.game.fogOfWar.isUnitHiddenByNightfall(this.currentTarget) && this.unit.sqrDistanceToTarget(this.currentTarget) >= 2500)
+         {
+            minDistance = Number.POSITIVE_INFINITY;
+            this.currentTarget = null;
+         }
          if(this.currentTarget != null && this.isTargeted)
          {
             return this.currentTarget;
@@ -517,6 +535,11 @@ package com.brockw.stickwar.engine.Ai
             if(!(u.pz != 0 && !this.unit.canAttackAir()) && !u.isConfused())
             {
                d = this.unit.sqrDistanceToTarget(u);
+               if(this.isNightfallCheckActive() && this.unit.team.game.fogOfWar.isUnitHiddenByNightfall(u) && (this.unit is RangedUnit || d >= 2500))
+               {
+                  i++;
+                  continue;
+               }
                if(d * 1.3 < minDistance && this.unit.team.enemyTeam.units[rIndex].isTargetable())
                {
                   minDistance = d;

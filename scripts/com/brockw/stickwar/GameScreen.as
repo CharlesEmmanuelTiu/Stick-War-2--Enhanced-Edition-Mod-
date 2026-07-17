@@ -351,6 +351,10 @@ package com.brockw.stickwar
          }
       }
       
+      public function showBossMessage(text:String, visibleFrames:int = 210) : void
+      {
+      }
+      
       public function endGame() : void
       {
       }

@@ -8,10 +8,6 @@ package com.brockw.stickwar.engine.Ai
    public class SkelatorAi extends UnitAi
    {
       
-      private static const BOSS_PREFERRED_DISTANCE:Number = 240;
-      
-      private static const BOSS_HOLD_DISTANCE:Number = 360;
-      
       public function SkelatorAi(s:Skelator)
       {
          super();
@@ -24,9 +20,16 @@ package com.brockw.stickwar.engine.Ai
          var targetId:int = 0;
          var targ:Entity = null;
          unit.isBusyForSpell = false;
-         if(unit.isBoss && currentCommand.type != UnitCommand.FIST_ATTACK && currentCommand.type != UnitCommand.REAPER)
+         if(unit.isBoss && currentCommand.type != UnitCommand.FIST_ATTACK && currentCommand.type != UnitCommand.REAPER && currentCommand.type != UnitCommand.MOVE && currentCommand.type != UnitCommand.ATTACK_MOVE)
          {
             if(this.updateBossCaster(game))
+            {
+               return;
+            }
+         }
+         if(!unit.isBoss && currentCommand.type != UnitCommand.FIST_ATTACK && currentCommand.type != UnitCommand.REAPER && currentCommand.type != UnitCommand.MOVE && currentCommand.type != UnitCommand.ATTACK_MOVE)
+         {
+            if(this.updateAmbushCaster(game))
             {
                return;
             }
@@ -86,9 +89,6 @@ package com.brockw.stickwar.engine.Ai
          var distance:Number = Number(NaN);
          var isDistancing:Boolean = false;
          var retreatDirection:int = 0;
-         var fistReady:Boolean = false;
-         var fistCanCast:Boolean = false;
-         var reaperReady:Boolean = false;
          var reaperTarget:Unit = null;
          var reaperDistance:Number = Number(NaN);
          var reaperRange:Number = Number(game.xml.xml.Chaos.Units.skelator.reaper.range);
@@ -98,10 +98,10 @@ package com.brockw.stickwar.engine.Ai
             unit.isBossMovementLocked = false;
             return false;
          }
-         if(skelator.canBossDeadRising())
+         if(skelator.canBossSummonUndead())
          {
             unit.isBossMovementLocked = false;
-            skelator.deadRising();
+            skelator.bossSummonUndead(game);
             return true;
          }
          target = this.getClosestTarget();
@@ -114,16 +114,13 @@ package com.brockw.stickwar.engine.Ai
          dy = target.py - unit.py;
          distance = Math.sqrt(dx * dx + dy * dy);
          isDistancing = skelator.isBossDistancePhaseActive() && skelator.hasRecentBossHitForDistance();
-         fistReady = skelator.fistAttackCooldown() == 0;
-         fistCanCast = fistReady && distance <= fistRange;
-         reaperReady = skelator.reaperCooldown() == 0;
-         if(fistCanCast)
+         if(skelator.fistAttackCooldown() == 0 && distance <= fistRange)
          {
             unit.isBossMovementLocked = false;
             skelator.fistAttack(target.px,target.py);
             return true;
          }
-         if(reaperReady && (!fistCanCast || isDistancing))
+         if(skelator.reaperCooldown() == 0)
          {
             reaperTarget = this.getBossReaperControlTarget(reaperRange);
             if(reaperTarget != null)
@@ -137,33 +134,74 @@ package com.brockw.stickwar.engine.Ai
                }
             }
          }
-         if(isDistancing && distance < BOSS_PREFERRED_DISTANCE)
+         if(isDistancing)
          {
-            retreatDirection = skelator.getBossDistanceRetreatDirection();
-            if(retreatDirection == 0)
+            var defendLine:Number = unit.team.homeX + unit.team.direction * 600;
+            if(unit.team.direction * unit.px <= unit.team.direction * defendLine)
             {
-               retreatDirection = -unit.team.direction;
+               if(distance < fistRange)
+               {
+                  retreatDirection = skelator.getBossDistanceRetreatDirection();
+                  if(retreatDirection == 0)
+                  {
+                     retreatDirection = -unit.team.direction;
+                  }
+                  unit.isBossMovementLocked = true;
+                  unit.mayWalkThrough = true;
+                  unit.walk(retreatDirection,-dy / 160,retreatDirection);
+                  unit.faceDirection(retreatDirection);
+                  return true;
+               }
+               if(distance < fistRange * 1.3)
+               {
+                  retreatDirection = skelator.getBossDistanceRetreatDirection();
+                  if(retreatDirection == 0)
+                  {
+                     retreatDirection = -unit.team.direction;
+                  }
+                  unit.isBossMovementLocked = true;
+                  unit.mayWalkThrough = false;
+                  unit.faceDirection(retreatDirection);
+                  return true;
+               }
             }
-            unit.isBossMovementLocked = true;
-            unit.mayWalkThrough = true;
-            unit.walk(retreatDirection,-dy / 160,retreatDirection);
-            unit.faceDirection(retreatDirection);
-            return true;
-         }
-         if(isDistancing && distance < BOSS_HOLD_DISTANCE)
-         {
-            retreatDirection = skelator.getBossDistanceRetreatDirection();
-            if(retreatDirection == 0)
-            {
-               retreatDirection = -unit.team.direction;
-            }
-            unit.isBossMovementLocked = true;
-            unit.mayWalkThrough = false;
-            unit.faceDirection(retreatDirection);
-            return true;
          }
          unit.isBossMovementLocked = false;
          unit.faceDirection(dx);
+         return false;
+      }
+      
+      private function updateAmbushCaster(game:StickWar) : Boolean
+      {
+         var target:Unit = null;
+         var skelator:Skelator = unit;
+         var dx:Number = Number.NaN;
+         var dy:Number = Number.NaN;
+         var distance:Number = Number.NaN;
+         var fistRange:Number = Number(game.xml.xml.Chaos.Units.skelator.fist.range);
+         var reaperRange:Number = Number(game.xml.xml.Chaos.Units.skelator.reaper.range);
+         if(unit.isBusy() || unit.isIncapacitated())
+         {
+            return false;
+         }
+         target = this.getClosestTarget();
+         if(target == null || !target.isAlive())
+         {
+            return false;
+         }
+         dx = target.px - unit.px;
+         dy = target.py - unit.py;
+         distance = Math.sqrt(dx * dx + dy * dy);
+         if(skelator.fistAttackCooldown() == 0 && distance <= fistRange)
+         {
+            skelator.fistAttack(target.px,target.py);
+            return true;
+         }
+         if(skelator.reaperCooldown() == 0 && distance <= reaperRange)
+         {
+            skelator.reaperAttack(target);
+            return true;
+         }
          return false;
       }
       

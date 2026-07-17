@@ -8,7 +8,6 @@ package com.brockw.stickwar.campaign
    import com.brockw.stickwar.BaseMain;
    import com.brockw.stickwar.GameScreen;
    import com.brockw.stickwar.campaign.controllers.CampaignController;
-   import com.brockw.stickwar.engine.Ai.MinerAi;
    import com.brockw.stickwar.engine.Ai.command.*;
    import com.brockw.stickwar.engine.Gold;
    import com.brockw.stickwar.engine.Ore;
@@ -55,6 +54,8 @@ package com.brockw.stickwar.campaign
       private static const LEVEL_TITLE_MAGIKILL_BOSS:String = "Magic in the Air: Wizards and monks Declare War ";
       
       private static const LEVEL_TITLE_MEDUSA_GATES:String = "Medusa\'s Gates: The Chaos Capital is in sight. ";
+      
+      private static const LEVEL_TITLE_ECLIPSORS_ATTACK:String = "Shadow of the moon: Eclipsors Attack.";
       
       private static const REBELS_BOSS_QUEUE_WAVE_FRAMES:int = 30 * 10;
       
@@ -140,6 +141,8 @@ package com.brockw.stickwar.campaign
       
       private var rebelsBossQueueDebugText:String;
       
+      private var _wingidonBossSpawned:Boolean;
+      
       public function CampaignGameScreen(main:BaseMain)
       {
          super(main);
@@ -166,6 +169,7 @@ package com.brockw.stickwar.campaign
          {
             this.controller = null;
          }
+         this._wingidonBossSpawned = false;
          if(!main.stickWar)
          {
             main.stickWar = new StickWar(main,this);
@@ -225,6 +229,11 @@ package com.brockw.stickwar.campaign
             this.unlockAllPlayerOrderUnits();
          }
          game.teamB.unitsAvailable = level.oponent.unitsAvailable;
+         if(level.title.indexOf("Ambush:") == 0)
+         {
+            delete game.teamB.unitsAvailable[Unit.U_MINER];
+            delete game.teamB.unitsAvailable[Unit.U_CHAOS_MINER];
+         }
          game.teamA.name = a;
          game.teamB.name = b;
          this.team.enemyTeam.isEnemy = true;
@@ -265,12 +274,20 @@ package com.brockw.stickwar.campaign
             if(main.campaign.difficultyLevel == Campaign.D_HARD)
             {
                playerStartingUnits.push(game.team.getMinerType());
+               if(level.title == "Ambush: Undead Horde")
+               {
+                  w = team.addWall(team.homeX + 1200);
+                  w.setConstructionAmount(1);
+               }
             }
             else if(main.campaign.difficultyLevel == Campaign.D_NORMAL)
             {
                playerStartingUnits.push([game.team.getMinerType()]);
-               w = team.addWall(team.homeX + 1200);
-               w.setConstructionAmount(1);
+               if(level.title.indexOf("Ambush:") != 0 || level.title == "Ambush: Undead Horde")
+               {
+                  w = team.addWall(team.homeX + 1200);
+                  w.setConstructionAmount(1);
+               }
             }
          }
          else
@@ -387,6 +404,7 @@ package com.brockw.stickwar.campaign
       {
          this.handleDebugHotkeys();
          this.tryTriggerCampaignReinforcements();
+         this.tryWingidonBossSpawn();
          if(this.campaignPrewarmManager != null)
          {
             this.campaignPrewarmManager.process();
@@ -567,7 +585,7 @@ package com.brockw.stickwar.campaign
             addChild(this._bossGameTipArrow);
          }
          this._bossGameTipMessageBox = new inGameMessageBoxMc();
-         this._bossGameTipMessageBox.text.text = "Click here or press \'B\' keybind to switch from a set of normal units to boss units";
+         this._bossGameTipMessageBox.text.text = "Click here or press \',\' keybind to switch from a set of normal units to boss units";
          this._bossGameTipMessageBox.step.text = "";
          this._bossGameTipMessageBox.tick.visible = false;
          this._bossGameTipMessageBox.scaleX = 1.3;
@@ -602,6 +620,10 @@ package com.brockw.stickwar.campaign
       {
          trace("Do the cleanup");
          this.enemyTeamAi = null;
+         if(this.controller != null)
+         {
+            this.controller.cleanUp(this);
+         }
          this.controller = null;
          if(this.campaignPrewarmManager != null)
          {
@@ -726,6 +748,14 @@ package com.brockw.stickwar.campaign
          if(this.campaignBossMessages != null)
          {
             this.campaignBossMessages.showMedusaLookAtMe();
+         }
+      }
+      
+      override public function showBossMessage(text:String, visibleFrames:int = 210) : void
+      {
+         if(this.campaignBossMessages != null)
+         {
+            this.campaignBossMessages.showNightfallMessage(text,visibleFrames);
          }
       }
       
@@ -1423,7 +1453,6 @@ package com.brockw.stickwar.campaign
                      break;
                   }
                   i--;
-                  continue;
                }
             }
             return game.map.gold[i];
@@ -1880,6 +1909,40 @@ package com.brockw.stickwar.campaign
          }
       }
       
+      public function spawnDebugUndeadMagikill() : void
+      {
+         var undead:Undead = null;
+         if(game == null || game.teamB == null)
+         {
+            return;
+         }
+         if(!this.canDebugSpawnUnitOnTeam(Unit.U_UNDEAD,game.teamB))
+         {
+            return;
+         }
+         undead = game.unitFactory.getUnit(Unit.U_UNDEAD);
+         if(undead == null)
+         {
+            return;
+         }
+         game.teamB.spawn(undead,game);
+         undead.px = game.map.width / 2;
+         undead.x = undead.px;
+         undead.py = game.map.height / 2;
+         undead.y = undead.py;
+         undead.turnedHeadSkin = "Undead Magikill";
+         undead.maxHealth = undead.health = game.xml.xml.Order.Units.swordwrath.health;
+         undead.healthBar.totalHealth = undead.maxHealth;
+         undead.healthBar.health = undead.health;
+         game.projectileManager.initTowerSpawn(undead.px,undead.py,game.teamB,0.6);
+         game.projectileManager.initSpawnDrip(undead.px,undead.py,game.teamB);
+         var attackMove:AttackMoveCommand = new AttackMoveCommand(game);
+         attackMove.goalX = game.teamA.statue.px;
+         attackMove.goalY = game.map.height / 2;
+         undead.ai.setCommand(game,attackMove);
+         this.applyDebugFrozenAttackModeToUnit(undead);
+      }
+      
       public function spawnDebugEnemyGroupAtBase(unitTypes:Array) : void
       {
          var enemy:Unit = null;
@@ -2039,6 +2102,7 @@ package com.brockw.stickwar.campaign
             case Unit.U_WINGIDON:
             case Unit.U_SKELATOR:
             case Unit.U_DEAD:
+            case Unit.U_UNDEAD:
             case Unit.U_CAT:
             case Unit.U_KNIGHT:
             case Unit.U_MEDUSA:
@@ -2288,6 +2352,79 @@ package com.brockw.stickwar.campaign
             }
          }
          return revealed;
+      }
+      
+      private function tryWingidonBossSpawn() : void
+      {
+         var level:Level = null;
+         var attackCmd:AttackMoveCommand = null;
+         var wingidon:Wingidon = null;
+         var support:Wingidon = null;
+         var xPos:Number = Number.NaN;
+         var yPos:Number = Number.NaN;
+         var i:int = 0;
+         var supportCount:int = 2;
+         if(this._wingidonBossSpawned || game == null || game.teamB == null || game.teamB.statue == null || main == null || main.campaign == null)
+         {
+            return;
+         }
+         level = main.campaign.getCurrentLevel();
+         if(level == null || level.title != LEVEL_TITLE_ECLIPSORS_ATTACK)
+         {
+            return;
+         }
+         if(this.campaignReinforcementManager != null && this.campaignReinforcementManager.wingidonBossPreSpawned)
+         {
+            this._wingidonBossSpawned = true;
+            return;
+         }
+         if(game.teamB.statue.health > game.teamB.statue.maxHealth * 0.5)
+         {
+            return;
+         }
+         this._wingidonBossSpawned = true;
+         game.teamB.tech.isResearchedMap[Tech.WINGIDON_SPEED] = true;
+         wingidon = game.unitFactory.getUnit(Unit.U_WINGIDON);
+         game.teamB.spawn(wingidon,game);
+         wingidon.makeBoss();
+         wingidon.enableCampaignBossEscape();
+         xPos = game.teamB.homeX + game.teamB.direction * 180;
+         yPos = game.map.height / 2;
+         wingidon.px = wingidon.x = xPos;
+         wingidon.py = wingidon.y = yPos;
+         game.teamB.population += wingidon.population;
+         attackCmd = new AttackMoveCommand(game);
+         attackCmd.type = UnitCommand.ATTACK_MOVE;
+         attackCmd.goalX = game.teamA.statue.px;
+         attackCmd.goalY = game.map.height / 2;
+         attackCmd.realX = game.teamA.statue.px;
+         attackCmd.realY = game.map.height / 2;
+         wingidon.ai.setCommand(game,attackCmd);
+         i = 0;
+         while(i < supportCount)
+         {
+            support = game.unitFactory.getUnit(Unit.U_WINGIDON);
+            game.teamB.spawn(support,game);
+            xPos = game.teamB.homeX + game.teamB.direction * (180 + (i + 1) * 80);
+            yPos = Math.max(80,Math.min(game.map.height - 80,game.map.height / 2 + (i - 1) * 70));
+            support.px = support.x = xPos;
+            support.py = support.y = yPos;
+            game.teamB.population += support.population;
+            attackCmd = new AttackMoveCommand(game);
+            attackCmd.type = UnitCommand.ATTACK_MOVE;
+            attackCmd.goalX = game.teamA.statue.px;
+            attackCmd.goalY = game.map.height / 2;
+            attackCmd.realX = game.teamA.statue.px;
+            attackCmd.realY = game.map.height / 2;
+            support.ai.setCommand(game,attackCmd);
+            i++;
+         }
+         game.projectileManager.initTowerSpawn(game.teamB.homeX + game.teamB.direction * 180,game.map.height / 2,game.teamB,0.7);
+         game.projectileManager.initSpawnDrip(game.teamB.homeX + game.teamB.direction * 180,game.map.height / 2,game.teamB);
+         if(this.campaignReinforcementManager != null)
+         {
+            this.campaignReinforcementManager.wingidonBossPreSpawned = true;
+         }
       }
    }
 }

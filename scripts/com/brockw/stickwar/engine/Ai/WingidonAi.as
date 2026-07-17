@@ -3,7 +3,6 @@ package com.brockw.stickwar.engine.Ai
    import com.brockw.game.Util;
    import com.brockw.stickwar.engine.Ai.command.UnitCommand;
    import com.brockw.stickwar.engine.StickWar;
-   import com.brockw.stickwar.engine.units.RangedUnit;
    import com.brockw.stickwar.engine.units.Unit;
    import com.brockw.stickwar.engine.units.Wingidon;
    
@@ -22,6 +21,11 @@ package com.brockw.stickwar.engine.Ai
          if(unit.isBoss)
          {
             unit.tryBossAbilities(game);
+         }
+         if(!unit.isBoss && unit is Wingidon && unit.hasNearbySkyCommanderAura())
+         {
+            mayAttack = true;
+            mayMoveToAttack = true;
          }
          if(this.tryMarkedPreyFocus(game))
          {

@@ -2,6 +2,8 @@ package com.brockw.stickwar.engine.projectile
 {
    import com.brockw.game.Util;
    import com.brockw.stickwar.engine.StickWar;
+   import com.brockw.stickwar.engine.units.Unit;
+   import com.brockw.stickwar.engine.units.Wingidon;
    import flash.filters.GlowFilter;
    import flash.geom.ColorTransform;
    
@@ -90,6 +92,28 @@ package com.brockw.stickwar.engine.projectile
                game.soundManager.playSoundRandom("mediumExplosion",3,this.px,this.py);
             }
             this.mc.gotoAndStop(3);
+         }
+      }
+      
+      override protected function arrowHit(u:Unit) : void
+      {
+         var prevHasHit:Boolean = this.hasHit;
+         super.arrowHit(u);
+         if(!prevHasHit && this.hasHit)
+         {
+            if(u.deflectArrow(this))
+            {
+               this.unitNotToHit = null;
+               this.dx = this.dy = this.dz = 0;
+               this.visible = false;
+               return;
+            }
+            if(u is Wingidon)
+            {
+               u.lastArrowHitX = this.px;
+               u.lastArrowHitY = this.py;
+               u.lastArrowHitZ = this.pz;
+            }
          }
       }
       

@@ -40,7 +40,14 @@ package com.brockw.stickwar.engine.Ai
          {
             currentTarget = this.getClosestTarget();
          }
-         unit.aim(currentTarget);
+         if(currentTarget != null && game.fogOfWar.isUnitHiddenByNightfall(currentTarget) && !this.isNightfallCheckActive())
+         {
+            unit.aim(null);
+         }
+         else
+         {
+            unit.aim(currentTarget);
+         }
          if(unit.mayAttack(currentTarget) && currentCommand.type != UnitCommand.MOVE)
          {
             unit.faceDirection(Util.sgn(currentTarget.px - unit.px));

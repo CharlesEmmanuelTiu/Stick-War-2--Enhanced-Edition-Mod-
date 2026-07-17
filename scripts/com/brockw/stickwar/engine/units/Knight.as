@@ -7,6 +7,7 @@ package com.brockw.stickwar.engine.units
    import com.brockw.stickwar.engine.Entity;
    import com.brockw.stickwar.engine.StickWar;
    import com.brockw.stickwar.engine.Team.Tech;
+   import com.brockw.stickwar.engine.projectile.Projectile;
    import com.brockw.stickwar.market.*;
    import flash.display.MovieClip;
    
@@ -464,6 +465,17 @@ package com.brockw.stickwar.engine.units
          }
          this.chargeSpell.forceActivate();
          this.hasCharged = false;
+      }
+      
+      override public function deflectArrow(projectile:Projectile) : Boolean
+      {
+         if(projectile.inflictor != null && this.chargeSpell.inEffect())
+         {
+            var dir:int = Util.sgn(projectile.inflictor.px - this.px);
+            this.team.game.projectileManager.initDeflectedArrow(this.px,this.py,this.pz,this.team.game,dir * 4,-10);
+            return true;
+         }
+         return false;
       }
       
       public function get isBoss() : Boolean

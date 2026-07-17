@@ -141,6 +141,11 @@ package com.brockw.stickwar.engine.units
          return WEAPON_REACH;
       }
       
+      override public function canAttackAir() : Boolean
+      {
+         return true;
+      }
+      
       override public function playDeathSound() : void
       {
          team.game.soundManager.playSound("MagikillDeath",px,py);
@@ -165,8 +170,8 @@ package com.brockw.stickwar.engine.units
          _mc.width *= _scale;
          _mc.height *= _scale;
          _state = S_RUN;
-         _mc.mc.gotoAndPlay(1); //unpopped
-         _mc.gotoAndStop(1); //unpopped
+         _mc.mc.gotoAndPlay(1);
+         _mc.gotoAndStop(1);
          drawShadow();
          this.stunSpellCooldown = new SpellCooldown(game.xml.xml.Order.Units.magikill.electricWall.effect,game.xml.xml.Order.Units.magikill.electricWall.cooldown,game.xml.xml.Order.Units.magikill.electricWall.mana);
          this.nukeSpellCooldown = new SpellCooldown(game.xml.xml.Order.Units.magikill.nuke.effect,game.xml.xml.Order.Units.magikill.nuke.cooldown,game.xml.xml.Order.Units.magikill.nuke.mana);

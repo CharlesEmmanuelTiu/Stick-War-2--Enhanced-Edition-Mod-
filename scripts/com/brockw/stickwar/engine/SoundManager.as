@@ -41,6 +41,12 @@ package com.brockw.stickwar.engine
       
       private var targetBackgroundVolume:Number;
       
+      private var ambientLoopChannel:SoundChannel;
+      
+      private var ambientLoopName:String;
+      
+      public var ambientLoopRestartCount:int;
+      
       private var timer:Timer;
       
       public function SoundManager(main:BaseMain)
@@ -72,6 +78,7 @@ package com.brockw.stickwar.engine
       public function cleanUp() : void
       {
          this.backgroundLoop.stop();
+         this.stopAmbientLoop();
       }
       
       public function setPosition(x:Number, y:Number) : void
@@ -95,6 +102,12 @@ package com.brockw.stickwar.engine
          if(Boolean(this.backgroundLoop))
          {
             this.backgroundLoop.soundTransform = s;
+         }
+         if(this.ambientLoopChannel != null && this.ambientLoopName != "")
+         {
+            var at:SoundTransform = new SoundTransform();
+            at.volume = this.isSound ? this.volumeMap[this.ambientLoopName] : 0;
+            this.ambientLoopChannel.soundTransform = at;
          }
       }
       
@@ -190,6 +203,52 @@ package com.brockw.stickwar.engine
       {
          var name:String = baseName + (1 + Math.floor(Math.random() * range));
          return this.playSoundFullVolume(name);
+      }
+      
+      public function playAmbientLoop(name:String) : void
+      {
+         this.stopAmbientLoop();
+         if(!(name in this.sounds))
+         {
+            return;
+         }
+         this.ambientLoopName = name;
+         this.ambientLoopRestartCount = 0;
+         this.playAmbientOnce();
+      }
+      
+      private function playAmbientOnce() : void
+      {
+         var s:Sound = new this.sounds[this.ambientLoopName]();
+         this.ambientLoopChannel = s.play(0,0);
+         if(this.ambientLoopChannel != null)
+         {
+            this.ambientLoopChannel.addEventListener(Event.SOUND_COMPLETE,this.onAmbientComplete);
+            var t:SoundTransform = new SoundTransform();
+            t.volume = this.isSound ? this.volumeMap[this.ambientLoopName] : 0;
+            this.ambientLoopChannel.soundTransform = t;
+         }
+      }
+      
+      private function onAmbientComplete(e:Event) : void
+      {
+         if(this.ambientLoopChannel != null)
+         {
+            this.ambientLoopChannel.removeEventListener(Event.SOUND_COMPLETE,this.onAmbientComplete);
+         }
+         ++this.ambientLoopRestartCount;
+         this.playAmbientOnce();
+      }
+      
+      public function stopAmbientLoop() : void
+      {
+         if(this.ambientLoopChannel != null)
+         {
+            this.ambientLoopChannel.removeEventListener(Event.SOUND_COMPLETE,this.onAmbientComplete);
+            this.ambientLoopChannel.stop();
+            this.ambientLoopChannel = null;
+         }
+         this.ambientLoopName = "";
       }
       
       public function playSoundFullVolume(name:String) : Number

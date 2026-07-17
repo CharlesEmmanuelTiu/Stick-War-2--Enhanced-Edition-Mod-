@@ -6,12 +6,15 @@ package com.brockw.stickwar.campaign.controllers
    import com.brockw.stickwar.campaign.InGameMessage;
    import com.brockw.stickwar.engine.Ai.command.AttackMoveCommand;
    import com.brockw.stickwar.engine.Ai.command.HoldCommand;
+   import com.brockw.stickwar.engine.Ai.command.MoveCommand;
    import com.brockw.stickwar.engine.Ai.command.UnitCommand;
+   import com.brockw.stickwar.engine.FogOfWar;
    import com.brockw.stickwar.engine.Gold;
    import com.brockw.stickwar.engine.Hill;
    import com.brockw.stickwar.engine.Team.Team;
    import com.brockw.stickwar.engine.Team.Tech;
    import com.brockw.stickwar.engine.units.Archer;
+   import com.brockw.stickwar.engine.units.Dead;
    import com.brockw.stickwar.engine.units.Magikill;
    import com.brockw.stickwar.engine.units.Monk;
    import com.brockw.stickwar.engine.units.Ninja;
@@ -34,17 +37,23 @@ package com.brockw.stickwar.campaign.controllers
       
       private static const LEVEL_DEAD_HORDE:String = "Ambush: Undead Horde";
       
-      private static const HORDE_WAVE_TIMES:Array = [90,1200,2100,3000,3900];
+      private static const HORDE_WAVE_TIMES:Array = [90,1200,2000,3000];
       
-      private static const HORDE_WAVE_UNDEAD_NORMAL:Array = [4,6,8,10,12];
+      private static const HORDE_WAVE_UNDEAD_NORMAL:Array = [6,8,10,15];
       
-      private static const HORDE_WAVE_UNDEAD_HARD:Array = [6,8,10,12,16];
+      private static const HORDE_WAVE_UNDEAD_HARD:Array = [6,8,8,16];
       
-      private static const HORDE_WAVE_UNDEAD_INSANE:Array = [8,10,14,18,22];
+      private static const HORDE_WAVE_UNDEAD_INSANE:Array = [8,10,8,20];
+      
+      private static const HORDE_WAVE_DEAD_NORMAL:Array = [0,0,0,0];
+      
+      private static const HORDE_WAVE_DEAD_HARD:Array = [0,0,0,2];
+      
+      private static const HORDE_WAVE_DEAD_INSANE:Array = [0,0,0,2];
       
       private static const CUTSCENE_PAN_FRAMES:int = 60;
       
-      private static const CUTSCENE_FIST_WAIT_FRAMES:int = 15;
+      private static const CUTSCENE_FIST_WAIT_FRAMES:int = 45;
       
       private static const CUTSCENE_END_WAIT_FRAMES:int = 120;
       
@@ -95,6 +104,46 @@ package com.brockw.stickwar.campaign.controllers
       private static const NATIVE_SWORDWRATH_WEAPON:String = "Club";
       
       private static const NATIVE_HEALTH_MULTIPLIER:Number = 0.5;
+      
+      private static const LEVEL_THE_STORM:String = "Ambush: The Storm";
+      
+      private static const GIANTS_NIGHT_TINT_COLOR:uint = 0;
+      
+      private static const GIANTS_NIGHT_TINT_ALPHA:Number = 0.6;
+      
+      private static const GIANTS_STONED_TINT_COLOR:uint = 8947848;
+      
+      private static const GIANTS_STONED_TINT_ALPHA:Number = 0.7;
+      
+      private static const GIANTS_THUNDER_MIN_FRAMES:int = 150;
+      
+      private static const GIANTS_THUNDER_MAX_FRAMES:int = 450;
+      
+      private static const GIANTS_THUNDER_FLASH_FRAMES:int = 60;
+      
+      private static const GIANTS_STONED_GARRISON_EXCLUDE_X:Number = 500;
+      
+      private static const GIANTS_STONED_UNIT_COUNT:int = 50;
+      
+      private static const GIANTS_RAIN_PARTICLES:int = 250;
+      
+      private static const GIANTS_TOTAL_WAVES:int = 6;
+      
+      private static const GIANTS_BREATHER_FRAMES:int = 900;
+      
+      private static const GIANTS_INTERMISSION_DELAY_FRAMES:int = 300;
+      
+      private static const GIANTS_CLEANUP_EXTRA_FRAMES:int = 300;
+      
+      private static const GIANTS_COMPLETE_DELAY_FRAMES:int = 60;
+      
+      private static const GIANTS_WAVES_NORMAL:Array = [[[Unit.U_CAT,4]],[[Unit.U_KNIGHT,3],[Unit.U_DEAD,1]],[[Unit.U_UNDEAD,4],[Unit.U_DEAD,2]],[[Unit.U_SKELATOR,1],[Unit.U_UNDEAD,2]],[[Unit.U_WINGIDON,1],[Unit.U_GIANT,1]],[[Unit.U_GIANT,1],[Unit.U_KNIGHT,4],[Unit.U_CAT,2],[Unit.U_WINGIDON,1],[Unit.U_UNDEAD,3]]];
+      
+      private static const GIANTS_WAVES_HARD:Array = [[[Unit.U_CAT,6]],[[Unit.U_KNIGHT,4],[Unit.U_DEAD,2]],[[Unit.U_UNDEAD,6],[Unit.U_DEAD,3]],[[Unit.U_SKELATOR,1],[Unit.U_UNDEAD,3]],[[Unit.U_WINGIDON,2],[Unit.U_GIANT,1]],[[Unit.U_GIANT,1],[Unit.U_KNIGHT,4],[Unit.U_CAT,4],[Unit.U_WINGIDON,1],[Unit.U_SKELATOR,1],[Unit.U_UNDEAD,3]]];
+      
+      private static const GIANTS_WAVES_INSANE:Array = [[[Unit.U_CAT,8]],[[Unit.U_KNIGHT,6],[Unit.U_DEAD,2]],[[Unit.U_UNDEAD,8],[Unit.U_DEAD,4]],[[Unit.U_SKELATOR,2],[Unit.U_UNDEAD,4]],[[Unit.U_WINGIDON,2],[Unit.U_GIANT,1]],[[Unit.U_GIANT,1],[Unit.U_KNIGHT,6],[Unit.U_CAT,6],[Unit.U_WINGIDON,2],[Unit.U_SKELATOR,1],[Unit.U_UNDEAD,4]]];
+      
+      private static const GIANTS_INTERMISSION_COUNT_MAX:int = 3;
       
       private static const NATIVE_BASE_SPAWN_OFFSET:Number = 260;
       
@@ -182,6 +231,8 @@ package com.brockw.stickwar.campaign.controllers
       
       private var ambushCompleteDelayStartFrame:int;
       
+      public var wavePaused:Boolean;
+      
       private var hasShownStartMessage:Boolean;
       
       private var hasSpawnedReinforcements:Boolean;
@@ -220,11 +271,45 @@ package com.brockw.stickwar.campaign.controllers
       
       private var hordeRevealFog:Boolean;
       
+      private var _cutsceneCameraLocked:Boolean;
+      
+      private var _lockedCameraX:Number;
+      
+      private var _cutsceneBattleUnits:Array;
+      
       private var nightOverlay:Sprite;
       
       private var hasUnlockedStalkCloak:Boolean;
       
       private var pendingAttackRefreshes:Array;
+      
+      private var isGiantsLevel:Boolean;
+      
+      private var giantsThunderTimer:int;
+      
+      private var giantsThunderFlashFrames:int;
+      
+      private var isGiantsThunderFlashing:Boolean;
+      
+      private var giantsStonedDecorations:Array;
+      
+      private var lastRainRestartCount:int;
+      
+      private var giantsWaveIndex:int;
+      
+      private var activeGiantsWaveUnits:Array;
+      
+      private var giantsIntermissionUnits:Array;
+      
+      private var giantsBreatherEndFrame:int;
+      
+      private var giantsIntermissionSpawned:Boolean;
+      
+      private var giantsPhase:String;
+      
+      private var giantsPhaseEndFrame:int;
+      
+      private var giantsComplete:Boolean;
       
       public function CampaignAmbush(gameScreen:GameScreen)
       {
@@ -263,9 +348,33 @@ package com.brockw.stickwar.campaign.controllers
          this.rebelEndingStartFrame = -1;
          this.rebelRevealFog = false;
          this.hordeRevealFog = false;
+         this._cutsceneCameraLocked = false;
+         this._lockedCameraX = 0;
+         this._cutsceneBattleUnits = [];
          this.nightOverlay = null;
          this.hasUnlockedStalkCloak = false;
          this.pendingAttackRefreshes = [];
+         this.isGiantsLevel = false;
+         this.giantsThunderTimer = 0;
+         this.giantsThunderFlashFrames = 0;
+         this.isGiantsThunderFlashing = false;
+         this.giantsStonedDecorations = [];
+         this.giantsWaveIndex = 0;
+         this.activeGiantsWaveUnits = [];
+         this.giantsIntermissionUnits = [];
+         this.giantsBreatherEndFrame = 0;
+         this.giantsIntermissionSpawned = false;
+         this.giantsPhase = "breathing";
+         this.giantsPhaseEndFrame = -1;
+         this.giantsComplete = false;
+      }
+      
+      override public function cleanUp(gameScreen:GameScreen) : void
+      {
+         if(gameScreen != null && gameScreen.game != null && gameScreen.game.soundManager != null)
+         {
+            gameScreen.game.soundManager.stopAmbientLoop();
+         }
       }
       
       override public function update(gameScreen:GameScreen) : void
@@ -288,11 +397,54 @@ package com.brockw.stickwar.campaign.controllers
          {
             this.updateDeadHordeCutscene(gameScreen);
          }
+         if(this._cutsceneCameraLocked)
+         {
+            this.setCameraTarget(gameScreen,this._lockedCameraX);
+         }
+         if(this.isGiantsLevel)
+         {
+            this.updateGiantsThunder(gameScreen);
+            this.updateGiantsWaves(gameScreen);
+            this.hideAllGiantsEnemyUnits(gameScreen);
+            for each(unit in gameScreen.team.enemyTeam.units)
+            {
+               if(unit != null && (unit.type == Unit.U_MINER || unit.type == Unit.U_CHAOS_MINER || unit.type == Unit.U_CHAOS_TOWER))
+               {
+                  unit.visible = false;
+               }
+            }
+            for each(var w in gameScreen.team.enemyTeam.walls)
+            {
+               w.visible = false;
+               for each(var part in w.wallParts)
+               {
+                  part.visible = false;
+               }
+            }
+            if(gameScreen.team.enemyTeam.castleDefence != null)
+            {
+               for each(unit in gameScreen.team.enemyTeam.castleDefence.units)
+               {
+                  if(unit != null)
+                  {
+                     unit.visible = false;
+                  }
+               }
+            }
+            if(!gameScreen.isPaused && gameScreen.game.soundManager.ambientLoopRestartCount > this.lastRainRestartCount)
+            {
+               this.lastRainRestartCount = gameScreen.game.soundManager.ambientLoopRestartCount;
+               if(!this.isGiantsThunderFlashing)
+               {
+                  this.triggerGiantsThunder(gameScreen);
+               }
+            }
+         }
          this.updatePendingAttackRefreshes(gameScreen);
          this.updateAmbusherOrders(gameScreen);
          this.stopSpawnedPlayerUnits(gameScreen);
          this.clampPlayerUnits(gameScreen);
-         if(this.isRebelBreakLevel(gameScreen) || this.isDeadHordeLevel(gameScreen))
+         if(this.isRebelBreakLevel(gameScreen) || this.isDeadHordeLevel(gameScreen) || this.isTheStormLevel(gameScreen))
          {
             return;
          }
@@ -339,6 +491,10 @@ package com.brockw.stickwar.campaign.controllers
          this.hideEnemyGoldVisuals(gameScreen);
          this.disableEnemyCastleDefence(gameScreen);
          this.applyShadowrathNightOverlay(gameScreen);
+         if(this.isTheStormLevel(gameScreen))
+         {
+            this.initializeGiantsLevel(gameScreen);
+         }
          this.updateAmbushFog(gameScreen);
          this.keepEnemyBaseHidden(gameScreen);
          this.updateAmbusherOrders(gameScreen);
@@ -349,6 +505,10 @@ package com.brockw.stickwar.campaign.controllers
          if(this.isShadowrathStalkersLevel(gameScreen))
          {
             return Math.min(gameScreen.game.map.width / 2 - BARRIER_PADDING,gameScreen.team.homeX + gameScreen.team.direction * SHADOWRATH_BARRIER_DISTANCE_FROM_BASE);
+         }
+         if(this.isDeadHordeLevel(gameScreen))
+         {
+            return gameScreen.game.map.width / 2 + 75;
          }
          return gameScreen.game.map.width / 2 - BARRIER_PADDING;
       }
@@ -421,8 +581,432 @@ package com.brockw.stickwar.campaign.controllers
          gameScreen.game.addChild(this.nightOverlay);
       }
       
+      private function initializeGiantsLevel(gameScreen:GameScreen) : void
+      {
+         this.isGiantsLevel = true;
+         this.giantsThunderTimer = GIANTS_THUNDER_MIN_FRAMES + int(gameScreen.game.random.nextNumber() * (GIANTS_THUNDER_MAX_FRAMES - GIANTS_THUNDER_MIN_FRAMES));
+         this.giantsThunderFlashFrames = 0;
+         this.isGiantsThunderFlashing = false;
+         this.lastRainRestartCount = 0;
+         gameScreen.game.rain.setParticleCount(GIANTS_RAIN_PARTICLES);
+         gameScreen.game.soundManager.playAmbientLoop("rainfall");
+         gameScreen.team.enemyTeam.unitsAvailable[Unit.U_MINER] = 0;
+         this.clearEnemyStartingCombatUnits(gameScreen);
+         this.placeGiantsStonedUnits(gameScreen);
+         this.hideAllGiantsEnemyUnits(gameScreen);
+         this.giantsWaveIndex = 0;
+         this.activeGiantsWaveUnits = [];
+         this.giantsIntermissionUnits = [];
+         this.giantsIntermissionSpawned = false;
+         this.giantsPhase = "breathing";
+         this.giantsPhaseEndFrame = -1;
+         this.giantsComplete = false;
+         gameScreen.team.enemyTeam.tech.isResearchedMap[Tech.DEAD_POISON] = true;
+         gameScreen.team.enemyTeam.tech.isResearchedMap[Tech.SKELETON_FIST_ATTACK] = true;
+         gameScreen.team.enemyTeam.tech.isResearchedMap[Tech.CAT_PACK] = true;
+         gameScreen.team.enemyTeam.tech.isResearchedMap[Tech.CAT_SPEED] = true;
+         gameScreen.team.enemyTeam.tech.isResearchedMap[Tech.CHAOS_GIANT_GROWTH_I] = true;
+         this.startGiantsNextWave(gameScreen);
+      }
+      
+      private function placeGiantsStonedUnits(gameScreen:GameScreen) : void
+      {
+         this.giantsStonedDecorations = [];
+         var types:Array = [Unit.U_SWORDWRATH,Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_NINJA,Unit.U_MAGIKILL,Unit.U_MINER];
+         var i:int = 0;
+         var attempts:int = 0;
+         var typeIdx:int = 0;
+         var u:Unit = null;
+         var hasStoneLabel:Boolean = false;
+         var labels:Array = null;
+         var label:* = null;
+         var perspScale:Number = 0;
+         while(i < GIANTS_STONED_UNIT_COUNT && attempts < GIANTS_STONED_UNIT_COUNT * 4)
+         {
+            typeIdx = int(gameScreen.game.random.nextNumber() * types.length);
+            u = gameScreen.game.unitFactory.getUnit(int(types[typeIdx]));
+            attempts++;
+            if(!(u == null || u.mc == null))
+            {
+               hasStoneLabel = false;
+               labels = u.mc.currentLabels;
+               for each(label in labels)
+               {
+                  if(label.name == "stone")
+                  {
+                     hasStoneLabel = true;
+                     break;
+                  }
+               }
+               if(hasStoneLabel)
+               {
+                  u.team = gameScreen.team.enemyTeam;
+                  u.setBuilding();
+                  var posAttempts:int = 0;
+                  var tooClose:Boolean = false;
+                  var existingUnit:Unit = null;
+                  do
+                  {
+                     u.px = 50 + gameScreen.game.random.nextNumber() * (gameScreen.game.map.width - 100);
+                     u.py = -100 + gameScreen.game.random.nextNumber() * (gameScreen.game.map.height + 400);
+                     u.x = u.px;
+                     u.y = u.py;
+                     tooClose = false;
+                     if(u.px < gameScreen.team.homeX + GIANTS_STONED_GARRISON_EXCLUDE_X)
+                     {
+                        tooClose = true;
+                     }
+                     if(!tooClose)
+                     {
+                        for each(existingUnit in this.giantsStonedDecorations)
+                        {
+                           if(Math.abs(u.py - existingUnit.py) < 25)
+                           {
+                              tooClose = gameScreen.game.random.nextNumber() < 0.8;
+                              if(tooClose)
+                              {
+                                 break;
+                              }
+                           }
+                        }
+                     }
+                     posAttempts++;
+                  }
+                  while(tooClose && posAttempts < 50);
+                  u.scaleX *= gameScreen.game.random.nextNumber() > 0.5 ? 1 : -1;
+                  u.isDead = false;
+                  u.isDieing = false;
+                  u.init(gameScreen.game);
+                  u.healthBar.visible = false;
+                  perspScale = gameScreen.game.getPerspectiveScale(u.py);
+                  u.mc.scaleX = perspScale;
+                  u.mc.scaleY = perspScale;
+                  u.stoned = true;
+                  u.health = 0;
+                  u.isDieing = true;
+                  u.mc.gotoAndStop("stone");
+                  if(u.mc.mc != null)
+                  {
+                     u.mc.mc.gotoAndStop(u.mc.mc.totalFrames);
+                  }
+                  u.mouseEnabled = false;
+                  u.mouseChildren = false;
+                  if(u.shadowSprite != null)
+                  {
+                     u.shadowSprite.visible = false;
+                  }
+                  gameScreen.game.battlefield.addChild(u);
+                  this.giantsStonedDecorations.push(u);
+                  i++;
+               }
+            }
+         }
+      }
+      
+      private function hideAllGiantsEnemyUnits(gameScreen:GameScreen) : void
+      {
+         if(this.isGiantsThunderFlashing)
+         {
+            return;
+         }
+         var unit:Unit = null;
+         for each(unit in gameScreen.team.enemyTeam.units)
+         {
+            if(unit != null)
+            {
+               unit.visible = false;
+            }
+         }
+      }
+      
+      private function updateGiantsThunder(gameScreen:GameScreen) : void
+      {
+         if(gameScreen.isPaused)
+         {
+            return;
+         }
+         var unit:Unit = null;
+         var fog:FogOfWar = gameScreen.game.fogOfWar;
+         if(this.isGiantsThunderFlashing)
+         {
+            --this.giantsThunderFlashFrames;
+            if(this.giantsThunderFlashFrames > 30)
+            {
+               fog.fogFadeSpeed = 0;
+               fog.isFogOn = false;
+            }
+            else
+            {
+               if(this.giantsThunderFlashFrames == 30)
+               {
+                  for each(unit in gameScreen.team.enemyTeam.units)
+                  {
+                     if(unit != null)
+                     {
+                        unit.visible = false;
+                     }
+                  }
+                  fog.fogFadeSpeed = 0.12;
+               }
+               fog.isFogOn = true;
+            }
+            if(this.giantsThunderFlashFrames <= 0)
+            {
+               this.isGiantsThunderFlashing = false;
+               fog.fogFadeSpeed = 0;
+               this.giantsThunderTimer = GIANTS_THUNDER_MIN_FRAMES + int(gameScreen.game.random.nextNumber() * (GIANTS_THUNDER_MAX_FRAMES - GIANTS_THUNDER_MIN_FRAMES));
+            }
+         }
+         else
+         {
+            --this.giantsThunderTimer;
+            if(this.giantsThunderTimer <= 0)
+            {
+               this.triggerGiantsThunder(gameScreen);
+            }
+         }
+      }
+      
+      private function triggerGiantsThunder(gameScreen:GameScreen) : void
+      {
+         var unit:Unit = null;
+         var fog:FogOfWar = gameScreen.game.fogOfWar;
+         this.isGiantsThunderFlashing = true;
+         this.giantsThunderFlashFrames = GIANTS_THUNDER_FLASH_FRAMES;
+         fog.fogFadeSpeed = 0;
+         fog.isFogOn = false;
+         gameScreen.game.soundManager.playSoundFullVolumeRandom("thunder",6);
+         for each(unit in gameScreen.team.enemyTeam.units)
+         {
+            if(unit != null)
+            {
+               unit.visible = true;
+            }
+         }
+      }
+      
+      private function hasLivingGiantsWaveUnits() : Boolean
+      {
+         var i:int = 0;
+         var unit:Unit = null;
+         while(i < this.activeGiantsWaveUnits.length)
+         {
+            unit = this.activeGiantsWaveUnits[i] as Unit;
+            if(unit != null && unit.isAlive())
+            {
+               return true;
+            }
+            this.activeGiantsWaveUnits.splice(i,1);
+         }
+         return false;
+      }
+      
+      private function hasLivingGiantsIntermissionUnits() : Boolean
+      {
+         var i:int = 0;
+         var unit:Unit = null;
+         while(i < this.giantsIntermissionUnits.length)
+         {
+            unit = this.giantsIntermissionUnits[i] as Unit;
+            if(unit != null && unit.isAlive())
+            {
+               return true;
+            }
+            this.giantsIntermissionUnits.splice(i,1);
+         }
+         return false;
+      }
+      
+      private function getGiantsWaves(gameScreen:GameScreen) : Array
+      {
+         if(gameScreen.main != null && gameScreen.main.campaign != null && gameScreen.main.campaign.difficultyLevel == Campaign.D_INSANE)
+         {
+            return GIANTS_WAVES_INSANE;
+         }
+         if(gameScreen.main != null && gameScreen.main.campaign != null && gameScreen.main.campaign.difficultyLevel == Campaign.D_HARD)
+         {
+            return GIANTS_WAVES_HARD;
+         }
+         return GIANTS_WAVES_NORMAL;
+      }
+      
+      private function startGiantsNextWave(gameScreen:GameScreen) : void
+      {
+         this.spawnGiantsWave(gameScreen);
+         ++this.giantsWaveIndex;
+         this.giantsIntermissionUnits = [];
+         this.giantsIntermissionSpawned = false;
+         this.giantsBreatherEndFrame = gameScreen.game.frame + GIANTS_BREATHER_FRAMES;
+         this.giantsPhase = "breathing";
+         this.giantsPhaseEndFrame = -1;
+      }
+      
+      private function spawnGiantsWave(gameScreen:GameScreen) : void
+      {
+         var waves:Array = this.getGiantsWaves(gameScreen);
+         var wavePairs:Array = waves[this.giantsWaveIndex];
+         var spawnedUnits:Array = [];
+         var refreshEntries:Array = [];
+         var unit:Unit = null;
+         var goalY:Number = 0;
+         var totalCount:int = 0;
+         var unitIdx:int = 0;
+         var pair:Array = null;
+         var unitType:int = 0;
+         var count:int = 0;
+         var i:int = 0;
+         for each(pair in wavePairs)
+         {
+            totalCount += int(pair[1]);
+         }
+         for each(pair in wavePairs)
+         {
+            unitType = int(pair[0]);
+            count = int(pair[1]);
+            i = 0;
+            while(i < count)
+            {
+               unit = gameScreen.game.unitFactory.getUnit(unitType);
+               gameScreen.team.enemyTeam.spawn(unit,gameScreen.game);
+               goalY = this.getNativeFormationGoalY(gameScreen,unitIdx,totalCount);
+               unit.px = this.getNativeFormationSpawnX(gameScreen,unitIdx);
+               unit.x = unit.px;
+               unit.py = goalY;
+               unit.y = unit.py;
+               unit.scaleX *= gameScreen.team.enemyTeam.direction * -1;
+               this.issueAmbushAttackCommand(gameScreen,unit,goalY);
+               spawnedUnits.push(unit);
+               refreshEntries.push([unit,goalY]);
+               i++;
+               unitIdx++;
+            }
+         }
+         this.activeGiantsWaveUnits = spawnedUnits;
+         this.pendingAttackRefreshes.push([gameScreen.game.frame + ATTACK_REFRESH_DELAY_FRAMES,refreshEntries]);
+      }
+      
+      private function spawnGiantsIntermission(gameScreen:GameScreen) : void
+      {
+         var pool:Array = [Unit.U_CAT,Unit.U_KNIGHT,Unit.U_UNDEAD,Unit.U_WINGIDON];
+         var weights:Array = [35,25,25,12];
+         var totalWeight:int = 0;
+         var w:int = 0;
+         for each(w in weights)
+         {
+            totalWeight += w;
+         }
+         var count:int = 1 + int(gameScreen.game.random.nextNumber() * GIANTS_INTERMISSION_COUNT_MAX);
+         var spawnedUnits:Array = [];
+         var goalY:Number = 0;
+         var unit:Unit = null;
+         var roll:Number = 0;
+         var cumulative:int = 0;
+         var chosenType:int = Unit.U_CAT;
+         var j:int = 0;
+         var i:int = 0;
+         while(i < count)
+         {
+            roll = gameScreen.game.random.nextNumber() * totalWeight;
+            cumulative = 0;
+            chosenType = Unit.U_CAT;
+            j = 0;
+            while(j < pool.length)
+            {
+               cumulative += weights[j];
+               if(roll < cumulative)
+               {
+                  chosenType = int(pool[j]);
+                  break;
+               }
+               j++;
+            }
+            unit = gameScreen.game.unitFactory.getUnit(chosenType);
+            gameScreen.team.enemyTeam.spawn(unit,gameScreen.game);
+            goalY = gameScreen.game.map.height / 2 + (i - (count - 1) / 2) * 50;
+            unit.px = gameScreen.team.enemyTeam.homeX + gameScreen.team.enemyTeam.direction * 180;
+            unit.x = unit.px;
+            unit.py = goalY;
+            unit.y = unit.py;
+            unit.scaleX *= gameScreen.team.enemyTeam.direction * -1;
+            this.issueAmbushAttackCommand(gameScreen,unit,goalY);
+            spawnedUnits.push(unit);
+            i++;
+         }
+         this.giantsIntermissionUnits = spawnedUnits;
+      }
+      
+      private function updateGiantsWaves(gameScreen:GameScreen) : void
+      {
+         if(this.giantsComplete)
+         {
+            return;
+         }
+         if(this.giantsWaveIndex >= GIANTS_TOTAL_WAVES)
+         {
+            if(!this.hasLivingGiantsWaveUnits())
+            {
+               if(this.giantsPhaseEndFrame < 0)
+               {
+                  this.giantsPhaseEndFrame = gameScreen.game.frame + GIANTS_COMPLETE_DELAY_FRAMES;
+               }
+               if(gameScreen.game.frame >= this.giantsPhaseEndFrame)
+               {
+                  this.giantsComplete = true;
+                  this.completeAmbush(gameScreen);
+               }
+            }
+            else
+            {
+               this.giantsPhaseEndFrame = -1;
+            }
+            return;
+         }
+         if(this.hasLivingGiantsWaveUnits())
+         {
+            return;
+         }
+         if(this.giantsPhase == "breathing")
+         {
+            if(!this.giantsIntermissionSpawned && gameScreen.game.frame >= this.giantsBreatherEndFrame - GIANTS_BREATHER_FRAMES + GIANTS_INTERMISSION_DELAY_FRAMES)
+            {
+               this.spawnGiantsIntermission(gameScreen);
+               this.giantsIntermissionSpawned = true;
+            }
+            if(gameScreen.game.frame >= this.giantsBreatherEndFrame)
+            {
+               if(this.hasLivingGiantsIntermissionUnits())
+               {
+                  this.giantsPhase = "intermission_cleanup";
+               }
+               else
+               {
+                  this.startGiantsNextWave(gameScreen);
+               }
+            }
+         }
+         else if(this.giantsPhase == "intermission_cleanup")
+         {
+            if(!this.hasLivingGiantsIntermissionUnits())
+            {
+               this.giantsPhaseEndFrame = gameScreen.game.frame + GIANTS_CLEANUP_EXTRA_FRAMES;
+               this.giantsPhase = "cleanup_delay";
+            }
+         }
+         else if(this.giantsPhase == "cleanup_delay")
+         {
+            if(gameScreen.game.frame >= this.giantsPhaseEndFrame)
+            {
+               this.startGiantsNextWave(gameScreen);
+            }
+         }
+      }
+      
       private function updateMessage(gameScreen:GameScreen) : void
       {
+         if(this._cutsceneCameraLocked)
+         {
+            return;
+         }
          if(this.message != null)
          {
             if(gameScreen.contains(this.message))
@@ -450,6 +1034,10 @@ package com.brockw.stickwar.campaign.controllers
          {
             this.message.setMessage("Dead Horde approaches! Survive the undead onslaught!","");
          }
+         else if(this.isTheStormLevel(gameScreen))
+         {
+            this.message.setMessage("The storm hides the enemy... Survive until Reinforcements arrive","");
+         }
          else
          {
             this.message.setMessage("Defend until Reinforcements arrive","");
@@ -460,6 +1048,10 @@ package com.brockw.stickwar.campaign.controllers
       
       private function updateInfectionMessage(gameScreen:GameScreen) : void
       {
+         if(this.isDeadHordeLevel(gameScreen) && this.hordeCutsceneActive)
+         {
+            return;
+         }
          if(Boolean(this.infectionMessage) && gameScreen.contains(this.infectionMessage))
          {
             this.infectionMessage.update();
@@ -509,6 +1101,11 @@ package com.brockw.stickwar.campaign.controllers
          {
             gameScreen.game.fogOfWar.isFogOn = true;
             gameScreen.game.fogOfWar.lockForwardPosition(this.barrierX);
+         }
+         if(this.isTheStormLevel(gameScreen))
+         {
+            gameScreen.game.fogOfWar.isFogOn = true;
+            gameScreen.game.fogOfWar.lockForwardPosition(-500);
          }
       }
       
@@ -587,7 +1184,7 @@ package com.brockw.stickwar.campaign.controllers
          }
          for each(unit in gameScreen.team.units)
          {
-            if(unit != null && unit.isAlive() && this.rebelDisplayUnits.indexOf(unit) == -1 && unit.px > this.barrierX)
+            if(unit != null && unit.isAlive() && this.rebelDisplayUnits.indexOf(unit) == -1 && this._cutsceneBattleUnits.indexOf(unit) == -1 && unit.px > this.barrierX)
             {
                unit.px = this.barrierX;
                unit.x = unit.px;
@@ -841,6 +1438,7 @@ package com.brockw.stickwar.campaign.controllers
          }
          if(this.rebelCameraQueued && !this.rebelOpeningFinished && elapsed >= REBEL_OPENING_DELAY_FRAMES + REBEL_CAMERA_DELAY_FRAMES)
          {
+            this._cutsceneCameraLocked = true;
             this.setCameraTarget(gameScreen,this.getEnemyCameraX(gameScreen) - 100);
             this.rebelCameraQueued = false;
          }
@@ -873,6 +1471,7 @@ package com.brockw.stickwar.campaign.controllers
          {
             this.rebelRevealFog = false;
             this.hordeRevealFog = false;
+            this._cutsceneCameraLocked = false;
             this.completeAmbush(gameScreen);
          }
       }
@@ -888,6 +1487,7 @@ package com.brockw.stickwar.campaign.controllers
       private function finishRebelOpening(gameScreen:GameScreen) : void
       {
          this.rebelOpeningFinished = true;
+         this._cutsceneCameraLocked = false;
          this.rebelRevealFog = false;
          this.cleanupRebelDisplayUnits(gameScreen);
          this.killAllEnemyUnits(gameScreen);
@@ -899,6 +1499,7 @@ package com.brockw.stickwar.campaign.controllers
          this.rebelEndingStarted = true;
          this.rebelEndingStartFrame = gameScreen.game.frame;
          this.rebelRevealFog = true;
+         this._cutsceneCameraLocked = true;
          gameScreen.doAiUpdates = true;
          this.pendingAttackRefreshes = [];
          if(this.message != null && gameScreen.contains(this.message))
@@ -986,7 +1587,7 @@ package com.brockw.stickwar.campaign.controllers
          var i:int = 0;
          var rebel:Unit = null;
          var chaos:Unit = null;
-         var GAP:Number = 160;
+         var GAP:Number = 20;
          if(gameScreen.team.unitGroups[Unit.U_KNIGHT] == null)
          {
             gameScreen.team.unitGroups[Unit.U_KNIGHT] = [];
@@ -1358,6 +1959,10 @@ package com.brockw.stickwar.campaign.controllers
          {
             return this.hordeMarrowkaiSpawned;
          }
+         if(this.isTheStormLevel(gameScreen))
+         {
+            return this.giantsComplete;
+         }
          return true;
       }
       
@@ -1369,6 +1974,10 @@ package com.brockw.stickwar.campaign.controllers
             return;
          }
          if(this.hordeCutsceneActive)
+         {
+            return;
+         }
+         if(this.wavePaused)
          {
             return;
          }
@@ -1388,15 +1997,7 @@ package com.brockw.stickwar.campaign.controllers
             else
             {
                this.ambushCompleteDelayStartFrame = -1;
-            }
-            if(gameScreen.game.frame - this.marrowkaiSummonTimer >= 360 && this.activeHordeWaveUnits.length > 0)
-            {
-               var marrowkai:Skelator = this.activeHordeWaveUnits[0];
-               if(marrowkai != null && marrowkai.isAlive() && marrowkai.notInSpell())
-               {
-                  marrowkai.bossSummonFist(gameScreen.team.statue.px,gameScreen.game.map.height / 2);
-               }
-               this.marrowkaiSummonTimer = gameScreen.game.frame;
+               this.wavePaused = false;
             }
             return;
          }
@@ -1406,12 +2007,11 @@ package com.brockw.stickwar.campaign.controllers
          }
          if(this.hordeWaveIndex < HORDE_WAVE_TIMES.length && elapsed >= int(HORDE_WAVE_TIMES[this.hordeWaveIndex]))
          {
-            this.spawnDeadHordeWave(gameScreen,int(this.getHordeWaveUndeadCount(gameScreen)[this.hordeWaveIndex]));
+            this.spawnDeadHordeWave(gameScreen,int(this.getHordeWaveUndeadCount(gameScreen)[this.hordeWaveIndex]),int(this.getHordeWaveDeadCount(gameScreen)[this.hordeWaveIndex]));
             ++this.hordeWaveIndex;
          }
          else if(this.hordeWaveIndex >= HORDE_WAVE_TIMES.length)
          {
-            this.spawnDeadHordeMarrowkai(gameScreen);
             this.hordeMarrowkaiSpawned = true;
          }
       }
@@ -1429,31 +2029,189 @@ package com.brockw.stickwar.campaign.controllers
          return HORDE_WAVE_UNDEAD_NORMAL;
       }
       
-      private function spawnDeadHordeWave(gameScreen:GameScreen, count:int) : void
+      private function getHordeWaveDeadCount(gameScreen:GameScreen) : Array
+      {
+         if(gameScreen.main != null && gameScreen.main.campaign != null && gameScreen.main.campaign.difficultyLevel == Campaign.D_INSANE)
+         {
+            return HORDE_WAVE_DEAD_INSANE;
+         }
+         if(gameScreen.main != null && gameScreen.main.campaign != null && gameScreen.main.campaign.difficultyLevel == Campaign.D_HARD)
+         {
+            return HORDE_WAVE_DEAD_HARD;
+         }
+         return HORDE_WAVE_DEAD_NORMAL;
+      }
+      
+      private function spawnDeadHordeWave(gameScreen:GameScreen, undeadCount:int, deadCount:int) : void
       {
          var i:int = 0;
          var undead:Undead = null;
+         var dead:Dead = null;
          var spawnedUnits:Array = [];
          var refreshEntries:Array = [];
          var goalY:Number = 0;
+         var totalCount:int = undeadCount + deadCount;
+         var variantsSpawned:int = 0;
+         var maxVariants:int = Math.ceil(undeadCount * 0.3);
          i = 0;
-         while(i < count)
+         while(i < undeadCount)
          {
             undead = gameScreen.game.unitFactory.getUnit(Unit.U_UNDEAD);
             gameScreen.team.enemyTeam.spawn(undead,gameScreen.game);
-            goalY = this.getNativeFormationGoalY(gameScreen,i,count);
+            undead.maxVelocity = gameScreen.game.xml.xml.Chaos.Units.dead.maxVelocity;
+            undead.maxForce = gameScreen.game.xml.xml.Chaos.Units.dead.maxForce;
+            goalY = this.getNativeFormationGoalY(gameScreen,i,totalCount);
             undead.px = this.getNativeFormationSpawnX(gameScreen,i);
             undead.x = undead.px;
             undead.py = goalY;
             undead.y = undead.py;
             undead.scaleX *= gameScreen.team.enemyTeam.direction * -1;
             this.issueAmbushAttackCommand(gameScreen,undead,goalY);
+            if(variantsSpawned < maxVariants && gameScreen.game.random.nextNumber() < 0.3)
+            {
+               var variantRoll:Number = gameScreen.game.random.nextNumber();
+               if(variantRoll < 0.4)
+               {
+                  var variantType:int = Unit.U_ARCHER;
+               }
+               else if(variantRoll < 0.7)
+               {
+                  variantType = Unit.U_SPEARTON;
+               }
+               else if(variantRoll < 0.9)
+               {
+                  variantType = Unit.U_NINJA;
+               }
+               else
+               {
+                  variantType = Unit.U_MAGIKILL;
+               }
+               var variantHeadSkin:String = "";
+               switch(variantType)
+               {
+                  case Unit.U_SPEARTON:
+                     variantHeadSkin = "Undead Spearton";
+                     break;
+                  case Unit.U_ARCHER:
+                     variantHeadSkin = "Undead Archer";
+                     break;
+                  case Unit.U_NINJA:
+                     variantHeadSkin = "Undead Ninja";
+                     break;
+                  case Unit.U_MAGIKILL:
+                     variantHeadSkin = "Undead Magikill";
+               }
+               undead.turnedHeadSkin = variantHeadSkin;
+               if(variantType == Unit.U_SPEARTON)
+               {
+                  undead.maxHealth = undead.health = gameScreen.game.xml.xml.Chaos.Units.dead.health;
+               }
+               else if(variantType == Unit.U_ARCHER)
+               {
+                  undead._firstHitBonus = undead.damageToDeal;
+               }
+               else if(variantType == Unit.U_NINJA)
+               {
+                  undead.maxHealth = undead.health = gameScreen.game.xml.xml.Order.Units.swordwrath.health;
+                  undead.maxVelocity *= 1.2;
+                  undead.maxForce *= 1.2;
+               }
+               else if(variantType == Unit.U_MAGIKILL)
+               {
+                  undead.maxHealth = undead.health = gameScreen.game.xml.xml.Order.Units.swordwrath.health;
+               }
+               undead.healthBar.totalHealth = undead.maxHealth;
+               undead.healthBar.health = undead.health;
+               variantsSpawned++;
+            }
             spawnedUnits.push(undead);
             refreshEntries.push([undead,goalY]);
             i++;
          }
+         i = 0;
+         while(i < deadCount)
+         {
+            dead = gameScreen.game.unitFactory.getUnit(Unit.U_DEAD);
+            gameScreen.team.enemyTeam.spawn(dead,gameScreen.game);
+            goalY = this.getNativeFormationGoalY(gameScreen,i + undeadCount,totalCount);
+            dead.px = this.getNativeFormationSpawnX(gameScreen,i + undeadCount);
+            dead.x = dead.px;
+            dead.py = goalY;
+            dead.y = dead.py;
+            dead.scaleX *= gameScreen.team.enemyTeam.direction * -1;
+            var moveCmd:MoveCommand = new MoveCommand(gameScreen.game);
+            moveCmd.type = UnitCommand.MOVE;
+            moveCmd.goalX = this.barrierX - 100;
+            moveCmd.goalY = goalY;
+            moveCmd.realX = moveCmd.goalX;
+            moveCmd.realY = moveCmd.goalY;
+            dead.ai.setCommand(gameScreen.game,moveCmd);
+            spawnedUnits.push(dead);
+            refreshEntries.push([dead,goalY]);
+            i++;
+         }
          this.activeHordeWaveUnits = spawnedUnits;
          this.pendingAttackRefreshes.push([gameScreen.game.frame + ATTACK_REFRESH_DELAY_FRAMES,refreshEntries]);
+      }
+      
+      private function spawnCutsceneBattleUnits(gameScreen:GameScreen) : void
+      {
+         var pairs:Array = [[Unit.U_SWORDWRATH,Unit.U_UNDEAD],[Unit.U_SWORDWRATH,Unit.U_UNDEAD],[Unit.U_SWORDWRATH,Unit.U_UNDEAD],[Unit.U_NINJA,Unit.U_UNDEAD],[Unit.U_SWORDWRATH,Unit.U_UNDEAD],[Unit.U_NINJA,Unit.U_UNDEAD]];
+         var GAP:Number = 35;
+         var cutsceneCameraPanX:Number = this.hordeCutsceneMarrowkai.px - 700;
+         var cutsceneScoutsX:Number = this.hordeCutsceneMarrowkai.px - 300;
+         var i:int = 0;
+         var pairY:Number = 0;
+         var playerX:Number = 0;
+         var undeadX:Number = 0;
+         var playerUnit:Unit = null;
+         var undead:Undead = null;
+         var playerCmd:AttackMoveCommand = null;
+         var undeadCmd:AttackMoveCommand = null;
+         this._cutsceneBattleUnits = [];
+         i = 0;
+         while(i < pairs.length)
+         {
+            var column:int = int(i / 3);
+            var row:int = i % 3;
+            var colOffset:Number = column * 100 + (gameScreen.game.random.nextNumber() * 60 - 30);
+            var centerX:Number = cutsceneScoutsX + colOffset;
+            pairY = Math.max(70,Math.min(gameScreen.game.map.height - 70,gameScreen.game.map.height / 2 + (row - 1) * 80 + (gameScreen.game.random.nextNumber() * 40 - 20)));
+            playerX = centerX - GAP / 2;
+            undeadX = centerX + GAP / 2;
+            if(gameScreen.game.random.nextNumber() > 0.5)
+            {
+               playerX = centerX + GAP / 2;
+               undeadX = centerX - GAP / 2;
+            }
+            playerUnit = gameScreen.game.unitFactory.getUnit(int(pairs[i][0]));
+            gameScreen.team.spawn(playerUnit,gameScreen.game);
+            playerUnit.px = playerX;
+            playerUnit.x = playerX;
+            playerUnit.py = pairY;
+            playerUnit.y = pairY;
+            playerUnit.health = playerUnit.maxHealth * 0.3;
+            playerUnit.healthBar.health = playerUnit.health;
+            playerUnit.healthBar.reset();
+            playerCmd = new AttackMoveCommand(gameScreen.game);
+            playerCmd.goalX = undeadX + 20;
+            playerCmd.goalY = pairY;
+            playerUnit.ai.setCommand(gameScreen.game,playerCmd);
+            this._cutsceneBattleUnits.push(playerUnit);
+            undead = gameScreen.game.unitFactory.getUnit(Unit.U_UNDEAD);
+            gameScreen.team.enemyTeam.spawn(undead,gameScreen.game);
+            undead.px = undeadX;
+            undead.x = undeadX;
+            undead.py = pairY;
+            undead.y = pairY;
+            undead.scaleX *= gameScreen.team.enemyTeam.direction * -1;
+            undeadCmd = new AttackMoveCommand(gameScreen.game);
+            undeadCmd.goalX = playerX - 20;
+            undeadCmd.goalY = pairY;
+            undead.ai.setCommand(gameScreen.game,undeadCmd);
+            this._cutsceneBattleUnits.push(undead);
+            i++;
+         }
       }
       
       private function initializeDeadHordeCutscene(gameScreen:GameScreen) : void
@@ -1472,16 +2230,13 @@ package com.brockw.stickwar.campaign.controllers
          s.scaleX *= gameScreen.team.enemyTeam.direction * -1;
          s.makeBoss();
          s.isBossMovementLocked = true;
-         s.forceFaceDirection(gameScreen.team.direction);
+         s.forceFaceDirection(gameScreen.team.enemyTeam.direction);
          var hold:HoldCommand = new HoldCommand(gameScreen.game);
          s.ai.setCommand(gameScreen.game,hold);
          gameScreen.team.enemyTeam.tech.isResearchedMap[Tech.SKELETON_FIST_ATTACK] = true;
-         if(!Boolean(gameScreen.team.enemyTeam.unitGroups[Unit.U_UNDEAD]))
-         {
-            gameScreen.team.enemyTeam.unitGroups[Unit.U_UNDEAD] = [];
-         }
-         this.hordeRevealFog = true;
+         gameScreen.team.tech.isResearchedMap[Tech.MINER_WALL] = true;
          this.hordeCutsceneMarrowkai = s;
+         this.hordeRevealFog = true;
          this.hordeCutsceneUndeads = [];
          this.hordeCutsceneState = HORDE_CS_BEFORE;
          this.hordeCutsceneTimer = gameScreen.game.frame;
@@ -1506,6 +2261,8 @@ package com.brockw.stickwar.campaign.controllers
             case HORDE_CS_BEFORE:
                if(elapsed >= CUTSCENE_PAN_FRAMES)
                {
+                  this.spawnCutsceneBattleUnits(gameScreen);
+                  this._cutsceneCameraLocked = true;
                   this.setCameraTarget(gameScreen,this.hordeCutsceneMarrowkai.px - 700);
                   this.hordeCutsceneState = HORDE_CS_FIST_WAIT;
                   this.hordeCutsceneTimer = gameScreen.game.frame;
@@ -1543,9 +2300,26 @@ package com.brockw.stickwar.campaign.controllers
                gameScreen.team.enemyTeam.removeUnitCompletely(undeadGroup[0],gameScreen.game);
             }
          }
+         var unit:Unit = null;
+         for each(unit in this._cutsceneBattleUnits)
+         {
+            if(unit != null)
+            {
+               if(unit.team == gameScreen.team)
+               {
+                  gameScreen.team.removeUnitCompletely(unit,gameScreen.game);
+               }
+               else
+               {
+                  gameScreen.team.enemyTeam.removeUnitCompletely(unit,gameScreen.game);
+               }
+            }
+         }
+         this._cutsceneBattleUnits = [];
          this.hordeCutsceneUndeads = [];
          this.hordeRevealFog = false;
-         this.setCameraTarget(gameScreen,this.getPlayerCameraX(gameScreen));
+         this._cutsceneCameraLocked = false;
+         this.setCameraTarget(gameScreen,gameScreen.team.statue.px);
          this.startFrame = gameScreen.game.frame;
          this.hordeCutsceneActive = false;
       }
@@ -1636,9 +2410,14 @@ package com.brockw.stickwar.campaign.controllers
          return gameScreen.main != null && gameScreen.main.campaign != null && gameScreen.main.campaign.getCurrentLevel() != null && gameScreen.main.campaign.getCurrentLevel().title == LEVEL_DEAD_HORDE;
       }
       
+      private function isTheStormLevel(gameScreen:GameScreen) : Boolean
+      {
+         return gameScreen.main != null && gameScreen.main.campaign != null && gameScreen.main.campaign.getCurrentLevel() != null && gameScreen.main.campaign.getCurrentLevel().title == LEVEL_THE_STORM;
+      }
+      
       private function shouldShowStartMessage(gameScreen:GameScreen) : Boolean
       {
-         return this.isNativeTribesLevel(gameScreen) || this.isShadowrathStalkersLevel(gameScreen) || this.isDeadHordeLevel(gameScreen);
+         return this.isNativeTribesLevel(gameScreen) || this.isShadowrathStalkersLevel(gameScreen) || this.isDeadHordeLevel(gameScreen) || this.isTheStormLevel(gameScreen);
       }
       
       private function showAmbushMessage(gameScreen:GameScreen, text:String) : void
@@ -1704,6 +2483,10 @@ package com.brockw.stickwar.campaign.controllers
             targetX = Math.max(gameScreen.game.background.minScreenX(),Math.min(gameScreen.game.background.maxScreenX(),targetX));
          }
          gameScreen.game.targetScreenX = targetX;
+         if(this._cutsceneCameraLocked)
+         {
+            this._lockedCameraX = targetX;
+         }
       }
       
       private function getEnemyCameraX(gameScreen:GameScreen) : Number
@@ -1725,7 +2508,7 @@ package com.brockw.stickwar.campaign.controllers
          }
          for each(unit in gameScreen.team.units)
          {
-            if(unit != null && unit.isAlive() && unit.type != Unit.U_MINER && this.rebelDisplayUnits.indexOf(unit) == -1 && unit.ai.currentCommand.type == UnitCommand.ATTACK_MOVE && unit.px > this.getAmbushBarrierX(gameScreen))
+            if(unit != null && unit.isAlive() && unit.type != Unit.U_MINER && this.rebelDisplayUnits.indexOf(unit) == -1 && this._cutsceneBattleUnits.indexOf(unit) == -1 && unit.ai.currentCommand.type == UnitCommand.ATTACK_MOVE && unit.px > this.getAmbushBarrierX(gameScreen))
             {
                this.holdUnit(gameScreen,unit);
             }

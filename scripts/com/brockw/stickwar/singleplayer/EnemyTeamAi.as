@@ -22,7 +22,11 @@ package com.brockw.stickwar.singleplayer
       
       private static const DEEP_PRESSURE_OFFSET:Number = 700;
       
+      private static const FORWARD_POSITION_OFFSET:Number = 200;
+      
       protected var isAttacking:Boolean;
+      
+      protected var _lastStrategyOrder:String = "";
       
       protected var team:Team;
       
@@ -265,6 +269,11 @@ package com.brockw.stickwar.singleplayer
          u.execute(this.team.game);
       }
       
+      protected function getDefendPosition() : Number
+      {
+         return this.team.homeX + this.team.direction * 600;
+      }
+      
       protected function defendGroup() : void
       {
          var unit:String = null;
@@ -272,6 +281,7 @@ package com.brockw.stickwar.singleplayer
          var m:UnitMove = null;
          this.isAttacking = false;
          this.team.currentAttackState = Team.G_DEFEND;
+         var defendPos:Number = this.getDefendPosition();
          var attackMoveUnits:* = new UnitMove();
          attackMoveUnits.moveType = UnitCommand.ATTACK_MOVE;
          var moveUnits:* = new UnitMove();
@@ -300,10 +310,10 @@ package com.brockw.stickwar.singleplayer
             }
          }
          moveUnits.owner = this.team.id;
-         moveUnits.arg0 = this.team.homeX + this.team.direction * 600;
+         moveUnits.arg0 = defendPos;
          moveUnits.arg1 = this.team.game.gameScreen.game.map.height / 2;
          attackMoveUnits.owner = this.team.id;
-         attackMoveUnits.arg0 = this.team.homeX + this.team.direction * 600;
+         attackMoveUnits.arg0 = defendPos;
          attackMoveUnits.arg1 = this.team.game.gameScreen.game.map.height / 2;
          attackMoveUnits.execute(this.team.game);
          moveUnits.execute(this.team.game);
@@ -314,15 +324,23 @@ package com.brockw.stickwar.singleplayer
          var movePos:Number = Number(NaN);
          if(this.isArmyHealers())
          {
+            _lastStrategyOrder = "Defend (Healers)";
             this.defendGroup();
          }
          else if(this.enemyIsWeak())
          {
+            _lastStrategyOrder = "Full Attack";
             this.attackMoveGroupTo(this.getPressureAttackTarget(this.team.medianPosition + this.team.direction * 250));
          }
-         else if(this.enemyIsEvenStrength() || Unit.U_GIANT in this.team.unitGroups)
+         else if(this.enemyIsEvenStrength())
          {
-            movePos = this.team.medianPosition + this.team.direction * 250;
+            _lastStrategyOrder = "Attack Cautiously";
+            movePos = this.team.medianPosition + this.team.direction * 600;
+            var aggroLimit:Number = this.team.enemyTeam.forwardMilitaryPosition - this.team.direction * 300;
+            if(this.team.direction * movePos > this.team.direction * aggroLimit)
+            {
+               movePos = aggroLimit;
+            }
             if(this.team.direction * movePos > this.team.direction * this.team.game.map.width / 2)
             {
                movePos = this.team.game.map.width / 2;
@@ -331,14 +349,17 @@ package com.brockw.stickwar.singleplayer
          }
          else if(this.enemyIsAttacking())
          {
+            _lastStrategyOrder = "Home Defend";
             this.defendGroup();
          }
          else if(this.enemyAtMiddle())
          {
+            _lastStrategyOrder = "Defend Mid";
             this.defendGroup();
          }
          else
          {
+            _lastStrategyOrder = "Push Center";
             this.attackMoveGroupTo(this.team.game.map.width / 2);
          }
       }
@@ -403,12 +424,40 @@ package com.brockw.stickwar.singleplayer
       
       protected function agressionMetric() : Number
       {
-         var m:Number = this.team.enemyTeam.medianPosition / this.team.game.map.width;
+         var median:Number = this.team.enemyTeam.medianPosition;
+         var fwd:Number = this.team.enemyTeam.forwardMilitaryPosition;
+         if(!isNaN(fwd) && !isNaN(median))
+         {
+            if(this.team.direction == 1 && fwd < median - FORWARD_POSITION_OFFSET)
+            {
+               median = fwd + FORWARD_POSITION_OFFSET;
+            }
+            else if(this.team.direction == -1 && fwd > median + FORWARD_POSITION_OFFSET)
+            {
+               median = fwd - FORWARD_POSITION_OFFSET;
+            }
+         }
+         var m:Number = median / this.team.game.map.width;
          if(this.team.direction == 1)
          {
-            m = (this.team.game.map.width - this.team.enemyTeam.medianPosition) / this.team.game.map.width;
+            m = (this.team.game.map.width - median) / this.team.game.map.width;
          }
          return m;
+      }
+      
+      public function getAggressionMetric() : Number
+      {
+         return this.agressionMetric();
+      }
+      
+      public function getLastStrategyOrder() : String
+      {
+         return this._lastStrategyOrder;
+      }
+      
+      public function getTeam() : Team
+      {
+         return this.team;
       }
       
       protected function enemyAtHome() : Boolean

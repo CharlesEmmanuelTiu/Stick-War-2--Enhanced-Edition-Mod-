@@ -133,6 +133,7 @@ package com.brockw.stickwar.engine.Ai
                if(this.shouldRestoreAutoSpellCommand && !this.isAutoSpellTargetStillValid(game))
                {
                   this.finishSpellCommand(game);
+                  baseUpdate(game);
                   return;
                }
                this.updateSpellCommandTargetPosition(game);
@@ -146,16 +147,19 @@ package com.brockw.stickwar.engine.Ai
                {
                   unit.nukeSpell(currentCommand.realX,currentCommand.realY);
                   this.finishSpellCommand(game);
+                  baseUpdate(game);
                }
                else if(currentCommand.type == UnitCommand.STUN || currentCommand.type == UnitCommand.LIGHTNING_STUN)
                {
                   unit.stunSpell(currentCommand.realX,currentCommand.realY);
                   this.finishSpellCommand(game);
+                  baseUpdate(game);
                }
                else if(currentCommand.type == UnitCommand.POISON_DART)
                {
                   unit.poisonDartSpell(currentCommand.realX,currentCommand.realY);
                   this.finishSpellCommand(game);
+                  baseUpdate(game);
                }
                return;
             }
@@ -165,17 +169,18 @@ package com.brockw.stickwar.engine.Ai
                return;
             }
             this.shouldRestoreAutoSpellCommand = false;
-            if(magikill.isAutoCastEnabled && this.commandQueue.isEmpty())
-            {
-               this.tryAutoCast(game);
-            }
-            if(currentCommand.type == UnitCommand.NUKE || currentCommand.type == UnitCommand.NUKE_2 || currentCommand.type == UnitCommand.STUN || currentCommand.type == UnitCommand.LIGHTNING_STUN || currentCommand.type == UnitCommand.POISON_DART)
-            {
-               return;
-            }
-            if(!this.commandQueue.isEmpty())
+            var hasQueuedCommand:Boolean = !this.commandQueue.isEmpty();
+            if(hasQueuedCommand)
             {
                nextMove(game);
+            }
+            if(!hasQueuedCommand && magikill.isAutoCastEnabled && this.commandQueue.isEmpty())
+            {
+               this.tryAutoCast(game);
+               if(currentCommand.type == UnitCommand.NUKE || currentCommand.type == UnitCommand.NUKE_2 || currentCommand.type == UnitCommand.STUN || currentCommand.type == UnitCommand.LIGHTNING_STUN || currentCommand.type == UnitCommand.POISON_DART)
+               {
+                  return;
+               }
             }
             baseUpdate(game);
             return;
@@ -650,7 +655,10 @@ package com.brockw.stickwar.engine.Ai
          defendMode = this.isDefendMode();
          if(!defendMode && currentCommand.type == UnitCommand.MOVE && currentCommand.targetId == -1)
          {
-            defendMode = true;
+            if(unit.isFeetMoving() || Math.abs(currentCommand.goalX - unit.px) < 25 && Math.abs(currentCommand.goalY - unit.py) < 25)
+            {
+               defendMode = true;
+            }
          }
          if(!defendMode && !this.isAttackMode(game))
          {
@@ -1010,7 +1018,7 @@ package com.brockw.stickwar.engine.Ai
          {
             return false;
          }
-         return game.units[currentCommand.targetId].team != null && game.units[currentCommand.targetId].team.id != unit.team.id && game.units[currentCommand.targetId].isTargetable();
+         return game.units[currentCommand.targetId].team != null && game.units[currentCommand.targetId].team.id != unit.team.id && Boolean(game.units[currentCommand.targetId].isTargetable());
       }
       
       private function ensureCommands(game:StickWar) : void

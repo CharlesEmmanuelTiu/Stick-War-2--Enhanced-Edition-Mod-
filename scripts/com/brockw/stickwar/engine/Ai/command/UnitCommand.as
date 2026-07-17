@@ -119,6 +119,8 @@ package com.brockw.stickwar.engine.Ai.command
       
       public static const LIGHTNING_STUN:int = 61;
       
+      public static const FOG_REVEAL:int = 62;
+      
       public static const actualButtonBitmap:* = new Bitmap(new CommandMove());
       
       protected var game:StickWar;

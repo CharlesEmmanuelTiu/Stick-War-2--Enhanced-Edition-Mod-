@@ -11,6 +11,7 @@ package com.brockw.stickwar.engine.units
    import com.brockw.stickwar.engine.StickWar;
    import com.brockw.stickwar.engine.Team.*;
    import com.brockw.stickwar.engine.dual.Dual;
+   import com.brockw.stickwar.engine.projectile.Projectile;
    import flash.display.DisplayObject;
    import flash.display.FrameLabel;
    import flash.display.MovieClip;
@@ -221,6 +222,12 @@ package com.brockw.stickwar.engine.units
       
       private var _poisonDamage:Number;
       
+      private var _infectionDamage:Number;
+      
+      private var _infectionFramesLeft:int;
+      
+      private var _infectionStunTimer:int;
+      
       private var framesPoisoned:int = 0;
       
       private var _randomInterval:int = 90;
@@ -240,6 +247,12 @@ package com.brockw.stickwar.engine.units
       protected var framesInAttack:int;
       
       protected var attackStartFrame:int;
+      
+      public var lastArrowHitX:Number;
+      
+      public var lastArrowHitY:Number;
+      
+      public var lastArrowHitZ:Number;
       
       protected var _interactsWith:int = I_ENEMY;
       
@@ -279,6 +292,10 @@ package com.brockw.stickwar.engine.units
       
       private var eclipsorMarkFrames:int = 0;
       
+      private var _extremeSlowFrames:int;
+      
+      private var _defenseDebuffFrames:int;
+      
       private var confusionFrames:int = 0;
       
       private var reaperControlFallbackFrames:int = 0;
@@ -316,6 +333,8 @@ package com.brockw.stickwar.engine.units
       private var _isBossMovementLocked:Boolean;
       
       private var _bossAbilitySpawnLockFrames:int;
+      
+      public var bossSummonFrame:int = 0;
       
       private var _queuedAsBoss:Boolean;
       
@@ -432,6 +451,32 @@ package com.brockw.stickwar.engine.units
          this.removeMcChild(this.eclipsorMarkMc);
          this.eclipsorMarkMc = null;
          return true;
+      }
+      
+      public function applyExtremeSlow(frames:int) : void
+      {
+         if(frames > this._extremeSlowFrames)
+         {
+            this._extremeSlowFrames = frames;
+         }
+      }
+      
+      public function isExtremeSlowed() : Boolean
+      {
+         return this._extremeSlowFrames > 0;
+      }
+      
+      public function applyDefenseDebuff(frames:int) : void
+      {
+         if(frames > this._defenseDebuffFrames)
+         {
+            this._defenseDebuffFrames = frames;
+         }
+      }
+      
+      public function hasDefenseDebuff() : Boolean
+      {
+         return this._defenseDebuffFrames > 0;
       }
       
       public function confuse(frames:int) : void
@@ -591,6 +636,9 @@ package com.brockw.stickwar.engine.units
          this._scale = 1;
          this._maxVelocity = 1;
          this._poisonDamage = 0;
+         this._infectionDamage = 0;
+         this._infectionFramesLeft = 0;
+         this._infectionStunTimer = 0;
          this._hitBoxWidth = 50;
          this._hitBoxHeight = 40;
          this.maxHealth = 100;
@@ -610,6 +658,8 @@ package com.brockw.stickwar.engine.units
          this._healTimeRemaining = 0;
          this.slowFramesRemaining = 0;
          this.slowReaperFrames = 0;
+         this._extremeSlowFrames = 0;
+         this._defenseDebuffFrames = 0;
          _mouseIsOver = false;
          this.isHome = true;
          this.isOnFire = false;
@@ -775,6 +825,26 @@ package com.brockw.stickwar.engine.units
       public function set mass(value:int) : void
       {
          this._mass = value;
+      }
+      
+      public function get maxVelocity() : Number
+      {
+         return this._maxVelocity;
+      }
+      
+      public function set maxVelocity(value:Number) : void
+      {
+         this._maxVelocity = value;
+      }
+      
+      public function get maxForce() : Number
+      {
+         return this._maxForce;
+      }
+      
+      public function set maxForce(value:Number) : void
+      {
+         this._maxForce = value;
       }
       
       public function init(game:StickWar) : void
@@ -976,6 +1046,19 @@ package com.brockw.stickwar.engine.units
                this.eclipsorMarkMc = null;
             }
          }
+         if(this._defenseDebuffFrames > 0)
+         {
+            --this._defenseDebuffFrames;
+         }
+         if(this._extremeSlowFrames > 0)
+         {
+            --this._extremeSlowFrames;
+            this.filters = [new GlowFilter(1118481,0.9,14,14,3,1)];
+            if(this._extremeSlowFrames == 0)
+            {
+               this.filters = [];
+            }
+         }
          if(this.confusionFrames > 0)
          {
             --this.confusionFrames;
@@ -1106,6 +1189,45 @@ package com.brockw.stickwar.engine.units
             c.greenOffset = 0;
             this.mc.transform.colorTransform = c;
          }
+         if(this.isAlive() && this._infectionDamage > 0 && this.isInfected)
+         {
+            var infectionFired:Boolean = false;
+            if(this._infectionStunTimer <= 0)
+            {
+               this._infectionStunTimer = 150;
+            }
+            --this._infectionStunTimer;
+            if(this._infectionStunTimer <= 0)
+            {
+               this._infectionStunTimer = 150;
+               if(!this.isHome)
+               {
+                  this._state = S_RUN;
+                  this.stun(30);
+                  infectionFired = true;
+               }
+            }
+            if(this._stunTimeLeft <= 0)
+            {
+               --this._infectionFramesLeft;
+               if(this._infectionFramesLeft <= 0)
+               {
+                  this.damage(D_NO_SOUND,this._infectionDamage,null);
+                  infectionFired = true;
+                  this._infectionFramesLeft = 90;
+               }
+            }
+            if(infectionFired)
+            {
+               c.redOffset = 55;
+               this.mc.transform.colorTransform = c;
+            }
+            else
+            {
+               c.redOffset = 0;
+               this.mc.transform.colorTransform = c;
+            }
+         }
          if(this.isHome && this.team.direction * px > this.team.direction * (this.team.homeX + this.team.direction * 1200))
          {
             this.isHome = false;
@@ -1118,6 +1240,13 @@ package com.brockw.stickwar.engine.units
          {
             this.cure();
             this.isInfected = false;
+            this._infectionFramesLeft = 0;
+            this._infectionStunTimer = 0;
+            if(this.infectionMc != null)
+            {
+               this.removeMcChild(this.infectionMc);
+               this.infectionMc = null;
+            }
             this.heal(this.garrisonHealRate,1);
          }
          if(this.poisonDamage == 0)
@@ -1284,6 +1413,11 @@ package com.brockw.stickwar.engine.units
             {
                this._dy = 8 * this._maxVelocity / 2 * Math.abs(this._dy) / this._dy;
             }
+         }
+         if(this._extremeSlowFrames > 0)
+         {
+            this._dx *= 0.3;
+            this._dy *= 0.3;
          }
          var CASTLE_WIDTH:int = 200;
          if(!this.isGarrisoned)
@@ -1599,7 +1733,11 @@ package com.brockw.stickwar.engine.units
             }
             if(inflictor is Wingidon)
             {
-               dmg = inflictor.modifyBossProjectileDamage(this,type,dmg);
+               dmg = Number(inflictor.modifyBossProjectileDamage(this,type,dmg));
+            }
+            if(this._defenseDebuffFrames > 0)
+            {
+               dmg *= 1.5;
             }
             dmg /= this.team.healthModifier;
             dmg *= this.team.enemyTeam.damageModifier;
@@ -2098,6 +2236,26 @@ package com.brockw.stickwar.engine.units
          this._poisonDamage = value;
       }
       
+      public function get infectionDamage() : Number
+      {
+         return this._infectionDamage;
+      }
+      
+      public function set infectionDamage(value:Number) : void
+      {
+         this._infectionDamage = value;
+      }
+      
+      public function get infectionFramesLeft() : int
+      {
+         return this._infectionFramesLeft;
+      }
+      
+      public function set infectionFramesLeft(value:int) : void
+      {
+         this._infectionFramesLeft = value;
+      }
+      
       public function get isDieing() : Boolean
       {
          return this._isDieing;
@@ -2391,6 +2549,11 @@ package com.brockw.stickwar.engine.units
          }
          this.ai.baseUpdate(game);
          return true;
+      }
+      
+      public function deflectArrow(projectile:Projectile) : Boolean
+      {
+         return false;
       }
       
       public function makeBoss(enableDeathBurst:Boolean = false) : void

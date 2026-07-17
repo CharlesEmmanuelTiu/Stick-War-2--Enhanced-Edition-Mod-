@@ -12,7 +12,7 @@ package com.brockw.stickwar.engine.units
    import flash.display.MovieClip;
    import flash.geom.Point;
    
-   public class Archer extends RangedUnit
+   public class Archer extends com.brockw.stickwar.engine.units.RangedUnit
    {
       
       private static const BOSS_ARMOR_SKIN:String = "Robin Hood Hat";
@@ -196,8 +196,8 @@ package com.brockw.stickwar.engine.units
          _mc.width *= _scale;
          _mc.height *= _scale;
          _state = S_RUN;
-         _mc.mc.gotoAndPlay(1); //unpopped
-         _mc.gotoAndStop(1); //unpopped
+         _mc.mc.gotoAndPlay(1);
+         _mc.gotoAndStop(1);
          drawShadow();
          this.isFire = false;
          this.bowFrame = 1;
@@ -388,6 +388,10 @@ package com.brockw.stickwar.engine.units
          if(_mc.mc.bow != null)
          {
             _mc.mc.bow.rotation = bowAngle;
+         }
+         if(this.ai != null && this.ai.isNightfallCheckActive() && this.ai.currentTarget != null && game.fogOfWar.isUnitHiddenByNightfall(this.ai.currentTarget))
+         {
+            this.ai.currentTarget = null;
          }
       }
       

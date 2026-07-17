@@ -1,6 +1,8 @@
 package com.brockw.stickwar.engine.units
 {
    import com.brockw.game.Util;
+   import com.brockw.stickwar.campaign.Campaign;
+   import com.brockw.stickwar.campaign.CampaignGameScreen;
    import com.brockw.stickwar.engine.*;
    import com.brockw.stickwar.engine.Ai.*;
    import com.brockw.stickwar.engine.Ai.command.*;
@@ -12,7 +14,7 @@ package com.brockw.stickwar.engine.units
    import flash.filters.GlowFilter;
    import flash.geom.Point;
    
-   public class Wingidon extends RangedUnit
+   public class Wingidon extends com.brockw.stickwar.engine.units.RangedUnit
    {
       
       private static var WEAPON_REACH:int;
@@ -33,7 +35,7 @@ package com.brockw.stickwar.engine.units
       
       private static const BOSS_AURA_DURATION_FRAMES:int = 30 * 10;
       
-      private static const BOSS_AURA_COOLDOWN_FRAMES:int = 30 * 24;
+      private static const BOSS_AURA_COOLDOWN_FRAMES:int = 30 * 25;
       
       private static const BOSS_BURST_STUN_FRAMES:int = 30 * 3;
       
@@ -49,7 +51,23 @@ package com.brockw.stickwar.engine.units
       
       private static const BOSS_PROJECTILE_RESISTANCE:Number = 0.6;
       
+      private static const BOSS_NIGHTFALL_DURATION_FRAMES:int = 30 * 8;
+      
+      private static const NIGHTFALL_FOG_OFFSET:Number = 350;
+      
       private static const BOSS_RETREAT_FRAMES:int = 30;
+      
+      private static const NIGHTFALL_ADVANCE_SPEED:Number = 5;
+      
+      private static const NIGHTFALL_RETREAT_SPEED:Number = 5;
+      
+      private static const BOSS_EXTREME_SLOW_FRAMES:int = 30 * 5;
+      
+      private static const BOSS_DEFENSE_DEBUFF_FRAMES:int = 30 * 5;
+      
+      private static const BOSS_DEFENSE_DEBUFF_MULTIPLIER:Number = 1.5;
+      
+      private static const BOSS_ECLIPSE_MARK_RANGE:int = 900;
       
       private var wingidonSpeedSpell:SpellCooldown;
       
@@ -91,7 +109,23 @@ package com.brockw.stickwar.engine.units
       
       private var arrowDamageTaken:Number;
       
+      private var _hasUsedArrowRetreat:Boolean;
+      
+      private var _hasShownNightfallMessage:Boolean;
+      
+      private var _hasTriggeredStatueNightfall:Boolean;
+      
+      private var _nightfallPhase:int;
+      
       private var bossRetreatFrames:int;
+      
+      private var nightfallActiveFrames:int;
+      
+      private var _isNightfallActive:Boolean;
+      
+      private var nightfallFogPosition:Number;
+      
+      private var _pendingAuraFrames:int;
       
       public function Wingidon(game:StickWar)
       {
@@ -119,7 +153,14 @@ package com.brockw.stickwar.engine.units
          this.eclipseMarkUntilFrame = 0;
          this.projectileResistanceFrames = 0;
          this.arrowDamageTaken = 0;
+         this._hasUsedArrowRetreat = false;
+         this._hasShownNightfallMessage = false;
+         this._hasTriggeredStatueNightfall = false;
+         this._nightfallPhase = 0;
          this.bossRetreatFrames = 0;
+         this.nightfallActiveFrames = 0;
+         this._isNightfallActive = false;
+         this.nightfallFogPosition = 0;
       }
       
       public static function setItem(mc:MovieClip, weapon:String, armor:String, misc:String) : void
@@ -167,8 +208,8 @@ package com.brockw.stickwar.engine.units
          _mc.height *= _scale;
          _hitBoxWidth = 25;
          _state = S_RUN;
-         _mc.mc.gotoAndPlay(1); //unpopped
-         _mc.gotoAndStop(1); //unpopped
+         _mc.mc.gotoAndPlay(1);
+         _mc.gotoAndStop(1);
          py = 0;
          pz = -flyingHeight * (game.backScale + py / game.map.height * (game.frontScale - game.backScale));
          y = -100;
@@ -247,9 +288,12 @@ package com.brockw.stickwar.engine.units
                if(arms.currentFrame != 1)
                {
                   arms.nextFrame();
-                  if(!this.isBoss && this.hasNearbySkyCommanderAura() && arms.currentFrame != 1 && arms.currentFrame != arms.totalFrames)
+                  if(!this.isBoss && this.hasNearbySkyCommanderAura())
                   {
-                     arms.nextFrame();
+                     if(arms.currentFrame != 1 && arms.currentFrame != arms.totalFrames)
+                     {
+                        arms.nextFrame();
+                     }
                   }
                   if(arms.currentFrame == arms.totalFrames)
                   {
@@ -257,6 +301,17 @@ package com.brockw.stickwar.engine.units
                   }
                }
                arms.rotation = bowAngle;
+            }
+            if(!this.isBoss)
+            {
+               if(this.hasNearbySkyCommanderAura())
+               {
+                  this.filters = [new GlowFilter(16737792,0.9,14,14,3,1)];
+               }
+               else
+               {
+                  this.filters = [];
+               }
             }
             if(_isDualing)
             {
@@ -292,6 +347,24 @@ package com.brockw.stickwar.engine.units
          else if(isDead == false)
          {
             isDead = true;
+            if(this._isNightfallActive)
+            {
+               this._isNightfallActive = false;
+               this._nightfallPhase = 0;
+               game.fogOfWar.isNightfallActive = false;
+               game.fogOfWar.unlockForwardPosition();
+            }
+            if(!this.isBoss)
+            {
+               if(this.hasNearbySkyCommanderAura())
+               {
+                  this.filters = [new GlowFilter(16737792,0.9,14,14,3,1)];
+               }
+               else
+               {
+                  this.filters = [];
+               }
+            }
             if(_isDualing)
             {
                _mc.gotoAndStop(_currentDual.defendLabel);
@@ -349,6 +422,77 @@ package com.brockw.stickwar.engine.units
          {
             return;
          }
+         if(!this._hasTriggeredStatueNightfall && team != null && team.statue != null && team.statue.health <= team.statue.maxHealth * 0.5)
+         {
+            this._hasTriggeredStatueNightfall = true;
+            if(game.gameScreen is CampaignGameScreen && game.gameScreen.main != null && game.gameScreen.main.campaign != null && game.gameScreen.main.campaign.getCurrentLevel() != null && game.gameScreen.main.campaign.getCurrentLevel().title == "Shadow of the moon: Eclipsors Attack.")
+            {
+               this._isNightfallActive = true;
+               game.fogOfWar.isNightfallActive = true;
+               game.soundManager.playSoundFullVolume("Nightfall");
+               this.nightfallFogPosition = team.homeX;
+               game.fogOfWar.isForwardPositionLocked = true;
+               game.fogOfWar.lockedForwardPosition = this.nightfallFogPosition;
+               this._nightfallPhase = 1;
+               this.nightfallActiveFrames = 0;
+               if(!this._hasShownNightfallMessage)
+               {
+                  this._hasShownNightfallMessage = true;
+                  game.gameScreen.showBossMessage("Nightfall pushes the fog forward, hiding enemies beyond it and making them untargetable.");
+               }
+            }
+         }
+         if(this._isNightfallActive)
+         {
+            if(this._nightfallPhase == 1)
+            {
+               var advTargetX:Number = game.team.homeX + 1600;
+               if(this.nightfallFogPosition < advTargetX)
+               {
+                  this.nightfallFogPosition = Math.min(this.nightfallFogPosition + NIGHTFALL_ADVANCE_SPEED,advTargetX);
+               }
+               else
+               {
+                  this.nightfallFogPosition = Math.max(this.nightfallFogPosition - NIGHTFALL_ADVANCE_SPEED,advTargetX);
+               }
+               game.fogOfWar.lockedForwardPosition = this.nightfallFogPosition;
+               if(this.nightfallFogPosition == advTargetX)
+               {
+                  this.nightfallFogPosition = advTargetX;
+                  this._nightfallPhase = 2;
+                  this.nightfallActiveFrames = BOSS_NIGHTFALL_DURATION_FRAMES;
+               }
+            }
+            else if(this._nightfallPhase == 2)
+            {
+               game.fogOfWar.lockedForwardPosition = game.team.homeX + 1600;
+               --this.nightfallActiveFrames;
+               if(this.nightfallActiveFrames <= 0)
+               {
+                  this._nightfallPhase = 3;
+               }
+            }
+            else if(this._nightfallPhase == 3)
+            {
+               var naturalPos:Number = game.team.getVisionRange();
+               if(this.nightfallFogPosition < naturalPos)
+               {
+                  this.nightfallFogPosition = Math.min(this.nightfallFogPosition + NIGHTFALL_RETREAT_SPEED,naturalPos);
+               }
+               else
+               {
+                  this.nightfallFogPosition = Math.max(this.nightfallFogPosition - NIGHTFALL_RETREAT_SPEED,naturalPos);
+               }
+               game.fogOfWar.lockedForwardPosition = this.nightfallFogPosition;
+               if(this.nightfallFogPosition == naturalPos)
+               {
+                  this._isNightfallActive = false;
+                  this._nightfallPhase = 0;
+                  game.fogOfWar.isNightfallActive = false;
+                  game.fogOfWar.unlockForwardPosition();
+               }
+            }
+         }
          if(this.eclipseMarkCooldownFrames > 0)
          {
             --this.eclipseMarkCooldownFrames;
@@ -364,6 +508,19 @@ package com.brockw.stickwar.engine.units
          if(this.skyCommanderAuraFrames > 0)
          {
             --this.skyCommanderAuraFrames;
+            if(this.skyCommanderAuraFrames == 0)
+            {
+               this.skyCommanderCooldownFrames = BOSS_AURA_COOLDOWN_FRAMES;
+            }
+         }
+         if(this._pendingAuraFrames > 0)
+         {
+            --this._pendingAuraFrames;
+            if(this._pendingAuraFrames == 0)
+            {
+               this.skyCommanderAuraFrames = BOSS_AURA_DURATION_FRAMES;
+               team.game.soundManager.playSoundFullVolume("Rage1");
+            }
          }
          if(this.eclipseMarkHitWindowFrames > 0)
          {
@@ -393,6 +550,10 @@ package com.brockw.stickwar.engine.units
          {
             --this.bossRetreatFrames;
             this.walk(-team.direction * 2,0,-team.direction);
+         }
+         if(this.campaignBossEscaping && !this.wingidonSpeedSpell.inEffect())
+         {
+            this.speedSpell();
          }
          this.updateBossGlow();
       }
@@ -443,18 +604,15 @@ package com.brockw.stickwar.engine.units
          {
             return false;
          }
-         if(this.skyCommanderCooldownFrames == 0 && this.countNearbyWingidons() >= 2)
-         {
-            this.skyCommanderAuraFrames = BOSS_AURA_DURATION_FRAMES;
-            this.skyCommanderCooldownFrames = BOSS_AURA_COOLDOWN_FRAMES;
-            game.soundManager.playSoundFullVolume("Rage1");
-            return true;
-         }
          if(this.eclipseMarkCooldownFrames > 0 && this.demonBurstCooldownFrames > 0)
          {
             return false;
          }
-         target = this.chooseBossAbilityTarget();
+         target = this.chooseEclipseMarkTarget(game);
+         if(target == null)
+         {
+            target = this.chooseBossAbilityTarget();
+         }
          if(target == null)
          {
             return false;
@@ -478,6 +636,43 @@ package com.brockw.stickwar.engine.units
             return true;
          }
          return false;
+      }
+      
+      private function chooseEclipseMarkTarget(game:StickWar) : Unit
+      {
+         var enemy:Unit = null;
+         var best:Unit = null;
+         var score:Number = Number.NaN;
+         var bestScore:Number = Number.POSITIVE_INFINITY;
+         var sqrDist:Number = Number.NaN;
+         if(team == null || team.enemyTeam == null)
+         {
+            return null;
+         }
+         for each(enemy in team.enemyTeam.units)
+         {
+            if(!(enemy == null || !enemy.isAlive() || !enemy.isTargetable() || enemy.isGarrisoned))
+            {
+               if(!(enemy.team.currentAttackState != Team.G_DEFEND && enemy.ai.currentCommand.type != UnitCommand.MOVE))
+               {
+                  sqrDist = this.sqrDistanceToTarget(enemy);
+                  if(sqrDist <= BOSS_ECLIPSE_MARK_RANGE * BOSS_ECLIPSE_MARK_RANGE)
+                  {
+                     score = sqrDist;
+                     if(enemy.type == Unit.U_ARCHER || enemy.type == Unit.U_MONK || enemy.type == Unit.U_MAGIKILL || enemy.type == Unit.U_ENSLAVED_GIANT)
+                     {
+                        score *= 0.35;
+                     }
+                     if(score < bestScore)
+                     {
+                        bestScore = score;
+                        best = enemy;
+                     }
+                  }
+               }
+            }
+         }
+         return best;
       }
       
       private function chooseBossAbilityTarget() : Unit
@@ -584,10 +779,6 @@ package com.brockw.stickwar.engine.units
          {
             return damage;
          }
-         if(target.consumeEclipsorMark())
-         {
-            return damage * 2;
-         }
          return damage;
       }
       
@@ -602,7 +793,7 @@ package com.brockw.stickwar.engine.units
             --this.pendingEclipseMarkHits;
             this.pendingEclipseMarkTargetId = -1;
             this.pendingEclipseMarkDamage = 0;
-            target.applyEclipsorMark(BOSS_MARK_DURATION_FRAMES);
+            target.applyExtremeSlow(BOSS_EXTREME_SLOW_FRAMES);
             this.eclipseMarkedUnitId = target.id;
             this.eclipseMarkUntilFrame = team.game.frame + BOSS_MARK_DURATION_FRAMES;
             return;
@@ -617,7 +808,7 @@ package com.brockw.stickwar.engine.units
             if(!(target.id in this.demonBurstStunnedIds))
             {
                this.demonBurstStunnedIds[target.id] = true;
-               target.stun(BOSS_BURST_STUN_FRAMES);
+               target.applyDefenseDebuff(BOSS_DEFENSE_DEBUFF_FRAMES);
             }
          }
       }
@@ -669,9 +860,47 @@ package com.brockw.stickwar.engine.units
          return count;
       }
       
-      private function hasNearbySkyCommanderAura() : Boolean
+      public function hasNearbySkyCommanderAura() : Boolean
       {
-         return this.getNearbySkyCommanderBoss(false) != null;
+         var boss:Wingidon = this.getNearbySkyCommanderBoss(false);
+         if(boss == null)
+         {
+            return false;
+         }
+         if(team == null || team.game == null || team.game.main == null || team.game.main.campaign == null)
+         {
+            return true;
+         }
+         var diff:int = team.game.main.campaign.difficultyLevel;
+         if(diff == Campaign.D_INSANE)
+         {
+            return true;
+         }
+         if(diff == Campaign.D_NORMAL)
+         {
+            return false;
+         }
+         if(this.isBoss)
+         {
+            return true;
+         }
+         var unit:Unit = null;
+         var closerCount:int = 0;
+         var thisSqrDist:Number = this.sqrDistanceToTarget(boss);
+         for each(unit in team.unitGroups[Unit.U_WINGIDON])
+         {
+            if(unit != null && unit != this && unit is Wingidon && unit.isAlive() && !unit.isGarrisoned && !unit.isBoss)
+            {
+               if(unit.sqrDistanceToTarget(boss) < thisSqrDist)
+               {
+                  if(++closerCount >= 3)
+                  {
+                     return false;
+                  }
+               }
+            }
+         }
+         return true;
       }
       
       private function getNearbySkyCommanderBoss(requireMark:Boolean) : Wingidon
@@ -687,7 +916,7 @@ package com.brockw.stickwar.engine.units
             if(unit is Wingidon)
             {
                boss = unit;
-               if(boss.isBoss && boss.isAlive() && !boss.isGarrisoned && this.sqrDistanceToTarget(boss) <= BOSS_AURA_RADIUS * BOSS_AURA_RADIUS)
+               if(boss.isBoss && boss.isAlive() && !boss.isGarrisoned)
                {
                   if(!requireMark && boss.skyCommanderAuraFrames > 0)
                   {
@@ -718,24 +947,60 @@ package com.brockw.stickwar.engine.units
       
       override public function damage(type:int, amount:int, inflictor:Entity, modifier:Number = 1) : void
       {
-         var arrowDamage:Number = Number(NaN);
-         if(this.isBoss && Boolean(type & Unit.D_ARROW))
+         if(Boolean(type & Unit.D_ARROW))
          {
-            arrowDamage = inflictor != null ? inflictor.getDamageToUnit(this) * modifier : amount * modifier;
-            this.arrowDamageTaken += arrowDamage;
+            if(this.skyCommanderAuraFrames > 0 || !this.isBoss && this.hasNearbySkyCommanderAura())
+            {
+               team.game.soundManager.playSound("ironHit" + (1 + team.game.random.nextInt() % 4),this.px,this.py);
+               var impactPX:Number = this.lastArrowHitX;
+               var impactPY:Number = this.lastArrowHitY;
+               var impactPZ:Number = this.lastArrowHitZ;
+               if(isNaN(impactPX))
+               {
+                  impactPX = this.px;
+                  impactPY = this.py;
+                  impactPZ = this.pz;
+                  if(inflictor != null)
+                  {
+                     impactPX = this.px - Util.sgn(inflictor.px - this.px) * 20;
+                  }
+               }
+               this.lastArrowHitX = Number.NaN;
+               team.game.projectileManager.initDeflectedArrow(impactPX,impactPY,impactPZ,team.game);
+               return;
+            }
             if(this.projectileResistanceFrames > 0)
             {
                modifier *= 1 - BOSS_PROJECTILE_RESISTANCE;
             }
-            if(this.arrowDamageTaken >= BOSS_ARROW_RETREAT_THRESHOLD && this.projectileResistanceFrames <= 0 && !this.campaignBossEscaping)
-            {
-               this.arrowDamageTaken = 0;
-               this.projectileResistanceFrames = BOSS_PROJECTILE_RESISTANCE_FRAMES;
-               this.bossRetreatFrames = BOSS_RETREAT_FRAMES;
-               team.game.soundManager.playSoundFullVolume("Rage2");
-            }
          }
          super.damage(type,amount,inflictor,modifier);
+         if(this.isBoss && this._pendingAuraFrames == 0 && this.skyCommanderAuraFrames == 0 && this.skyCommanderCooldownFrames == 0)
+         {
+            this._pendingAuraFrames = 60;
+         }
+         else if(!this.isBoss && this.hasNearbySkyCommanderAura())
+         {
+            for each(var unit in team.unitGroups[Unit.U_WINGIDON])
+            {
+               if(unit is Wingidon)
+               {
+                  var w:Wingidon = unit;
+                  if(w.isBoss && w.isAlive() && !w.isGarrisoned && w._pendingAuraFrames == 0 && w.skyCommanderAuraFrames == 0 && w.skyCommanderCooldownFrames == 0)
+                  {
+                     w._pendingAuraFrames = 60;
+                     break;
+                  }
+               }
+            }
+         }
+         if(this.isBoss && Boolean(type & Unit.D_ARROW) && !this._hasUsedArrowRetreat && this.health <= this.maxHealth * 0.5 && !this.campaignBossEscaping)
+         {
+            this._hasUsedArrowRetreat = true;
+            this.projectileResistanceFrames = BOSS_PROJECTILE_RESISTANCE_FRAMES;
+            this.bossRetreatFrames = BOSS_RETREAT_FRAMES;
+            team.game.soundManager.playSoundFullVolume("Rage2");
+         }
       }
       
       override public function shoot(game:StickWar, target:Unit) : void

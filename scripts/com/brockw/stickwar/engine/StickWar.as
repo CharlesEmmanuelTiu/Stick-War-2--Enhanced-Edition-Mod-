@@ -368,7 +368,7 @@ package com.brockw.stickwar.engine
          var isVisible:Boolean = false;
          for(unit in this.teamA.units)
          {
-            isVisible = this.teamA.units[unit].onScreen(this);
+            isVisible = Boolean(this.teamA.units[unit].onScreen(this));
             if(this.teamA.units[unit].visible != isVisible)
             {
                this.teamA.units[unit].visible = isVisible;
@@ -376,7 +376,7 @@ package com.brockw.stickwar.engine
          }
          for(unit in this.teamB.units)
          {
-            isVisible = this.teamB.units[unit].onScreen(this);
+            isVisible = Boolean(this.teamB.units[unit].onScreen(this));
             if(this.teamB.units[unit].visible != isVisible)
             {
                this.teamB.units[unit].visible = isVisible;
@@ -910,6 +910,11 @@ package com.brockw.stickwar.engine
       public function set postCursors(value:Array) : void
       {
          this._postCursors = value;
+      }
+      
+      public function get rain() : Rain
+      {
+         return this._rain;
       }
       
       public function get fogOfWar() : FogOfWar
