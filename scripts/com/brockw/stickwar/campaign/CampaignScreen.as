@@ -14,14 +14,15 @@ package com.brockw.stickwar.campaign
    
    public class CampaignScreen extends Screen
    {
+      
       private static const BOTTOM_PANEL_TARGET_Y:Number = 1192.15;
-
+      
       private static const REPLAY_MAP_MIN_ZOOM:Number = 0.75;
-
+      
       private static const REPLAY_MAP_MAX_ZOOM:Number = 1.65;
-
+      
       private static const REPLAY_MAP_EDGE_PADDING_X:Number = 0;
-
+      
       private static const REPLAY_MAP_EDGE_PADDING_Y:Number = 0;
       
       private var main:BaseMain;
@@ -33,7 +34,7 @@ package com.brockw.stickwar.campaign
       private var btnMainMenu:GenericButton;
       
       private var mc:campaignMap;
-
+      
       private var mapBackdrop:Sprite;
       
       private var keyboard:KeyboardState;
@@ -43,23 +44,31 @@ package com.brockw.stickwar.campaign
       private var currentDisplayedMapFrame:int;
       
       private var currentAutoSaveVisible:Boolean;
-
+      
       private var completedMapFrame:int;
-
+      
       private var selectedReplayLevel:int;
-
+      
       private var replayFlagArrived:Boolean;
-
+      
       private var replayClickZones:Array;
-
+      
       private var isMapPanning:Boolean;
-
+      
       private var mapPanStartMouse:Point;
-
+      
       private var mapPanStartMap:Point;
-
+      
       private var mapPanMoved:Boolean;
-
+      
+      private var mapHiddenFrames:int;
+      
+      private var mapStartDelayFrames:int;
+      
+      private var mapCanAdvance:Boolean;
+      
+      private var mapStartDelayApplied:Boolean;
+      
       public function CampaignScreen(main:BaseMain)
       {
          super();
@@ -91,6 +100,10 @@ package com.brockw.stickwar.campaign
          this.mapPanStartMouse = null;
          this.mapPanStartMap = null;
          this.mapPanMoved = false;
+         this.mapHiddenFrames = 0;
+         this.mapStartDelayFrames = 0;
+         this.mapCanAdvance = false;
+         this.mapStartDelayApplied = false;
          this.mapBackdrop.visible = this.main.campaign.isGameFinished();
          if(this.main.campaign.isGameFinished())
          {
@@ -101,17 +114,19 @@ package com.brockw.stickwar.campaign
          if(this.main.campaign.isGameFinished())
          {
             this.mc.gotoAndStop("level" + this.completedMapFrame);
-            this.mc.map.gotoAndStop(this.mc.currentFrame);
+            this.syncMapToCurrentFrame();
             this.removeDuplicateReplayFlags();
          }
          else if(this.main.campaign.currentLevel != 0)
          {
             this.mc.gotoAndStop("level" + this.main.campaign.currentLevel);
+            this.syncMapToCurrentFrame();
          }
          else
          {
             this.mc.gotoAndStop(1);
             this.mc.map.stop();
+            this.syncMapToCurrentFrame();
          }
          addEventListener(Event.ENTER_FRAME,this.update);
          addEventListener(MouseEvent.CLICK,this.click);
@@ -129,9 +144,9 @@ package com.brockw.stickwar.campaign
          this.mc.title.mouseEnabled = false;
          if(this.hasReplayFlag())
          {
-            MovieClip(this.mc.map.playbuttonflag.turning).mouseEnabled = false;
-            MovieClip(this.mc.map.playbuttonflag.turning).mouseChildren = false;
-            MovieClip(this.mc.map.playbuttonflag).buttonMode = true;
+            this.mc.map.playbuttonflag.turning.mouseEnabled = false;
+            this.mc.map.playbuttonflag.turning.mouseChildren = false;
+            this.mc.map.playbuttonflag.buttonMode = true;
          }
          this.prewarmMapAssets();
          if(this.main.campaign.isGameFinished())
@@ -146,7 +161,7 @@ package com.brockw.stickwar.campaign
             this.main.showScreen("campaignGameScreen",false,true);
          }
       }
-
+      
       private function prewarmMapAssets() : void
       {
          var frames:Array = [];
@@ -160,7 +175,7 @@ package com.brockw.stickwar.campaign
          {
             return;
          }
-         turning = MovieClip(this.mc.map.playbuttonflag.turning);
+         turning = this.mc.map.playbuttonflag.turning;
          restoreTurningFrame = turning.currentFrame;
          restoreTurningVisible = turning.visible;
          this.addPrewarmMapFrame(frames,baseFrame == 0 ? 1 : baseFrame);
@@ -185,7 +200,7 @@ package com.brockw.stickwar.campaign
             turning.gotoAndStop(restoreTurningFrame);
          }
       }
-
+      
       private function addPrewarmMapFrame(frames:Array, frame:int) : void
       {
          if(frame < 1 || frame > this.mc.totalFrames || frames.indexOf(frame) != -1)
@@ -194,7 +209,7 @@ package com.brockw.stickwar.campaign
          }
          frames.push(frame);
       }
-
+      
       private function runMapFramePrewarm(frames:Array) : void
       {
          var frame:int = 0;
@@ -276,7 +291,7 @@ package com.brockw.stickwar.campaign
             this.clickPlay(null);
          }
       }
-
+      
       private function clickCompletedReplayLevel(levelIndex:int) : void
       {
          levelIndex = Math.max(0,Math.min(this.main.campaign.levels.length - 1,levelIndex));
@@ -292,7 +307,7 @@ package com.brockw.stickwar.campaign
          this.currentDisplayedLevelText = "";
          this.jumpCompletedMapToSelectedLevel();
       }
-
+      
       private function jumpCompletedMapToSelectedLevel() : void
       {
          if(!this.main.campaign.isGameFinished() || this.selectedReplayLevel == -1)
@@ -307,11 +322,11 @@ package com.brockw.stickwar.campaign
          if(this.hasReplayFlag() && this.mc.map.playbuttonflag.turning != null)
          {
             this.mc.map.playbuttonflag.turning.visible = true;
-            MovieClip(this.mc.map.playbuttonflag.turning).play();
+            this.mc.map.playbuttonflag.turning.play();
          }
          this.bringReplayFlagToFront();
       }
-
+      
       private function getReplayLevelFromClickTarget(target:Object, stageX:Number, stageY:Number) : int
       {
          var current:DisplayObject = target as DisplayObject;
@@ -336,7 +351,7 @@ package com.brockw.stickwar.campaign
          }
          return this.getReplayLevelFromCompletedMapPoint(stageX,stageY);
       }
-
+      
       private function getReplayLevelFromCompletedMapPoint(stageX:Number, stageY:Number) : int
       {
          var dx:Number = 0;
@@ -362,35 +377,20 @@ package com.brockw.stickwar.campaign
          }
          return -1;
       }
-
+      
       private function createReplayClickZones() : void
       {
          var spot:Array = null;
          var zone:Sprite = null;
          var radius:Number = 10;
-         var spots:Array = [
-            [563,523,0],
-            [538,358,1],
-            [511,430,2],
-            [283,470,3],
-            [-231,416,4],
-            [250,295,5],
-            [123,190,6],
-            [177,11,7],
-            [267,-245,8],
-            [-152,-421,9],
-            [-322,-207,10],
-            [-149,-53,11],
-            [-36,38,12],
-            [-13,114,13]
-         ];
+         var spots:Array = [[563,523,0],[538,358,1],[511,430,2],[283,470,3],[-231,416,4],[250,295,5],[123,190,6],[177,11,7],[267,-245,8],[-152,-421,9],[-322,-207,10],[-149,-53,11],[-36,38,12],[-13,114,13]];
          this.clearReplayClickZones();
          this.replayClickZones = [];
          for each(spot in spots)
          {
             zone = new Sprite();
             zone.name = "replayLevel" + (int(spot[2]) + 1);
-            zone.graphics.beginFill(0x770000,0.85);
+            zone.graphics.beginFill(7798784,0.85);
             zone.graphics.drawCircle(0,0,radius);
             zone.graphics.endFill();
             zone.x = Number(spot[0]);
@@ -401,7 +401,7 @@ package com.brockw.stickwar.campaign
             this.replayClickZones.push(zone);
          }
       }
-
+      
       private function clearReplayClickZones() : void
       {
          var zone:Sprite = null;
@@ -418,7 +418,7 @@ package com.brockw.stickwar.campaign
          }
          this.replayClickZones = null;
       }
-
+      
       private function startMapPan(evt:MouseEvent) : void
       {
          if(!this.main.campaign.isGameFinished() || this.isBottomPanelClick(evt.target))
@@ -430,7 +430,7 @@ package com.brockw.stickwar.campaign
          this.mapPanStartMap = new Point(this.mc.map.x,this.mc.map.y);
          this.mapPanMoved = false;
       }
-
+      
       private function updateMapPan(evt:MouseEvent) : void
       {
          if(!this.isMapPanning || this.mapPanStartMouse == null || this.mapPanStartMap == null)
@@ -445,7 +445,7 @@ package com.brockw.stickwar.campaign
          this.mc.map.y = this.mapPanStartMap.y + evt.stageY - this.mapPanStartMouse.y;
          this.clampCompletedMapToScreen();
       }
-
+      
       private function zoomCompletedMap(evt:MouseEvent) : void
       {
          var before:Point = null;
@@ -466,12 +466,12 @@ package com.brockw.stickwar.campaign
          this.mc.map.y += evt.stageY - after.y;
          this.clampCompletedMapToScreen();
       }
-
+      
       private function stopMapPan(evt:MouseEvent) : void
       {
          this.isMapPanning = false;
       }
-
+      
       private function isBottomPanelClick(target:Object) : Boolean
       {
          var current:DisplayObject = target as DisplayObject;
@@ -485,12 +485,12 @@ package com.brockw.stickwar.campaign
          }
          return false;
       }
-
+      
       private function clamp(value:Number, min:Number, max:Number) : Number
       {
          return Math.max(min,Math.min(max,value));
       }
-
+      
       private function resetCompletedMapTransform() : void
       {
          if(this.mc == null || this.mc.map == null)
@@ -502,7 +502,7 @@ package com.brockw.stickwar.campaign
          this.mc.map.scaleX = 1;
          this.mc.map.scaleY = 1;
       }
-
+      
       private function centerCompletedMapOnScreen() : void
       {
          var bounds:Rectangle = null;
@@ -515,7 +515,7 @@ package com.brockw.stickwar.campaign
          this.mc.map.y += this.main.stage.stageHeight / 2 - (bounds.top + bounds.height / 2);
          this.clampCompletedMapToScreen();
       }
-
+      
       private function bringReplayFlagToFront() : void
       {
          var flag:DisplayObject = this.getReplayFlag();
@@ -530,7 +530,7 @@ package com.brockw.stickwar.campaign
             this.mc.map.setChildIndex(flag,this.mc.map.numChildren - 1);
          }
       }
-
+      
       private function removeDuplicateReplayFlags() : void
       {
          var i:int = 0;
@@ -550,7 +550,7 @@ package com.brockw.stickwar.campaign
                {
                   this.mc.map.removeChild(child);
                }
-               --i;
+               i--;
             }
          }
          catch(e:Error)
@@ -558,12 +558,12 @@ package com.brockw.stickwar.campaign
             return;
          }
       }
-
+      
       private function hasReplayFlag() : Boolean
       {
          return this.getReplayFlag() != null;
       }
-
+      
       private function getReplayFlag() : DisplayObject
       {
          var flag:DisplayObject = null;
@@ -580,7 +580,7 @@ package com.brockw.stickwar.campaign
          }
          return flag;
       }
-
+      
       private function clampCompletedMapToScreen() : void
       {
          var bounds:Rectangle = null;
@@ -625,7 +625,7 @@ package com.brockw.stickwar.campaign
             }
          }
       }
-
+      
       private function updateMapBackdrop() : void
       {
          this.mapBackdrop.graphics.clear();
@@ -633,7 +633,7 @@ package com.brockw.stickwar.campaign
          this.mapBackdrop.graphics.drawRect(0,0,this.main.stage.stageWidth,this.main.stage.stageHeight);
          this.mapBackdrop.graphics.endFill();
       }
-
+      
       private function getLevelNumberFromDisplayName(name:String) : int
       {
          var i:int = 0;
@@ -653,7 +653,7 @@ package com.brockw.stickwar.campaign
             {
                break;
             }
-            ++i;
+            i++;
          }
          while(i < lower.length)
          {
@@ -663,11 +663,11 @@ package com.brockw.stickwar.campaign
                break;
             }
             digits += lower.charAt(i);
-            ++i;
+            i++;
          }
          return digits == "" ? -1 : int(digits);
       }
-
+      
       private function getLevelNumberFromFrameLabel(label:String) : int
       {
          if(label == null || label.indexOf("level") != 0)
@@ -697,6 +697,12 @@ package com.brockw.stickwar.campaign
          }
          targetFrameLabel = isCompleted && this.selectedReplayLevel != -1 ? this.mc.currentFrameLabel : (isCompleted ? "level" + this.completedMapFrame : "level" + (this.main.campaign.currentLevel + 1));
          this.mc.stop();
+         if(!this.canAdvanceMapThisFrame())
+         {
+            this.syncMapToCurrentFrame();
+            this.updateLevelDisplayText();
+            return;
+         }
          if(this.mc.currentFrameLabel != targetFrameLabel)
          {
             this.stepMapTowardLevel(targetFrameLabel);
@@ -712,7 +718,7 @@ package com.brockw.stickwar.campaign
             if(this.hasReplayFlag())
             {
                this.mc.map.playbuttonflag.turning.visible = false;
-               MovieClip(this.mc.map.playbuttonflag.turning).stop();
+               this.mc.map.playbuttonflag.turning.stop();
             }
          }
          else
@@ -724,7 +730,7 @@ package com.brockw.stickwar.campaign
             if(this.hasReplayFlag())
             {
                this.mc.map.playbuttonflag.turning.visible = true;
-               MovieClip(this.mc.map.playbuttonflag.turning).play();
+               this.mc.map.playbuttonflag.turning.play();
             }
             this.mc.bottomPanel.y += (BOTTOM_PANEL_TARGET_Y - this.mc.bottomPanel.y) * 1;
          }
@@ -745,7 +751,7 @@ package com.brockw.stickwar.campaign
             this.mc.bottomPanel.campaignButtons.autoSaveEnabled.visible = this.currentAutoSaveVisible;
          }
       }
-
+      
       private function stepMapTowardLevel(targetFrameLabel:String) : void
       {
          var currentLevel:int = this.getLevelNumberFromFrameLabel(this.mc.currentFrameLabel);
@@ -757,10 +763,45 @@ package com.brockw.stickwar.campaign
          }
          this.mc.nextFrame();
       }
-
+      
+      private function syncMapToCurrentFrame() : void
+      {
+         if(this.mc == null || this.mc.map == null)
+         {
+            return;
+         }
+         this.currentDisplayedMapFrame = this.mc.currentFrame;
+         this.mc.map.gotoAndStop(this.currentDisplayedMapFrame);
+      }
+      
+      private function canAdvanceMapThisFrame() : Boolean
+      {
+         if(this.mapCanAdvance)
+         {
+            return true;
+         }
+         if(!this.visible)
+         {
+            ++this.mapHiddenFrames;
+            return false;
+         }
+         if(this.mapHiddenFrames > 2 && !this.mapStartDelayApplied)
+         {
+            this.mapStartDelayFrames = 16;
+            this.mapStartDelayApplied = true;
+         }
+         if(this.mapStartDelayFrames > 0)
+         {
+            --this.mapStartDelayFrames;
+            return false;
+         }
+         this.mapCanAdvance = true;
+         return true;
+      }
+      
       private function updateLevelDisplayText() : void
       {
-         var level:Level = this.main.campaign.isGameFinished() && this.selectedReplayLevel != -1 ? Level(this.main.campaign.levels[this.selectedReplayLevel]) : this.main.campaign.getCurrentLevel();
+         var level:Level = this.main.campaign.isGameFinished() && this.selectedReplayLevel != -1 ? this.main.campaign.levels[this.selectedReplayLevel] : this.main.campaign.getCurrentLevel();
          var levelText:String = null;
          if(level == null)
          {
@@ -805,3 +846,4 @@ package com.brockw.stickwar.campaign
       }
    }
 }
+

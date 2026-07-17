@@ -13,6 +13,10 @@ package com.brockw.stickwar.campaign.controllers
       public function update(gameScreen:GameScreen) : void
       {
       }
+      
+      public function cleanUp(gameScreen:GameScreen) : void
+      {
+      }
    }
 }
 

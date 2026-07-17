@@ -1,9 +1,9 @@
 package com.brockw.stickwar.engine.Team
 {
    import com.brockw.game.Util;
+   import com.brockw.stickwar.GameScreen;
    import com.brockw.stickwar.campaign.CampaignGameScreen;
    import com.brockw.stickwar.campaign.controllers.CampaignCutScene2;
-   import com.brockw.stickwar.GameScreen;
    import com.brockw.stickwar.engine.Ai.*;
    import com.brockw.stickwar.engine.Ai.command.*;
    import com.brockw.stickwar.engine.Entity;
@@ -16,10 +16,10 @@ package com.brockw.stickwar.engine.Team
    import com.brockw.stickwar.market.*;
    import com.brockw.stickwar.singleplayer.SingleplayerGameScreen;
    import flash.display.MovieClip;
+   import flash.filters.GlowFilter;
    import flash.geom.ColorTransform;
    import flash.text.TextField;
    import flash.utils.Dictionary;
-   import flash.utils.getTimer;
    
    public class Team
    {
@@ -50,6 +50,8 @@ package com.brockw.stickwar.engine.Team
       
       public var medianPosition:Number;
       
+      public var forwardMilitaryPosition:Number;
+      
       public var attackingForcePopulation:int;
       
       private var _unitsAvailable:Dictionary;
@@ -79,6 +81,8 @@ package com.brockw.stickwar.engine.Team
       private var _mana:int;
       
       private var _isEnemy:Boolean;
+      
+      public var bypassMana:Boolean;
       
       private var _currentAttackState:int;
       
@@ -116,6 +120,8 @@ package com.brockw.stickwar.engine.Team
       
       protected var _buttonInfoMap:Dictionary;
       
+      private var _isBossMode:Boolean = false;
+      
       protected var _base:Entity;
       
       protected var _buildings:Dictionary;
@@ -147,6 +153,8 @@ package com.brockw.stickwar.engine.Team
       private var passiveIncomeAmountUpgraded3:Number;
       
       public var techAllowed:Dictionary;
+      
+      public var hideBossTechs:Boolean;
       
       private var passiveMana:Number;
       
@@ -181,8 +189,10 @@ package com.brockw.stickwar.engine.Team
       private var _statueType:String;
       
       private var _originalType:int;
-
+      
       private var _armyChangeVersion:int;
+      
+      public var createTimeMultiplier:Number;
       
       public function Team(game:StickWar)
       {
@@ -199,6 +209,7 @@ package com.brockw.stickwar.engine.Team
          this.game = game;
          this.isEnemy = false;
          this.medianPosition = 0;
+         this.forwardMilitaryPosition = 0;
          this._unitProductionQueue = new Dictionary();
          this._buildings = new Dictionary();
          this.unitInfo = new Dictionary();
@@ -229,6 +240,7 @@ package com.brockw.stickwar.engine.Team
          this._damageModifier = 1;
          this._originalType = 0;
          this._armyChangeVersion = 0;
+         this.createTimeMultiplier = 1;
       }
       
       public static function getTeamFromId(id:int, game:StickWar, health:int, techAllowed:Dictionary, handicap:* = 1, healthModifier:Number = 1) : Team
@@ -358,15 +370,15 @@ package com.brockw.stickwar.engine.Team
          {
             if(u.type == this.getMinerType())
             {
-               if(MinerAi(u.ai).targetOre != null)
+               if(u.ai.targetOre != null)
                {
                   m = new UnitMove();
                   m.moveType = UnitCommand.MOVE;
                   m.units.push(u.id);
                   m.owner = this.id;
-                  m.arg0 = MinerAi(u.ai).targetOre.x;
-                  m.arg1 = MinerAi(u.ai).targetOre.y;
-                  m.arg4 = MinerAi(u.ai).targetOre.id;
+                  m.arg0 = u.ai.targetOre.x;
+                  m.arg1 = u.ai.targetOre.y;
+                  m.arg4 = u.ai.targetOre.id;
                   if(!isLocal)
                   {
                      this.game.gameScreen.doMove(m,this.id);
@@ -443,15 +455,15 @@ package com.brockw.stickwar.engine.Team
          for(unit in this.units)
          {
             u = this.units[unit];
-            if((u.type == Unit.U_MINER || u.type == Unit.U_CHAOS_MINER) && MinerAi(u.ai).targetOre != null)
+            if((u.type == Unit.U_MINER || u.type == Unit.U_CHAOS_MINER) && u.ai.targetOre != null)
             {
                m = new UnitMove();
                m.moveType = UnitCommand.MOVE;
                m.units.push(u.id);
                m.owner = this.id;
-               m.arg0 = MinerAi(u.ai).targetOre.x;
-               m.arg1 = MinerAi(u.ai).targetOre.y;
-               m.arg4 = MinerAi(u.ai).targetOre.id;
+               m.arg0 = u.ai.targetOre.x;
+               m.arg1 = u.ai.targetOre.y;
+               m.arg4 = u.ai.targetOre.id;
                if(!isLocal)
                {
                   this.game.gameScreen.doMove(m,this.id);
@@ -501,15 +513,15 @@ package com.brockw.stickwar.engine.Team
             u = this.units[unit];
             if(u.type == Unit.U_MINER || u.type == Unit.U_CHAOS_MINER)
             {
-               if(MinerAi(u.ai).targetOre != null)
+               if(u.ai.targetOre != null)
                {
                   m = new UnitMove();
                   m.moveType = UnitCommand.MOVE;
                   m.units.push(u.id);
                   m.owner = this.id;
-                  m.arg0 = MinerAi(u.ai).targetOre.x;
-                  m.arg1 = MinerAi(u.ai).targetOre.y;
-                  m.arg4 = MinerAi(u.ai).targetOre.id;
+                  m.arg0 = u.ai.targetOre.x;
+                  m.arg1 = u.ai.targetOre.y;
+                  m.arg4 = u.ai.targetOre.id;
                   if(!isLocal)
                   {
                      this.game.gameScreen.doMove(m,this.id);
@@ -660,14 +672,14 @@ package com.brockw.stickwar.engine.Team
       {
          if(this.buttonInfoMap != null)
          {
-            if(String(unit.type) in this.buttonInfoMap)
+            if(unit.type in this.buttonInfoMap)
             {
                ++this.buttonInfoMap[unit.type][3];
             }
          }
          this._unitProductionQueue[this.unitInfo[unit.type][2]].push([unit,0]);
       }
-
+      
       private function getEffectiveCreateTime(unit:Unit) : Number
       {
          if(unit == null)
@@ -676,11 +688,11 @@ package com.brockw.stickwar.engine.Team
          }
          if(this.hasActiveCommanderTrainingAura(unit.type))
          {
-            return unit.createTime * 0.7;
+            return unit.createTime * 0.8 * this.createTimeMultiplier;
          }
-         return unit.createTime;
+         return unit.createTime * this.createTimeMultiplier;
       }
-
+      
       private function hasActiveCommanderTrainingAura(unitType:int) : Boolean
       {
          var unit:Unit = null;
@@ -694,17 +706,16 @@ package com.brockw.stickwar.engine.Team
          }
          for each(unit in this.unitGroups[unitType])
          {
-            if(unit == null || !unit.isAlive() || unit.isGarrisoned || unit.campaignBossEscaping)
+            if(!(unit == null || !unit.isAlive() || unit.isGarrisoned || unit.campaignBossEscaping))
             {
-               continue;
-            }
-            if(unitType == Unit.U_SPEARTON && unit is Spearton && Spearton(unit).isBoss)
-            {
-               return true;
-            }
-            if(unitType == Unit.U_KNIGHT && unit is Knight && Knight(unit).isBoss)
-            {
-               return true;
+               if(unitType == Unit.U_SPEARTON && unit is Spearton && unit.isBoss)
+               {
+                  return true;
+               }
+               if(unitType == Unit.U_KNIGHT && unit is Knight && unit.isBoss)
+               {
+                  return true;
+               }
             }
          }
          return false;
@@ -718,7 +729,8 @@ package com.brockw.stickwar.engine.Team
          var unit:Unit = null;
          if(backwards)
          {
-            for(i = this._unitProductionQueue[building].length - 1; i >= 0; i--)
+            i = this._unitProductionQueue[building].length - 1;
+            while(i >= 0)
             {
                u = this._unitProductionQueue[building][i][0];
                if(u.type == type)
@@ -727,11 +739,13 @@ package com.brockw.stickwar.engine.Team
                   this._unitProductionQueue[building].splice(i,1);
                   break;
                }
+               i--;
             }
          }
          else
          {
-            for(i = 0; i < this._unitProductionQueue[building].length; i++)
+            i = 0;
+            while(i < this._unitProductionQueue[building].length)
             {
                u = this._unitProductionQueue[building][i][0];
                if(u.type == type)
@@ -740,6 +754,7 @@ package com.brockw.stickwar.engine.Team
                   this._unitProductionQueue[building].splice(i,1);
                   break;
                }
+               i++;
             }
          }
          if(unit == null)
@@ -748,7 +763,7 @@ package com.brockw.stickwar.engine.Team
          }
          if(this.buttonInfoMap != null)
          {
-            if(String(unit.type) in this.buttonInfoMap)
+            if(unit.type in this.buttonInfoMap)
             {
                --this.buttonInfoMap[unit.type][3];
             }
@@ -758,6 +773,11 @@ package com.brockw.stickwar.engine.Team
       
       public function initTeamButtons(gameScreen:GameScreen) : void
       {
+      }
+      
+      public function toggleBossMode() : Boolean
+      {
+         return false;
       }
       
       public function spawnUnitGroup(u:Array) : void
@@ -807,9 +827,9 @@ package com.brockw.stickwar.engine.Team
             overlay = this.buttonInfoMap[key][1];
             button = this.buttonInfoMap[key][0];
             cancelButtonMc = this.buttonInfoMap[key][4];
-            number = TextField(MovieClip(this.buttonInfoMap[key][0]).getChildByName("number"));
-            underlay = MovieClip(this.buttonInfoMap[key][8]);
-            highlight = MovieClip(this.buttonInfoMap[key][7]);
+            number = this.buttonInfoMap[key][0].getChildByName("number");
+            underlay = this.buttonInfoMap[key][8];
+            highlight = this.buttonInfoMap[key][7];
             if(Boolean(this.unitsAvailable) && !(key in this.unitsAvailable))
             {
                button.visible = false;
@@ -824,7 +844,54 @@ package com.brockw.stickwar.engine.Team
                {
                   underlay.visible = true;
                }
+               if(this._isBossMode)
+               {
+                  if(this.isBossUnitType(int(key)))
+                  {
+                     var bossUnlockTech:int = this.getBossUnlockTechForUnit(int(key));
+                     var isUnlocked:Boolean = this.techAllowed == null || bossUnlockTech in this.techAllowed;
+                     if(isUnlocked)
+                     {
+                        button.filters = [new GlowFilter(16766720,1,8,8,2)];
+                        button.mouseEnabled = true;
+                     }
+                     else
+                     {
+                        button.visible = false;
+                        button.mouseEnabled = false;
+                        overlay.visible = false;
+                        if(underlay != null)
+                        {
+                           underlay.visible = false;
+                        }
+                     }
+                  }
+                  else
+                  {
+                     button.visible = false;
+                     button.mouseEnabled = false;
+                     overlay.visible = false;
+                     if(underlay != null)
+                     {
+                        underlay.visible = false;
+                     }
+                  }
+               }
+               else
+               {
+                  button.filters = [];
+                  button.mouseEnabled = true;
+               }
                number.text = "" + this.buttonInfoMap[key][3];
+               var buildingType:int = int(this.unitInfo[key][2]);
+               if(this._unitProductionQueue[buildingType].length != 0 && this._unitProductionQueue[buildingType][0][0].type == int(key) && this._unitProductionQueue[buildingType][0][0].queuedAsBoss)
+               {
+                  number.textColor = 16766720;
+               }
+               else
+               {
+                  number.textColor = 16777215;
+               }
                if(this.buttonInfoMap[key][3] > 0)
                {
                   cancelButtonMc.visible = true;
@@ -841,9 +908,9 @@ package com.brockw.stickwar.engine.Team
                   cancelButtonMc.visible = false;
                }
                k = int(this.unitInfo[key][2]);
-               if(this._unitProductionQueue[k].length != 0 && Unit(this._unitProductionQueue[k][0][0]).type == int(key))
+               if(this._unitProductionQueue[k].length != 0 && this._unitProductionQueue[k][0][0].type == int(key))
                {
-                  this.drawTimerOverlay(this.buttonInfoMap[key][6],overlay,this._unitProductionQueue[k][0][1] / this.getEffectiveCreateTime(Unit(this._unitProductionQueue[k][0][0])));
+                  this.drawTimerOverlay(this.buttonInfoMap[key][6],overlay,this._unitProductionQueue[k][0][1] / this.getEffectiveCreateTime(this._unitProductionQueue[k][0][0]));
                }
                else
                {
@@ -855,7 +922,7 @@ package com.brockw.stickwar.engine.Team
                }
                tip = this.buttonInfoMap[key][2];
                overlay.visible = true;
-               if(isCanceling == false && button.hitTestPoint(x,y,false))
+               if(isCanceling == false && button.visible && button.hitTestPoint(x,y,false))
                {
                   if(gameScreen.userInterface.mouseState.clicked)
                   {
@@ -869,6 +936,16 @@ package com.brockw.stickwar.engine.Team
                         this.game.gameScreen.userInterface.helpMessage.showMessage("Not enough mana to construct unit");
                         this.game.soundManager.playSoundFullVolume("UnitMakeFail");
                      }
+                     else if(this._isBossMode && this.isBossUnitType(int(key)) && this.hasAliveBossOfType(int(key)))
+                     {
+                        this.game.gameScreen.userInterface.helpMessage.showMessage(tip.child("name") + " Boss already exists");
+                        this.game.soundManager.playSoundFullVolume("UnitMakeFail");
+                     }
+                     else if(this._isBossMode && this.isBossUnitType(int(key)) && this.countAlivePlayerBosses() + this.countQueuedPlayerBosses() >= 3)
+                     {
+                        this.game.gameScreen.userInterface.helpMessage.showMessage("Maximum bosses alive reached");
+                        this.game.soundManager.playSoundFullVolume("UnitMakeFail");
+                     }
                      else
                      {
                         c = new UnitCreateMove();
@@ -879,7 +956,15 @@ package com.brockw.stickwar.engine.Team
                   }
                   highlight.visible = true;
                   overlay.visible = false;
-                  this.updateButtonOverXML(this.game,tip);
+                  if(this._isBossMode && this.isBossUnitType(int(key)))
+                  {
+                     var bossTipXml:XMLList = this.game.xml.xml.Order.Units[this.getBossXmlName(int(key))];
+                     this.updateButtonOver(this.game,bossTipXml.child("name"),bossTipXml.child("info"),int(tip.child("cooldown")),int(bossTipXml.child("gold")),int(bossTipXml.child("mana")),int(bossTipXml.child("population")));
+                  }
+                  else
+                  {
+                     this.updateButtonOverXML(this.game,tip);
+                  }
                }
             }
          }
@@ -924,6 +1009,135 @@ package com.brockw.stickwar.engine.Team
          this._isEnemy = value;
       }
       
+      public function get isBossMode() : Boolean
+      {
+         return this._isBossMode;
+      }
+      
+      public function set isBossMode(value:Boolean) : void
+      {
+         this._isBossMode = value;
+      }
+      
+      public function isBossUnitType(type:int) : Boolean
+      {
+         return type == Unit.U_SPEARTON || type == Unit.U_ARCHER || type == Unit.U_NINJA || type == Unit.U_MAGIKILL || type == Unit.U_MONK;
+      }
+      
+      public function getBossUnlockTechForUnit(type:int) : int
+      {
+         switch(type)
+         {
+            case Unit.U_SPEARTON:
+               return Tech.BOSS_SPEARTON_UNLOCK;
+            case Unit.U_ARCHER:
+               return Tech.BOSS_ARCHER_UNLOCK;
+            case Unit.U_NINJA:
+               return Tech.BOSS_NINJA_UNLOCK;
+            case Unit.U_MONK:
+               return Tech.BOSS_MONK_UNLOCK;
+            case Unit.U_MAGIKILL:
+               return Tech.BOSS_MAGIKILL_UNLOCK;
+            default:
+               return 0;
+         }
+      }
+      
+      public function getBossXmlName(type:int) : String
+      {
+         switch(type)
+         {
+            case Unit.U_SPEARTON:
+               return "spearos";
+            case Unit.U_ARCHER:
+               return "archis";
+            case Unit.U_NINJA:
+               return "shade";
+            case Unit.U_MONK:
+               return "vitalis";
+            case Unit.U_MAGIKILL:
+               return "magis";
+            default:
+               return "";
+         }
+      }
+      
+      public function isAnyBossUnlocked() : Boolean
+      {
+         if(this.techAllowed == null)
+         {
+            return true;
+         }
+         return Tech.BOSS_SPEARTON_UNLOCK in this.techAllowed || Tech.BOSS_ARCHER_UNLOCK in this.techAllowed || Tech.BOSS_NINJA_UNLOCK in this.techAllowed || Tech.BOSS_MONK_UNLOCK in this.techAllowed || Tech.BOSS_MAGIKILL_UNLOCK in this.techAllowed;
+      }
+      
+      public function hasAliveBossOfType(type:int) : Boolean
+      {
+         var unit:Unit = null;
+         var group:Array = this.unitGroups[type];
+         if(group == null)
+         {
+            return false;
+         }
+         for each(unit in group)
+         {
+            if(unit != null && unit.isAlive() && unit.isBoss)
+            {
+               return true;
+            }
+         }
+         return false;
+      }
+      
+      public function countAlivePlayerBosses() : int
+      {
+         var count:int = 0;
+         var unit:Unit = null;
+         for each(unit in this.units)
+         {
+            if(unit != null && unit.isAlive() && unit.isBossUnit && !this.isAi)
+            {
+               count++;
+            }
+         }
+         return count;
+      }
+      
+      public function countQueuedPlayerBosses() : int
+      {
+         var count:int = 0;
+         for(var building in this._unitProductionQueue)
+         {
+            for each(var entry in this._unitProductionQueue[building])
+            {
+               if(entry != null && entry.length >= 1 && entry[0] != null && entry[0].queuedAsBoss)
+               {
+                  count++;
+               }
+            }
+         }
+         return count;
+      }
+      
+      public function hasQueuedBossOfType(type:int) : Boolean
+      {
+         var building:* = undefined;
+         var queue:Array = null;
+         var entry:Array = null;
+         for(building in this._unitProductionQueue)
+         {
+            queue = this._unitProductionQueue[building];
+            for each(entry in queue)
+            {
+               if(entry != null && entry.length >= 1 && entry[0] != null && entry[0].type == type && entry[0].queuedAsBoss)
+               {
+                  return true;
+               }
+            }
+         }
+         return false;
+      }
+      
       public function get game() : StickWar
       {
          return this._game;
@@ -937,6 +1151,7 @@ package com.brockw.stickwar.engine.Team
       public function spawnUnit(type:int, game:StickWar) : void
       {
          var unit:Unit = null;
+         var popMultiplier:int = 1;
          if(type >= 0)
          {
             if(this.unitsAvailable != null && !(type in this.unitsAvailable))
@@ -947,11 +1162,22 @@ package com.brockw.stickwar.engine.Team
             {
                return;
             }
+            if(this._isBossMode && this.isBossUnitType(type) && (this.hasAliveBossOfType(type) || this.hasQueuedBossOfType(type)))
+            {
+               return;
+            }
+            popMultiplier = 1;
             unit = null;
             if(this.gold >= this.unitInfo[type][0] && this.mana >= this.unitInfo[type][1])
             {
-               unit = Unit(game.unitFactory.getUnit(int(type)));
-               if(unit.population + this._population > this.populationLimit)
+               unit = game.unitFactory.getUnit(type);
+               var spawnPop:int = unit.population;
+               if(this._isBossMode && this.isBossUnitType(type))
+               {
+                  var bossXml:XMLList = this.game.xml.xml.Order.Units[this.getBossXmlName(type)];
+                  spawnPop = int(bossXml.child("population"));
+               }
+               if(spawnPop * popMultiplier + this._population > this.populationLimit)
                {
                   game.unitFactory.returnUnit(unit.type,unit);
                   unit = null;
@@ -975,25 +1201,47 @@ package com.brockw.stickwar.engine.Team
             }
             if(unit != null)
             {
+               unit.queuedAsBoss = this._isBossMode && this.isBossUnitType(type);
+               unit.goldPaid = this.unitInfo[type][0];
+               unit.manaPaid = this.unitInfo[type][1];
                this.queueUnit(unit);
-               this._population += unit.population;
+               this._population += spawnPop * popMultiplier;
             }
          }
-         else if(this.dequeueUnit(-int(type),true) != null)
+         else
          {
-            this.gold += int(this.unitInfo[-type][0]);
-            this.mana += int(this.unitInfo[-type][1]);
-            unit = Unit(game.unitFactory.getUnit(-int(type)));
-            this._population -= unit.population;
+            var dequeuedUnit:Unit = this.dequeueUnit(-type,true);
+            if(dequeuedUnit != null)
+            {
+               popMultiplier = 1;
+               this.gold += dequeuedUnit.goldPaid;
+               this.mana += dequeuedUnit.manaPaid;
+               var cancelPop:int = dequeuedUnit.population;
+               if(dequeuedUnit.queuedAsBoss)
+               {
+                  var cancelBossXml:XMLList = this.game.xml.xml.Order.Units[this.getBossXmlName(dequeuedUnit.type)];
+                  cancelPop = int(cancelBossXml.child("population"));
+               }
+               this._population -= cancelPop * popMultiplier;
+            }
          }
       }
       
       public function spawn(unit:Unit, game:StickWar) : void
       {
+         if(unit == null || game == null || unit.mc == null)
+         {
+            return;
+         }
          unit.isTowerSpawned = false;
          unit.forceTowerSpawnVisual = false;
          unit.suppressTowerSpawnVisual = false;
          unit.isBossSummoned = false;
+         unit.isBossUnit = false;
+         unit.isBossMovementLocked = false;
+         var wasQueuedAsBoss:Boolean = unit.queuedAsBoss;
+         unit.queuedAsBoss = false;
+         unit.healthBar.alpha = 1;
          unit.isDead = false;
          unit.isDieing = false;
          unit.team = this;
@@ -1036,6 +1284,8 @@ package com.brockw.stickwar.engine.Team
          unit.x = -100;
          unit.y = -100;
          unit.init(game);
+         unit.healthBar.totalHealth = unit.maxHealth;
+         unit.healthBar.health = unit.health;
          unit.healthBar.reset();
          this.units.push(unit);
          game.battlefield.addChildAt(unit,0);
@@ -1056,6 +1306,14 @@ package com.brockw.stickwar.engine.Team
          m.goalY = game.map.height / 2 + game.random.nextNumber() * 60 - 30;
          unit.ai.setCommand(game,m);
          unit.cure();
+         if(wasQueuedAsBoss)
+         {
+            unit.makeBoss();
+         }
+         if(!Boolean(this.unitGroups[unit.type]))
+         {
+            this.unitGroups[unit.type] = [];
+         }
          this.unitGroups[unit.type].push(unit);
          if(game.main.isKongregate)
          {
@@ -1077,8 +1335,8 @@ package com.brockw.stickwar.engine.Team
          }
          if(unit.type == Unit.U_MINER || unit.type == Unit.U_CHAOS_MINER)
          {
-            MinerAi(unit.ai).targetOre = null;
-            MinerAi(unit.ai).isUnassigned = true;
+            unit.ai.targetOre = null;
+            unit.ai.isUnassigned = true;
          }
          if(this == game.team)
          {
@@ -1104,7 +1362,14 @@ package com.brockw.stickwar.engine.Team
          {
             this._population -= unit.population;
          }
-         this.unitGroups[unit.type].splice(this.unitGroups[unit.type].indexOf(unit),1);
+         if(Boolean(this.unitGroups[unit.type]))
+         {
+            var unitGroupIndex:int = int(this.unitGroups[unit.type].indexOf(unit));
+            if(unitGroupIndex != -1)
+            {
+               this.unitGroups[unit.type].splice(unitGroupIndex,1);
+            }
+         }
          if(unit.id in this.garrisonedUnits)
          {
             delete this.garrisonedUnits[unit.id];
@@ -1119,16 +1384,23 @@ package com.brockw.stickwar.engine.Team
       
       public function removeUnitCompletely(unit:Unit, game:StickWar) : void
       {
-         this._units.splice(this._units.indexOf(unit),1);
+         var unitIndex:int = this._units.indexOf(unit);
+         if(unitIndex != -1)
+         {
+            this._units.splice(unitIndex,1);
+         }
          delete game.units[unit.id];
          if(game.battlefield.contains(unit))
          {
             game.battlefield.removeChild(unit);
          }
-         var index:int = int(this.unitGroups[unit.type].indexOf(unit));
-         if(index != -1)
+         if(Boolean(this.unitGroups[unit.type]))
          {
-            this.unitGroups[unit.type].splice(index,1);
+            var index:int = int(this.unitGroups[unit.type].indexOf(unit));
+            if(index != -1)
+            {
+               this.unitGroups[unit.type].splice(index,1);
+            }
          }
          game.unitFactory.returnUnit(unit.type,unit);
          if(unit.id in this.garrisonedUnits)
@@ -1138,7 +1410,23 @@ package com.brockw.stickwar.engine.Team
          this.notifyCampaignCutScene2SummonRemoved(unit,game);
          ++this._armyChangeVersion;
       }
-
+      
+      public function removeDeadUnit(unit:Unit, game:StickWar) : void
+      {
+         var i:int = 0;
+         while(i < this._deadUnits.length)
+         {
+            if(this._deadUnits[i] == unit)
+            {
+               this._deadUnits[i] = this._deadUnits[this._deadUnits.length - 1];
+               this._deadUnits.length -= 1;
+               break;
+            }
+            i++;
+         }
+         this.removeUnitCompletely(unit,game);
+      }
+      
       private function notifyCampaignCutScene2SummonRemoved(unit:Unit, game:StickWar) : void
       {
          var campaignScreen:CampaignGameScreen = null;
@@ -1147,12 +1435,12 @@ package com.brockw.stickwar.engine.Team
          {
             return;
          }
-         campaignScreen = CampaignGameScreen(game.gameScreen);
+         campaignScreen = game.gameScreen;
          if(!(campaignScreen.campaignController is CampaignCutScene2))
          {
             return;
          }
-         controller = CampaignCutScene2(campaignScreen.campaignController);
+         controller = campaignScreen.campaignController;
          controller.onTrackedMedusaSummonRemoved(unit);
       }
       
@@ -1161,26 +1449,47 @@ package com.brockw.stickwar.engine.Team
          var c:UnitCreateMove = null;
          if(userInterface.keyBoardState.isPressed(key))
          {
+            if(this._isBossMode && !this.isBossUnitType(unitType))
+            {
+               this.game.gameScreen.userInterface.helpMessage.showMessage("Cannot train non-boss units while in boss mode");
+               this.game.soundManager.playSoundFullVolume("UnitMakeFail");
+               return;
+            }
             c = new UnitCreateMove();
             if(userInterface.gameScreen is SingleplayerGameScreen && userInterface.gameScreen.isDebug && userInterface.keyBoardState.isShift)
             {
                c.unitType = unitType;
                userInterface.gameScreen.doMove(c,userInterface.gameScreen.team.enemyTeam.id);
             }
-            else if(this.gold < this.unitInfo[int(unitType)][0])
+            else if(this._isBossMode && this.isBossUnitType(unitType) && this.techAllowed != null && !(this.getBossUnlockTechForUnit(unitType) in this.techAllowed))
+            {
+               this.game.gameScreen.userInterface.helpMessage.showMessage(this.buttonInfoMap[unitType][2].child("name") + " Boss is not unlocked");
+               this.game.soundManager.playSoundFullVolume("UnitMakeFail");
+            }
+            else if(this.gold < this.unitInfo[unitType][0])
             {
                this.game.gameScreen.userInterface.helpMessage.showMessage("Not enough gold to construct unit");
                this.game.soundManager.playSoundFullVolume("UnitMakeFail");
             }
-            else if(this.mana < this.unitInfo[int(unitType)][1])
+            else if(this.mana < this.unitInfo[unitType][1])
             {
                this.game.gameScreen.userInterface.helpMessage.showMessage("Not enough mana to construct unit");
+               this.game.soundManager.playSoundFullVolume("UnitMakeFail");
+            }
+            else if(this._isBossMode && this.isBossUnitType(unitType) && this.hasAliveBossOfType(unitType))
+            {
+               this.game.gameScreen.userInterface.helpMessage.showMessage(this.buttonInfoMap[unitType][2].child("name") + " Boss already exists");
+               this.game.soundManager.playSoundFullVolume("UnitMakeFail");
+            }
+            else if(this._isBossMode && this.isBossUnitType(unitType) && this.countAlivePlayerBosses() + this.countQueuedPlayerBosses() >= 3)
+            {
+               this.game.gameScreen.userInterface.helpMessage.showMessage("Maximum bosses alive reached");
                this.game.soundManager.playSoundFullVolume("UnitMakeFail");
             }
             else
             {
                c = new UnitCreateMove();
-               c.unitType = int(unitType);
+               c.unitType = unitType;
                userInterface.gameScreen.doMove(c,this.id);
                this.game.soundManager.playSoundFullVolume("UnitMake");
             }
@@ -1331,10 +1640,10 @@ package com.brockw.stickwar.engine.Team
          {
             if(queue.length != 0)
             {
-               if(queue[0][1] > this.getEffectiveCreateTime(Unit(queue[0][0])) || isDebug)
+               if(queue[0][1] > this.getEffectiveCreateTime(queue[0][0]) || isDebug)
                {
-                  this.spawn(Unit(queue[0][0]),game);
-                  this.dequeueUnit(Unit(queue[0][0]).type,false);
+                  this.spawn(queue[0][0],game);
+                  this.dequeueUnit(queue[0][0].type,false);
                }
                else
                {
@@ -1352,11 +1661,11 @@ package com.brockw.stickwar.engine.Team
             for(unit in this._units)
             {
                currentUnit = this._units[unit];
-               if(Boolean(currentUnit.isAlive()) && (this._forwardUnit == null || currentUnit.px * this.direction > this._forwardUnit.px * this.direction))
+               if(currentUnit.isAlive() && (this._forwardUnit == null || currentUnit.px * this.direction > this._forwardUnit.px * this.direction))
                {
                   this._forwardUnit = currentUnit;
                }
-               if(Boolean(currentUnit.isAlive()) && Boolean(!currentUnit.isTowerSpawned) && (this._forwardUnitNotSpawn == null || currentUnit.px * this.direction > this._forwardUnitNotSpawn.px * this.direction))
+               if(currentUnit.isAlive() && !currentUnit.isTowerSpawned && (this._forwardUnitNotSpawn == null || currentUnit.px * this.direction > this._forwardUnitNotSpawn.px * this.direction))
                {
                   this._forwardUnitNotSpawn = currentUnit;
                }
@@ -1401,22 +1710,24 @@ package com.brockw.stickwar.engine.Team
             garrisonMove.execute(game);
          }
       }
-
+      
       private function getExpiredDeadUnitIndex() : int
       {
          var i:int = 0;
          var unit:Unit = null;
-         for(i = 0; i < this._deadUnits.length; i++)
+         i = 0;
+         while(i < this._deadUnits.length)
          {
-            unit = Unit(this._deadUnits[i]);
+            unit = this._deadUnits[i];
             if(unit.timeOfDeath > this.getDeadUnitCleanupFrames(unit))
             {
                return i;
             }
+            i++;
          }
          return -1;
       }
-
+      
       private function getDeadUnitCleanupFrames(unit:Unit) : int
       {
          if(unit != null && unit.isBossUnit && unit.type == Unit.U_MAGIKILL)
@@ -1493,10 +1804,10 @@ package com.brockw.stickwar.engine.Team
       {
          return a.px - b.px;
       }
-
+      
       private function countsAsHiddenMilitary(unit:Unit) : Boolean
       {
-         return unit is Miner && Miner(unit).isShadowrathDisguise;
+         return unit is Miner && Boolean(unit.isShadowrathDisguise);
       }
       
       private function isMilitaryFilter(unit:Unit, i:int, a:Array) : Boolean
@@ -1538,6 +1849,25 @@ package com.brockw.stickwar.engine.Team
          if(copyOfUnits.length > 0)
          {
             this.medianPosition = copyOfUnits[Math.floor(copyOfUnits.length / 2)].px;
+         }
+         this.forwardMilitaryPosition = NaN;
+         for each(var mUnit in copyOfUnits)
+         {
+            if(isNaN(this.forwardMilitaryPosition))
+            {
+               this.forwardMilitaryPosition = mUnit.px;
+            }
+            else if(this.direction == 1)
+            {
+               if(mUnit.px > this.forwardMilitaryPosition)
+               {
+                  this.forwardMilitaryPosition = mUnit.px;
+               }
+            }
+            else if(mUnit.px < this.forwardMilitaryPosition)
+            {
+               this.forwardMilitaryPosition = mUnit.px;
+            }
          }
       }
       
@@ -1750,7 +2080,7 @@ package com.brockw.stickwar.engine.Team
       {
          this._garrisonedUnits = value;
       }
-
+      
       public function get deadUnits() : Array
       {
          return this._deadUnits;
@@ -1885,7 +2215,7 @@ package com.brockw.stickwar.engine.Team
       {
          this._currentAttackState = value;
       }
-
+      
       public function get armyChangeVersion() : int
       {
          return this._armyChangeVersion;

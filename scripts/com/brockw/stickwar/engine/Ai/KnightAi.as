@@ -23,10 +23,10 @@ package com.brockw.stickwar.engine.Ai
          {
             return;
          }
-         Knight(unit).tryBossCharge();
+         unit.tryBossCharge();
          if(currentCommand != null && currentCommand.type == UnitCommand.KNIGHT_CHARGE)
          {
-            Knight(unit).charge();
+            unit.charge();
             nextMove(game);
          }
          baseUpdate(game);

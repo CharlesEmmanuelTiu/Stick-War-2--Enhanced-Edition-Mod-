@@ -8,10 +8,9 @@ package com.brockw.stickwar.campaign
    import com.brockw.stickwar.BaseMain;
    import com.brockw.stickwar.GameScreen;
    import com.brockw.stickwar.campaign.controllers.CampaignController;
-   import com.brockw.stickwar.engine.Ai.MinerAi;
+   import com.brockw.stickwar.engine.Ai.command.*;
    import com.brockw.stickwar.engine.Gold;
    import com.brockw.stickwar.engine.Ore;
-   import com.brockw.stickwar.engine.Ai.command.*;
    import com.brockw.stickwar.engine.StickWar;
    import com.brockw.stickwar.engine.Team.Team;
    import com.brockw.stickwar.engine.Team.Tech;
@@ -24,142 +23,125 @@ package com.brockw.stickwar.campaign
    import com.smartfoxserver.v2.requests.ExtensionRequest;
    import flash.display.*;
    import flash.events.*;
-   import flash.system.System;
-   import flash.text.TextField;
-   import flash.text.TextFormat;
-   import flash.ui.Keyboard;
+   import flash.geom.Point;
    import flash.utils.getTimer;
    
    public class CampaignGameScreen extends GameScreen
    {
       
-      private var enemyTeamAi:EnemyTeamAi;
+      private static const SHADOWRATH_LEVEL_TITLE:String = "Silent Assassins: Ninjas Declare War";
+      
+      private static const SHADOWRATH_REVEAL_RANGE_X:Number = 120;
+      
+      private static const SHADOWRATH_REVEAL_RANGE_Y:Number = 70;
+      
+      private static const SHADOWRATH_DEFENSE_RADIUS:Number = 700;
+      
+      private static const SHADOWRATH_REVEAL_STAGGER_FRAMES:int = 8;
+      
+      private static const SHADOWRATH_REDISGUISE_COOLDOWN_FRAMES:int = 30 * 12;
+      
+      private static const SHADOWRATH_INITIAL_DISGUISE_COOLDOWN_FRAMES:int = 30 * 10;
+      
+      private static const SHADOWRATH_HEAVY_UPDATE_INTERVAL_FRAMES:int = 5;
+      
+      private static const DEBUG_SET_ORDER:int = 0;
+      
+      private static const DEBUG_SET_CHAOS:int = 1;
+      
+      private static const LEVEL_TITLE_REBELS_UNITED:String = "Rebels United";
+      
+      private static const LEVEL_TITLE_MAGIKILL_BOSS:String = "Magic in the Air: Wizards and monks Declare War ";
+      
+      private static const LEVEL_TITLE_MEDUSA_GATES:String = "Medusa\'s Gates: The Chaos Capital is in sight. ";
+      
+      private static const LEVEL_TITLE_ECLIPSORS_ATTACK:String = "Shadow of the moon: Eclipsors Attack.";
+      
+      private static const REBELS_BOSS_QUEUE_WAVE_FRAMES:int = 30 * 10;
+      
+      private static const REBELS_BOSS_QUEUE_ACTIVE_SLOTS:int = 3;
+      
+      public var enemyTeamAi:EnemyTeamAi;
       
       private var controller:CampaignController;
       
       public var doAiUpdates:Boolean;
-
-      private var hasTriggeredCampaignReinforcements:Boolean;
-
-      private var enemyReinforcementShieldUntilFrame:int;
-
+      
       private var shadowrathRevealQueue:Array;
-
+      
       private var shadowrathRevealQueued:Object;
-
+      
       private var shadowrathDisguiseCooldowns:Object;
-
+      
       private var shadowrathDisguiseLockUntil:Object;
-
+      
       private var shadowrathSeenForInitialLock:Object;
-
+      
       private var shadowrathLastAttackState:int;
-
+      
       private var cachedDisguisedShadowrathCount:int;
-
-      private static const SHADOWRATH_LEVEL_TITLE:String = "Silent Assassins: Ninjas Declare War";
-
-      private static const SHADOWRATH_REVEAL_RANGE_X:Number = 120;
-
-      private static const SHADOWRATH_REVEAL_RANGE_Y:Number = 70;
-
-      private static const SHADOWRATH_DEFENSE_RADIUS:Number = 700;
-
-      private static const SHADOWRATH_REVEAL_STAGGER_FRAMES:int = 8;
-
-      private static const SHADOWRATH_REDISGUISE_COOLDOWN_FRAMES:int = 30 * 12;
-
-      private static const SHADOWRATH_INITIAL_DISGUISE_COOLDOWN_FRAMES:int = 30 * 10;
-
-      private static const SHADOWRATH_HEAVY_UPDATE_INTERVAL_FRAMES:int = 5;
-
-      private static const PREWARM_INTERVAL_FRAMES:int = 10;
-
-      private static const DEBUG_SET_ORDER:int = 0;
-
-      private static const DEBUG_SET_CHAOS:int = 1;
-
-      private static const LEVEL_TITLE_REBELS_UNITED:String = "Rebels United";
-
-      private static const LEVEL_TITLE_MAGIKILL_BOSS:String = "Magic in the Air: Wizards and monks Declare War ";
-
-      private static const LEVEL_TITLE_MEDUSA_GATES:String = "Medusa's Gates: The Chaos Capital is in sight. ";
-
-      private static const REBELS_BOSS_QUEUE_WAVE_FRAMES:int = 30 * 10;
-
-      private static const REBELS_BOSS_QUEUE_ACTIVE_SLOTS:int = 3;
-
-      private static const MAGIKILL_WARD_MESSAGE:String = "The Magikill Archmage is shielding the statue!\nDefeat him to break the ward.";
-
-      private static const MAGIKILL_WARD_MESSAGE_COOLDOWN_FRAMES:int = 30 * 14;
-
-      private static const MAGIKILL_WARD_MESSAGE_DURATION_FRAMES:int = 30 * 7;
-
-      private static const MEDUSA_LOOK_AT_ME_MESSAGE:String = "Look away to avoid being turned to stone.";
-
-      private static const MEDUSA_LOOK_AT_ME_MESSAGE_COOLDOWN_FRAMES:int = 30 * 14;
-
-      private static const MEDUSA_LOOK_AT_ME_MESSAGE_DURATION_FRAMES:int = 30 * 7;
-
-      private var delayedLevelPrewarmQueue:Array;
-
-      private var nextLevelPrewarmFrame:int;
-
+      
+      private var campaignMusicManager:CampaignMusicManager;
+      
+      private var campaignPrewarmManager:CampaignPrewarmManager;
+      
+      private var campaignBossMessages:CampaignBossMessages;
+      
+      private var campaignBossSpawner:CampaignBossSpawner;
+      
+      private var campaignReinforcementManager:CampaignReinforcementManager;
+      
+      private var campaignDebugTools:CampaignDebugTools;
+      
+      private var _bossGameTipArrow:tutorialArrow;
+      
+      private var _bossGameTipMessageBox:inGameMessageBoxMc;
+      
+      private var _bossGameTipState:int;
+      
+      private var _bossGameTipTimer:int;
+      
+      private var _bossGameTipDismissTimer:int;
+      
       private var debugModeEnabled:Boolean;
-
+      
       private var debugSpawnSet:int;
-
-      private var debugOverlay:TextField;
-
-      private var debugAbilityToast:TextField;
-
-      private var debugAbilityToastText:String;
-
-      private var debugAbilityToastUntilFrame:int;
-
+      
       private var debugLastFrameTick:int;
-
+      
       private var debugLastFrameMs:Number;
-
+      
       private var debugLastRealtimeFps:Number;
-
+      
       private var debugLastPrewarmMs:int;
-
+      
       private var debugLastEnemyAiMs:int;
-
+      
       private var debugLastControllerMs:int;
-
+      
       private var debugLastCoreMs:int;
-
+      
       private var debugLastTotalMs:int;
-
+      
       private var debugForceEnemyAttackFrames:int;
-
+      
       private var debugEnemyTrainingLocked:Boolean;
-
+      
+      private var debugFullVisionEnabled:Boolean;
+      
+      private var debugEnemyAiFrozenAttackMode:Boolean;
+      
+      private var debugPreviousDoAiUpdates:Boolean;
+      
       private var rebelsBossQueueActiveTypes:Object;
-
+      
       private var rebelsBossQueueRecentWaves:Object;
-
+      
       private var rebelsBossQueueWaveUntilFrame:int;
-
+      
       private var rebelsBossQueueDebugText:String;
-
-      private var nextMagikillWardMessageFrame:int;
-
-      private var magikillWardMessageHideFrame:int;
-
-      private var magikillWardMessageActive:Boolean;
-
-      private var magikillWardMessage:inGameMessageBoxMc;
-
-      private var nextMedusaLookAtMeMessageFrame:int;
-
-      private var medusaLookAtMeMessageHideFrame:int;
-
-      private var medusaLookAtMeMessageActive:Boolean;
-
-      private var medusaLookAtMeMessage:inGameMessageBoxMc;
+      
+      private var _wingidonBossSpawned:Boolean;
       
       public function CampaignGameScreen(main:BaseMain)
       {
@@ -187,6 +169,7 @@ package com.brockw.stickwar.campaign
          {
             this.controller = null;
          }
+         this._wingidonBossSpawned = false;
          if(!main.stickWar)
          {
             main.stickWar = new StickWar(main,this);
@@ -221,7 +204,7 @@ package com.brockw.stickwar.campaign
          }
          if(Boolean(level.player.unitsAvailable[Unit.U_NINJA]))
          {
-            upgrade = CampaignUpgrade(main.campaign.upgradeMap["Cloak_BASIC"]);
+            upgrade = main.campaign.upgradeMap["Cloak_BASIC"];
             upgrade.upgraded = true;
             main.campaign.techAllowed[Tech.CLOAK] = 1;
          }
@@ -230,12 +213,27 @@ package com.brockw.stickwar.campaign
          game.team = team;
          game.teamA.id = a;
          game.teamB.id = b;
+         var massiveBattleCompleted:Boolean = false;
+         for each(var mbLevel in main.campaign.levels)
+         {
+            if(mbLevel.title == "Massive Battle" && mbLevel.bestTime >= 0)
+            {
+               massiveBattleCompleted = true;
+               break;
+            }
+         }
+         game.teamA.hideBossTechs = !massiveBattleCompleted;
          game.teamA.unitsAvailable = level.player.unitsAvailable;
          if(main.campaign.isGameFinished())
          {
             this.unlockAllPlayerOrderUnits();
          }
          game.teamB.unitsAvailable = level.oponent.unitsAvailable;
+         if(level.title.indexOf("Ambush:") == 0)
+         {
+            delete game.teamB.unitsAvailable[Unit.U_MINER];
+            delete game.teamB.unitsAvailable[Unit.U_CHAOS_MINER];
+         }
          game.teamA.name = a;
          game.teamB.name = b;
          this.team.enemyTeam.isEnemy = true;
@@ -263,7 +261,7 @@ package com.brockw.stickwar.campaign
             }
             else
             {
-               towerConstructing = ChaosTower(game.unitFactory.getUnit(int(Unit.U_CHAOS_TOWER)));
+               towerConstructing = game.unitFactory.getUnit(Unit.U_CHAOS_TOWER);
                team.enemyTeam.spawn(towerConstructing,game);
                towerConstructing.scaleX *= team.enemyTeam.direction * -1;
                towerConstructing.px = team.enemyTeam.homeX - 900;
@@ -276,19 +274,33 @@ package com.brockw.stickwar.campaign
             if(main.campaign.difficultyLevel == Campaign.D_HARD)
             {
                playerStartingUnits.push(game.team.getMinerType());
+               if(level.title == "Ambush: Undead Horde")
+               {
+                  w = team.addWall(team.homeX + 1200);
+                  w.setConstructionAmount(1);
+               }
             }
             else if(main.campaign.difficultyLevel == Campaign.D_NORMAL)
             {
                playerStartingUnits.push([game.team.getMinerType()]);
-               w = team.addWall(team.homeX + 1200);
-               w.setConstructionAmount(1);
+               if(level.title.indexOf("Ambush:") != 0 || level.title == "Ambush: Undead Horde")
+               {
+                  w = team.addWall(team.homeX + 1200);
+                  w.setConstructionAmount(1);
+               }
             }
          }
          else
          {
             game.teamB.gold = 0;
          }
-         this.initializeLevelPrewarm(level);
+         this.campaignMusicManager = new CampaignMusicManager();
+         this.campaignPrewarmManager = new CampaignPrewarmManager();
+         this.campaignBossMessages = new CampaignBossMessages(this,game);
+         this.campaignBossSpawner = new CampaignBossSpawner(game);
+         this.campaignReinforcementManager = new CampaignReinforcementManager(main,game,team,this.campaignBossSpawner);
+         this.campaignDebugTools = new CampaignDebugTools(this);
+         this.campaignPrewarmManager.initialize(level,game,this.getCampaignReinforcementsForLevel(level.title,Campaign.D_INSANE));
          game.teamA.spawnUnitGroup(level.player.startingUnits);
          game.teamB.spawnUnitGroup(level.oponent.startingUnits);
          if(main.campaign.difficultyLevel > Campaign.D_NORMAL || Team.getIdFromRaceName(main.campaign.getCurrentLevel().oponent.race) == Team.T_CHAOS)
@@ -327,6 +339,13 @@ package com.brockw.stickwar.campaign
             game.teamA.tech.isResearchedMap[Tech.CASTLE_ARCHER_4] = 1;
          }
          userInterface.init(game.team);
+         if(!main.campaign.bossGameTipSeen && team.isAnyBossUnlocked())
+         {
+            this._bossGameTipState = 1;
+            this._bossGameTipTimer = 30;
+            this._bossGameTipDismissTimer = 0;
+            main.campaign.bossGameTipSeen = true;
+         }
          if(team.enemyTeam.type == Team.T_GOOD)
          {
             this.enemyTeamAi = new EnemyGoodTeamAi(team.enemyTeam,main,game);
@@ -340,8 +359,10 @@ package com.brockw.stickwar.campaign
          simulation.hasStarted = true;
          super.enter();
          this.doAiUpdates = true;
-         this.hasTriggeredCampaignReinforcements = false;
-         this.enemyReinforcementShieldUntilFrame = 0;
+         if(this.campaignReinforcementManager != null)
+         {
+            this.campaignReinforcementManager.reset();
+         }
          this.shadowrathRevealQueue = [];
          this.shadowrathRevealQueued = {};
          this.shadowrathDisguiseCooldowns = {};
@@ -349,7 +370,6 @@ package com.brockw.stickwar.campaign
          this.shadowrathSeenForInitialLock = {};
          this.shadowrathLastAttackState = -1;
          this.cachedDisguisedShadowrathCount = 0;
-         this.nextLevelPrewarmFrame = PREWARM_INTERVAL_FRAMES;
          this.debugModeEnabled = false;
          this.debugSpawnSet = DEBUG_SET_ORDER;
          this.debugLastFrameTick = getTimer();
@@ -362,51 +382,21 @@ package com.brockw.stickwar.campaign
          this.debugLastTotalMs = 0;
          this.debugForceEnemyAttackFrames = 0;
          this.debugEnemyTrainingLocked = false;
+         this.debugFullVisionEnabled = false;
+         this.debugEnemyAiFrozenAttackMode = false;
+         this.debugPreviousDoAiUpdates = true;
          this.rebelsBossQueueActiveTypes = {};
          this.rebelsBossQueueRecentWaves = {};
          this.rebelsBossQueueWaveUntilFrame = 0;
          this.rebelsBossQueueDebugText = "";
-         this.nextMagikillWardMessageFrame = 0;
-         this.magikillWardMessageHideFrame = 0;
-         this.magikillWardMessageActive = false;
-         this.magikillWardMessage = null;
-         this.nextMedusaLookAtMeMessageFrame = 0;
-         this.medusaLookAtMeMessageHideFrame = 0;
-         this.medusaLookAtMeMessageActive = false;
-         this.medusaLookAtMeMessage = null;
-         this.debugAbilityToastText = "";
-         this.debugAbilityToastUntilFrame = 0;
-         game.soundManager.playSoundInBackground(this.getCampaignBackgroundMusic());
-      }
-
-      private function getCampaignBackgroundMusic() : String
-      {
-         var title:String = String(this.main.campaign.getCurrentLevel().title);
-         switch(title)
+         var musicName:String = this.campaignMusicManager.getBackgroundMusic(level);
+         if(this.campaignMusicManager.shouldMusicLoop(level))
          {
-            case "Tutorial":
-            case "Silent Assassins: Ninjas Declare War":
-            case "Rebels United":
-            case "Shadow of the moon: Eclipsors Attack.":
-            case "Medusa and the Full Chaos Empire: Final battle":
-               return "battleOfTheShadowElves";
-            case "Blot out the sun: Archidons Declare War":
-            case "Magic in the Air: Wizards and monks Declare War ":
-            case "The Night is Dark: Juggerknights Attack":
-            case " 4 legged Fury: Crawlers Attack":
-            case "Medusa's Gates: The Chaos Capital is in sight. ":
-               return "enteringTheStronghold";
-            case "Massive Battle":
-            case "Explosive War: Bombers Attack":
-            case "Undead War: Deadly Deads Attack":
-            case "Bone Pile: Marrowkai summon war":
-               return "chaosInGame";
-            default:
-               if(Team.getIdFromRaceName(this.main.campaign.getCurrentLevel().oponent.race) == Team.T_GOOD)
-               {
-                  return "orderInGame";
-               }
-               return "chaosInGame";
+            game.soundManager.playSoundInBackground(musicName);
+         }
+         else
+         {
+            game.soundManager.playSoundInBackgroundOnce(musicName);
          }
       }
       
@@ -414,7 +404,11 @@ package com.brockw.stickwar.campaign
       {
          this.handleDebugHotkeys();
          this.tryTriggerCampaignReinforcements();
-         this.processDelayedLevelPrewarm();
+         this.tryWingidonBossSpawn();
+         if(this.campaignPrewarmManager != null)
+         {
+            this.campaignPrewarmManager.process();
+         }
          if(this.doAiUpdates)
          {
             this.enemyTeamAi.update(game);
@@ -430,8 +424,47 @@ package com.brockw.stickwar.campaign
          }
          this.updateShadowrathLevelDisguises();
          super.update(evt,timeDiff);
-         this.updateMagikillWardMessage();
-         this.updateMedusaLookAtMeMessage();
+         if(this.campaignBossMessages != null)
+         {
+            this.campaignBossMessages.update();
+         }
+         if(this._bossGameTipState == 1)
+         {
+            --this._bossGameTipTimer;
+            if(this._bossGameTipTimer <= 0)
+            {
+               this.createBossGameTip();
+               this._bossGameTipState = 2;
+            }
+         }
+         else if(this._bossGameTipState == 2)
+         {
+            if(this._bossGameTipArrow != null)
+            {
+               if(this._bossGameTipArrow.currentFrame == this._bossGameTipArrow.totalFrames)
+               {
+                  this._bossGameTipArrow.gotoAndPlay(1);
+               }
+               else
+               {
+                  this._bossGameTipArrow.nextFrame();
+               }
+            }
+            if(this._bossGameTipMessageBox != null)
+            {
+               var targetX:Number = game.stage.stageWidth / 2;
+               this._bossGameTipMessageBox.x += (targetX - this._bossGameTipMessageBox.x) * 0.4;
+            }
+            ++this._bossGameTipDismissTimer;
+            if(this._bossGameTipDismissTimer >= 300)
+            {
+               this.cleanupBossGameTip();
+            }
+         }
+         if(this.campaignDebugTools != null)
+         {
+            this.campaignDebugTools.update();
+         }
       }
       
       override public function leave() : void
@@ -539,36 +572,116 @@ package com.brockw.stickwar.campaign
          ++simulation.movesInTurn;
       }
       
+      private function createBossGameTip() : void
+      {
+         var btn:* = this.userInterface.hud.hud.bossToggle;
+         if(Boolean(btn))
+         {
+            var localPos:Point = new Point(btn.width / 2,0);
+            var globalPos:Point = btn.localToGlobal(localPos);
+            this._bossGameTipArrow = new tutorialArrow();
+            this._bossGameTipArrow.x = globalPos.x;
+            this._bossGameTipArrow.y = globalPos.y - 40;
+            addChild(this._bossGameTipArrow);
+         }
+         this._bossGameTipMessageBox = new inGameMessageBoxMc();
+         this._bossGameTipMessageBox.text.text = "Click here or press \',\' keybind to switch from a set of normal units to boss units";
+         this._bossGameTipMessageBox.step.text = "";
+         this._bossGameTipMessageBox.tick.visible = false;
+         this._bossGameTipMessageBox.scaleX = 1.3;
+         this._bossGameTipMessageBox.scaleY = 1.3;
+         this._bossGameTipMessageBox.x = game.stage.stageWidth + this._bossGameTipMessageBox.width;
+         this._bossGameTipMessageBox.y = game.stage.stageHeight / 4 - 75;
+         addChild(this._bossGameTipMessageBox);
+      }
+      
+      private function cleanupBossGameTip() : void
+      {
+         this._bossGameTipState = 0;
+         if(this._bossGameTipArrow != null)
+         {
+            if(contains(this._bossGameTipArrow))
+            {
+               removeChild(this._bossGameTipArrow);
+            }
+            this._bossGameTipArrow = null;
+         }
+         if(this._bossGameTipMessageBox != null)
+         {
+            if(contains(this._bossGameTipMessageBox))
+            {
+               removeChild(this._bossGameTipMessageBox);
+            }
+            this._bossGameTipMessageBox = null;
+         }
+      }
+      
       override public function cleanUp() : void
       {
          trace("Do the cleanup");
          this.enemyTeamAi = null;
+         if(this.controller != null)
+         {
+            this.controller.cleanUp(this);
+         }
          this.controller = null;
-         this.hasTriggeredCampaignReinforcements = false;
-         this.enemyReinforcementShieldUntilFrame = 0;
-         this.delayedLevelPrewarmQueue = null;
-         this.nextLevelPrewarmFrame = 0;
+         if(this.campaignPrewarmManager != null)
+         {
+            this.campaignPrewarmManager.reset();
+         }
+         this.campaignMusicManager = null;
+         this.campaignPrewarmManager = null;
+         if(this.campaignBossMessages != null)
+         {
+            this.campaignBossMessages.cleanUp();
+         }
+         this.cleanupBossGameTip();
+         this.campaignBossMessages = null;
+         if(this.campaignBossSpawner != null)
+         {
+            this.campaignBossSpawner.cleanUp();
+         }
+         if(this.campaignReinforcementManager != null)
+         {
+            this.campaignReinforcementManager.cleanUp();
+         }
+         if(this.campaignDebugTools != null)
+         {
+            this.campaignDebugTools.cleanUp();
+         }
+         this.campaignBossSpawner = null;
+         this.campaignReinforcementManager = null;
+         this.campaignDebugTools = null;
          this.debugForceEnemyAttackFrames = 0;
          this.rebelsBossQueueActiveTypes = null;
          this.rebelsBossQueueRecentWaves = null;
          this.rebelsBossQueueWaveUntilFrame = 0;
          this.rebelsBossQueueDebugText = "";
-         this.nextMagikillWardMessageFrame = 0;
-         this.magikillWardMessageHideFrame = 0;
-         this.magikillWardMessageActive = false;
-         this.removeMagikillWardMessage();
-         this.nextMedusaLookAtMeMessageFrame = 0;
-         this.medusaLookAtMeMessageHideFrame = 0;
-         this.medusaLookAtMeMessageActive = false;
-         this.removeMedusaLookAtMeMessage();
-         this.removeDebugOverlay();
          super.cleanUp();
       }
-
+      
       public function showDebugBossAbility(message:String) : void
       {
+         if(!this.debugModeEnabled)
+         {
+            return;
+         }
+         if(this.campaignDebugTools != null)
+         {
+            this.campaignDebugTools.showToast(message);
+         }
       }
-
+      
+      public function setDebugModeEnabled(value:Boolean) : void
+      {
+         this.debugModeEnabled = value;
+      }
+      
+      public function setDebugSpawnSet(value:int) : void
+      {
+         this.debugSpawnSet = value;
+      }
+      
       public function canUseRebelsUnitedBossAbility(unit:Unit, abilityName:String = "") : Boolean
       {
          if(!this.isRebelsUnitedBossQueueEnabled() || unit == null || !unit.isBossUnit || !unit.isAlive())
@@ -578,7 +691,7 @@ package com.brockw.stickwar.campaign
          this.updateRebelsUnitedBossAbilityWave();
          return this.rebelsBossQueueActiveTypes != null && unit.type in this.rebelsBossQueueActiveTypes;
       }
-
+      
       public function shouldBlockEnemyStatueDamageWithMagikillWard(inflictor:Object) : Boolean
       {
          if(!this.isMagikillWardLevel() || this.isEnemyReinforcementShieldActive() || !this.isPlayerInflictor(inflictor) || !this.hasLivingEnemyMagikillBoss())
@@ -588,7 +701,7 @@ package com.brockw.stickwar.campaign
          this.showMagikillWardMessage();
          return true;
       }
-
+      
       private function isMagikillWardLevel() : Boolean
       {
          var title:String = null;
@@ -599,12 +712,12 @@ package com.brockw.stickwar.campaign
          title = main.campaign.getCurrentLevel().title;
          return title == LEVEL_TITLE_MAGIKILL_BOSS || title == LEVEL_TITLE_REBELS_UNITED;
       }
-
+      
       private function isPlayerInflictor(inflictor:Object) : Boolean
       {
-         return game != null && (inflictor == null || inflictor is Unit && Unit(inflictor).team == game.teamA);
+         return game != null && (inflictor == null || inflictor is Unit && inflictor.team == game.teamA);
       }
-
+      
       private function hasLivingEnemyMagikillBoss() : Boolean
       {
          var unit:Unit = null;
@@ -614,129 +727,43 @@ package com.brockw.stickwar.campaign
          }
          for each(unit in game.teamB.units)
          {
-            if(unit is Magikill && unit.isAlive() && Magikill(unit).isBoss)
+            if(unit is Magikill && unit.isAlive() && unit.isBoss)
             {
                return true;
             }
          }
          return false;
       }
-
+      
       private function showMagikillWardMessage() : void
       {
-         if(game == null || game.frame < this.nextMagikillWardMessageFrame)
+         if(this.campaignBossMessages != null)
          {
-            return;
-         }
-         this.ensureMagikillWardMessage();
-         this.magikillWardMessage.visible = true;
-         this.magikillWardMessageActive = true;
-         this.magikillWardMessageHideFrame = game.frame + MAGIKILL_WARD_MESSAGE_DURATION_FRAMES;
-         this.nextMagikillWardMessageFrame = game.frame + MAGIKILL_WARD_MESSAGE_COOLDOWN_FRAMES;
-      }
-
-      private function ensureMagikillWardMessage() : void
-      {
-         if(this.magikillWardMessage == null)
-         {
-            this.magikillWardMessage = new inGameMessageBoxMc();
-            this.magikillWardMessage.x = game.stage.stageWidth / 2;
-            this.magikillWardMessage.y = game.stage.stageHeight / 4 - 75;
-            this.magikillWardMessage.scaleX *= 1.3;
-            this.magikillWardMessage.scaleY *= 1.3;
-            this.magikillWardMessage.text.text = MAGIKILL_WARD_MESSAGE;
-            this.magikillWardMessage.step.text = "";
-            this.magikillWardMessage.tick.visible = false;
-            this.magikillWardMessage.visible = false;
-         }
-         if(!contains(this.magikillWardMessage))
-         {
-            addChild(this.magikillWardMessage);
+            this.campaignBossMessages.showMagikillWard();
          }
       }
-
-      private function updateMagikillWardMessage() : void
-      {
-         if(!this.magikillWardMessageActive || game == null || game.frame < this.magikillWardMessageHideFrame)
-         {
-            return;
-         }
-         this.magikillWardMessageActive = false;
-         if(this.magikillWardMessage != null)
-         {
-            this.magikillWardMessage.visible = false;
-         }
-      }
-
-      private function removeMagikillWardMessage() : void
-      {
-         if(this.magikillWardMessage != null && contains(this.magikillWardMessage))
-         {
-            removeChild(this.magikillWardMessage);
-         }
-         this.magikillWardMessage = null;
-      }
-
+      
       public function showMedusaLookAtMeMessage() : void
       {
-         if(game == null || game.frame < this.nextMedusaLookAtMeMessageFrame)
+         if(this.campaignBossMessages != null)
          {
-            return;
+            this.campaignBossMessages.showMedusaLookAtMe();
          }
-         this.ensureMedusaLookAtMeMessage();
-         this.medusaLookAtMeMessage.visible = true;
-         this.medusaLookAtMeMessageActive = true;
-         this.medusaLookAtMeMessageHideFrame = game.frame + MEDUSA_LOOK_AT_ME_MESSAGE_DURATION_FRAMES;
-         this.nextMedusaLookAtMeMessageFrame = game.frame + MEDUSA_LOOK_AT_ME_MESSAGE_COOLDOWN_FRAMES;
       }
-
-      private function ensureMedusaLookAtMeMessage() : void
+      
+      override public function showBossMessage(text:String, visibleFrames:int = 210) : void
       {
-         if(this.medusaLookAtMeMessage == null)
+         if(this.campaignBossMessages != null)
          {
-            this.medusaLookAtMeMessage = new inGameMessageBoxMc();
-            this.medusaLookAtMeMessage.x = game.stage.stageWidth / 2;
-            this.medusaLookAtMeMessage.y = game.stage.stageHeight / 4 - 75;
-            this.medusaLookAtMeMessage.scaleX *= 1.3;
-            this.medusaLookAtMeMessage.scaleY *= 1.3;
-            this.medusaLookAtMeMessage.text.text = MEDUSA_LOOK_AT_ME_MESSAGE;
-            this.medusaLookAtMeMessage.step.text = "";
-            this.medusaLookAtMeMessage.tick.visible = false;
-            this.medusaLookAtMeMessage.visible = false;
-         }
-         if(!contains(this.medusaLookAtMeMessage))
-         {
-            addChild(this.medusaLookAtMeMessage);
+            this.campaignBossMessages.showNightfallMessage(text,visibleFrames);
          }
       }
-
-      private function updateMedusaLookAtMeMessage() : void
-      {
-         if(!this.medusaLookAtMeMessageActive || game == null || game.frame < this.medusaLookAtMeMessageHideFrame)
-         {
-            return;
-         }
-         this.medusaLookAtMeMessageActive = false;
-         if(this.medusaLookAtMeMessage != null)
-         {
-            this.medusaLookAtMeMessage.visible = false;
-         }
-      }
-
-      private function removeMedusaLookAtMeMessage() : void
-      {
-         if(this.medusaLookAtMeMessage != null && contains(this.medusaLookAtMeMessage))
-         {
-            removeChild(this.medusaLookAtMeMessage);
-         }
-         this.medusaLookAtMeMessage = null;
-      }
-
+      
       private function isRebelsUnitedBossQueueEnabled() : Boolean
       {
          return game != null && main != null && main.campaign != null && main.campaign.getCurrentLevel() != null && main.campaign.getCurrentLevel().title == LEVEL_TITLE_REBELS_UNITED;
       }
-
+      
       private function updateRebelsUnitedBossAbilityWave() : void
       {
          if(game == null)
@@ -749,7 +776,7 @@ package com.brockw.stickwar.campaign
          }
          this.chooseRebelsUnitedBossAbilityWave();
       }
-
+      
       private function chooseRebelsUnitedBossAbilityWave() : void
       {
          var candidates:Array = this.getLivingRebelsUnitedBossTypes();
@@ -769,9 +796,11 @@ package com.brockw.stickwar.campaign
          while(selected.length < slots && candidates.length > 0)
          {
             totalWeight = 0;
-            for(i = 0; i < candidates.length; i++)
+            i = 0;
+            while(i < candidates.length)
             {
                totalWeight += this.getRebelsUnitedBossQueueWeight(int(candidates[i]));
+               i++;
             }
             if(totalWeight <= 0)
             {
@@ -781,7 +810,8 @@ package com.brockw.stickwar.campaign
             {
                roll = Math.abs(game.random.nextInt()) % totalWeight;
                running = 0;
-               for(i = 0; i < candidates.length; i++)
+               i = 0;
+               while(i < candidates.length)
                {
                   running += this.getRebelsUnitedBossQueueWeight(int(candidates[i]));
                   if(roll < running)
@@ -789,6 +819,7 @@ package com.brockw.stickwar.campaign
                      type = int(candidates.splice(i,1)[0]);
                      break;
                   }
+                  i++;
                }
             }
             selected.push(type);
@@ -806,7 +837,7 @@ package com.brockw.stickwar.campaign
          this.rebelsBossQueueDebugText = this.getRebelsUnitedBossQueueNames(selected);
          this.rebelsBossQueueWaveUntilFrame = game.frame + REBELS_BOSS_QUEUE_WAVE_FRAMES;
       }
-
+      
       private function getRebelsUnitedBossQueueWeight(type:int) : int
       {
          var age:int = 0;
@@ -825,7 +856,7 @@ package com.brockw.stickwar.campaign
          }
          return 100;
       }
-
+      
       private function getLivingRebelsUnitedBossTypes() : Array
       {
          var unit:Unit = null;
@@ -837,21 +868,20 @@ package com.brockw.stickwar.campaign
          }
          for each(unit in game.teamB.units)
          {
-            if(unit == null || !unit.isAlive() || !unit.isBossUnit || !this.isRebelsUnitedQueueBossType(unit.type) || unit.type in seen)
+            if(!(unit == null || !unit.isAlive() || !unit.isBossUnit || !this.isRebelsUnitedQueueBossType(unit.type) || unit.type in seen))
             {
-               continue;
+               seen[unit.type] = true;
+               result.push(unit.type);
             }
-            seen[unit.type] = true;
-            result.push(unit.type);
          }
          return result;
       }
-
+      
       private function isRebelsUnitedQueueBossType(type:int) : Boolean
       {
          return type == Unit.U_SPEARTON || type == Unit.U_ARCHER || type == Unit.U_NINJA || type == Unit.U_MAGIKILL || type == Unit.U_MONK;
       }
-
+      
       private function getRebelsUnitedBossQueueNames(types:Array) : String
       {
          var names:Array = [];
@@ -866,7 +896,7 @@ package com.brockw.stickwar.campaign
          }
          return names.join(", ");
       }
-
+      
       private function getRebelsUnitedBossName(type:int) : String
       {
          switch(type)
@@ -890,12 +920,12 @@ package com.brockw.stickwar.campaign
       {
          return false;
       }
-
+      
       public function get campaignController() : CampaignController
       {
          return this.controller;
       }
-
+      
       private function unlockAllPlayerOrderUnits() : void
       {
          game.teamA.unitsAvailable[Unit.U_MINER] = 1;
@@ -908,476 +938,59 @@ package com.brockw.stickwar.campaign
          game.teamA.unitsAvailable[Unit.U_MAGIKILL] = 1;
          game.teamA.unitsAvailable[Unit.U_ENSLAVED_GIANT] = 1;
       }
-
+      
       private function getCampaignPointReward(level:Level) : int
       {
          if(level == null)
          {
             return 0;
          }
-         if(level.title == "Rebels United")
-         {
-            return level.points * 3;
-         }
-         if(level.title == "The Night is Dark: Juggerknights Attack")
-         {
-            return level.points + 1;
-         }
-         if(level.title == "Shadow of the moon: Eclipsors Attack." || level.title == "Bone Pile: Marrowkai summon war" || level.title == "Medusa's Gates: The Chaos Capital is in sight. ")
-         {
-            return level.points + 1;
-         }
-         if(Team.getIdFromRaceName(level.oponent.race) == Team.T_GOOD)
-         {
-            return level.points * 2;
-         }
          return level.points;
       }
-
-      private function initializeLevelPrewarm(level:Level) : void
-      {
-         var immediateUnits:Array = [];
-         var delayedUnits:Array = [];
-         if(level == null || game == null || game.unitFactory == null)
-         {
-            this.delayedLevelPrewarmQueue = [];
-            return;
-         }
-         this.addPrewarmUnitsFromSource(immediateUnits,level.player.startingUnits);
-         this.addPrewarmUnitsFromSource(immediateUnits,level.oponent.startingUnits);
-         this.addPrewarmUnitsFromSource(immediateUnits,this.getImmediatePrewarmUnitsForLevel(level.title));
-         this.addPrewarmUnitsFromSource(delayedUnits,this.getDelayedPrewarmUnitsForLevel(level.title));
-         this.removePrewarmDuplicatesAgainst(delayedUnits,immediateUnits);
-         this.runImmediateLevelPrewarm(immediateUnits);
-         this.delayedLevelPrewarmQueue = delayedUnits;
-      }
-
-      private function runImmediateLevelPrewarm(unitTypes:Array) : void
-      {
-         var unitType:int = 0;
-         if(unitTypes == null)
-         {
-            return;
-         }
-         for each(unitType in unitTypes)
-         {
-            this.prewarmUnitType(unitType);
-         }
-      }
-
-      private function processDelayedLevelPrewarm() : void
-      {
-         var nextType:int = 0;
-         if(this.delayedLevelPrewarmQueue == null || this.delayedLevelPrewarmQueue.length == 0 || game == null)
-         {
-            return;
-         }
-         if(game.frame < this.nextLevelPrewarmFrame)
-         {
-            return;
-         }
-         nextType = int(this.delayedLevelPrewarmQueue.shift());
-         this.prewarmUnitType(nextType);
-         this.nextLevelPrewarmFrame = game.frame + PREWARM_INTERVAL_FRAMES;
-      }
-
-      private function prewarmUnitType(unitType:int) : void
-      {
-         var warmUnit:Unit = null;
-         if(game == null || game.unitFactory == null || unitType <= 0)
-         {
-            return;
-         }
-         warmUnit = game.unitFactory.getUnit(unitType);
-         if(warmUnit == null)
-         {
-            return;
-         }
-         if(warmUnit.mc != null)
-         {
-            warmUnit.mc.gotoAndStop(1);
-         }
-         game.unitFactory.returnUnit(unitType,warmUnit);
-      }
-
-      private function addPrewarmUnitsFromSource(dest:Array, source:*) : void
-      {
-         var nested:* = undefined;
-         if(dest == null || source == null)
-         {
-            return;
-         }
-         if(source is Array)
-         {
-            for each(nested in source)
-            {
-               this.addPrewarmUnitsFromSource(dest,nested);
-            }
-            return;
-         }
-         this.addPrewarmUnitType(dest,int(source));
-      }
-
-      private function addPrewarmUnitType(dest:Array, unitType:int) : void
-      {
-         if(dest == null || !this.shouldPrewarmUnitType(unitType) || dest.indexOf(unitType) != -1)
-         {
-            return;
-         }
-         dest.push(unitType);
-      }
-
-      private function removePrewarmDuplicatesAgainst(dest:Array, existing:Array) : void
-      {
-         var i:int = 0;
-         if(dest == null || existing == null)
-         {
-            return;
-         }
-         i = dest.length - 1;
-         while(i >= 0)
-         {
-            if(existing.indexOf(dest[i]) != -1)
-            {
-               dest.splice(i,1);
-            }
-            i--;
-         }
-      }
-
-      private function shouldPrewarmUnitType(unitType:int) : Boolean
-      {
-         switch(unitType)
-         {
-            case Unit.U_SPEARTON:
-            case Unit.U_ARCHER:
-            case Unit.U_NINJA:
-            case Unit.U_MAGIKILL:
-            case Unit.U_MONK:
-            case Unit.U_BOMBER:
-            case Unit.U_GIANT:
-            case Unit.U_KNIGHT:
-            case Unit.U_DEAD:
-            case Unit.U_CAT:
-            case Unit.U_WINGIDON:
-            case Unit.U_SKELATOR:
-            case Unit.U_MEDUSA:
-            case Unit.U_ENSLAVED_GIANT:
-               return true;
-            default:
-               return false;
-         }
-      }
-
-      private function getImmediatePrewarmUnitsForLevel(title:String) : Array
-      {
-         switch(title)
-         {
-            case "Tutorial":
-               return [Unit.U_SPEARTON,Unit.U_ARCHER];
-            case "Blot out the sun: Archidons Declare War":
-               return [Unit.U_ARCHER];
-            case "Silent Assassins: Ninjas Declare War":
-               return [Unit.U_NINJA];
-            case "Magic in the Air: Wizards and monks Declare War ":
-               return [Unit.U_MAGIKILL,Unit.U_MONK];
-            case LEVEL_TITLE_REBELS_UNITED:
-               return [Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_NINJA,Unit.U_MAGIKILL,Unit.U_MONK];
-            case "Explosive War: Bombers Attack":
-               return [Unit.U_BOMBER,Unit.U_GIANT];
-            case "The Night is Dark: Juggerknights Attack":
-            case "Undead War: Deadly Deads Attack":
-               return [Unit.U_KNIGHT,Unit.U_DEAD];
-            case " 4 legged Fury: Crawlers Attack":
-               return [Unit.U_CAT,Unit.U_BOMBER];
-            case "Shadow of the moon: Eclipsors Attack.":
-               return [Unit.U_WINGIDON,Unit.U_KNIGHT];
-            case "Bone Pile: Marrowkai summon war":
-               return [Unit.U_SKELATOR,Unit.U_DEAD,Unit.U_KNIGHT];
-            case LEVEL_TITLE_MEDUSA_GATES:
-               return [Unit.U_MEDUSA,Unit.U_KNIGHT,Unit.U_DEAD,Unit.U_SKELATOR,Unit.U_WINGIDON,Unit.U_GIANT,Unit.U_CAT,Unit.U_BOMBER];
-            default:
-               return [];
-         }
-      }
-
-      private function getDelayedPrewarmUnitsForLevel(title:String) : Array
-      {
-         var unitTypes:Array = [];
-         this.addPrewarmUnitsFromSource(unitTypes,this.getCampaignReinforcementsForLevel(title,Campaign.D_INSANE));
-         switch(title)
-         {
-            case LEVEL_TITLE_REBELS_UNITED:
-               this.addPrewarmUnitsFromSource(unitTypes,[Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_NINJA,Unit.U_MAGIKILL,Unit.U_MONK]);
-               break;
-            case "Explosive War: Bombers Attack":
-               this.addPrewarmUnitsFromSource(unitTypes,[Unit.U_BOMBER,Unit.U_GIANT]);
-               break;
-            case LEVEL_TITLE_MEDUSA_GATES:
-               this.addPrewarmUnitsFromSource(unitTypes,[Unit.U_MEDUSA,Unit.U_KNIGHT,Unit.U_DEAD,Unit.U_SKELATOR,Unit.U_WINGIDON,Unit.U_GIANT,Unit.U_CAT,Unit.U_BOMBER,Unit.U_ENSLAVED_GIANT]);
-         }
-         return unitTypes;
-      }
-
+      
       private function tryTriggerCampaignReinforcements() : void
       {
-         var difficulty:int = 0;
-         var level:Level = null;
-         var reinforcements:Array = null;
-         if(this.hasTriggeredCampaignReinforcements || main == null || main.campaign == null || game == null || game.teamB == null || game.teamB.statue == null)
+         if(this.campaignReinforcementManager != null)
          {
-            return;
+            this.campaignReinforcementManager.tryTrigger();
          }
-         level = main.campaign.getCurrentLevel();
-         if(level == null || game.teamB.statue.health > level.oponent.statueHealth * 0.5)
-         {
-            return;
-         }
-         difficulty = main.campaign.difficultyLevel;
-         reinforcements = this.getCampaignReinforcementsForLevel(level.title,difficulty);
-         this.hasTriggeredCampaignReinforcements = true;
-         if(reinforcements == null || reinforcements.length == 0)
-         {
-            return;
-         }
-         this.spawnEnemyReinforcements(reinforcements);
       }
-
+      
       private function getCampaignReinforcementsForLevel(title:String, difficulty:int) : Array
       {
-         switch(title)
+         if(this.campaignReinforcementManager != null)
          {
-            case "Tutorial":
-               if(difficulty == Campaign.D_NORMAL)
-               {
-                  return [Unit.U_SPEARTON];
-               }
-               if(difficulty == Campaign.D_HARD)
-               {
-                  return [Unit.U_SPEARTON,Unit.U_SPEARTON];
-               }
-               return [Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_SPEARTON];
-            case "Blot out the sun: Archidons Declare War":
-               if(difficulty == Campaign.D_NORMAL)
-               {
-                  return [Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_SWORDWRATH];
-               }
-               if(difficulty == Campaign.D_HARD)
-               {
-                  return [Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_SWORDWRATH,Unit.U_SWORDWRATH];
-               }
-               return [Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_SWORDWRATH,Unit.U_SWORDWRATH];
-            case "Silent Assassins: Ninjas Declare War":
-               if(difficulty == Campaign.D_NORMAL)
-               {
-                  return [Unit.U_NINJA,Unit.U_SWORDWRATH];
-               }
-               if(difficulty == Campaign.D_HARD)
-               {
-                  return [Unit.U_NINJA,Unit.U_NINJA,Unit.U_SWORDWRATH,Unit.U_SWORDWRATH];
-               }
-               return [Unit.U_NINJA,Unit.U_NINJA,Unit.U_NINJA,Unit.U_SWORDWRATH,Unit.U_SWORDWRATH];
-            case "Magic in the Air: Wizards and monks Declare War ":
-               if(difficulty == Campaign.D_NORMAL)
-               {
-                  return [Unit.U_MAGIKILL,Unit.U_MONK,Unit.U_SWORDWRATH];
-               }
-               if(difficulty == Campaign.D_HARD)
-               {
-                  return [Unit.U_MAGIKILL,Unit.U_MONK,Unit.U_MONK,Unit.U_SWORDWRATH];
-               }
-               return [Unit.U_MAGIKILL,Unit.U_MONK,Unit.U_MONK,Unit.U_SWORDWRATH,Unit.U_SWORDWRATH];
-            case "Rebels United":
-               if(difficulty == Campaign.D_NORMAL)
-               {
-                  return [Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_NINJA,Unit.U_MAGIKILL,Unit.U_MONK,Unit.U_SPEARTON,Unit.U_ARCHER];
-               }
-               if(difficulty == Campaign.D_HARD)
-               {
-                  return [Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_NINJA,Unit.U_MAGIKILL,Unit.U_MONK,Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_NINJA];
-               }
-               return [Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_ARCHER,Unit.U_NINJA,Unit.U_NINJA,Unit.U_NINJA,Unit.U_MAGIKILL,Unit.U_MONK];
-            case "Explosive War: Bombers Attack":
-               if(difficulty == Campaign.D_NORMAL)
-               {
-                  return [Unit.U_BOMBER,Unit.U_GIANT];
-               }
-               if(difficulty == Campaign.D_HARD)
-               {
-                  return [Unit.U_BOMBER,Unit.U_BOMBER,Unit.U_GIANT];
-               }
-               return [Unit.U_BOMBER,Unit.U_BOMBER,Unit.U_BOMBER,Unit.U_GIANT];
-            case "The Night is Dark: Juggerknights Attack":
-               if(difficulty == Campaign.D_NORMAL)
-               {
-                  return [Unit.U_KNIGHT,Unit.U_KNIGHT,Unit.U_DEAD];
-               }
-               if(difficulty == Campaign.D_HARD)
-               {
-                  return [Unit.U_KNIGHT,Unit.U_KNIGHT,Unit.U_KNIGHT,Unit.U_DEAD];
-               }
-               return [Unit.U_KNIGHT,Unit.U_KNIGHT,Unit.U_KNIGHT,Unit.U_DEAD,Unit.U_DEAD];
-            case "Undead War: Deadly Deads Attack":
-               if(difficulty == Campaign.D_NORMAL)
-               {
-                  return [Unit.U_DEAD,Unit.U_DEAD,Unit.U_KNIGHT];
-               }
-               if(difficulty == Campaign.D_HARD)
-               {
-                  return [Unit.U_DEAD,Unit.U_DEAD,Unit.U_DEAD,Unit.U_KNIGHT,Unit.U_KNIGHT];
-               }
-               return [Unit.U_DEAD,Unit.U_DEAD,Unit.U_DEAD,Unit.U_DEAD,Unit.U_KNIGHT,Unit.U_KNIGHT];
-            case " 4 legged Fury: Crawlers Attack":
-               if(difficulty == Campaign.D_NORMAL)
-               {
-                  return [Unit.U_CAT,Unit.U_CAT,Unit.U_CAT,Unit.U_BOMBER];
-               }
-               if(difficulty == Campaign.D_HARD)
-               {
-                  return [Unit.U_CAT,Unit.U_CAT,Unit.U_CAT,Unit.U_CAT,Unit.U_BOMBER,Unit.U_BOMBER];
-               }
-               return [Unit.U_CAT,Unit.U_CAT,Unit.U_CAT,Unit.U_CAT,Unit.U_CAT,Unit.U_CAT,Unit.U_BOMBER,Unit.U_BOMBER];
-            case "Shadow of the moon: Eclipsors Attack.":
-               if(difficulty == Campaign.D_NORMAL)
-               {
-                  return [Unit.U_WINGIDON,Unit.U_WINGIDON,Unit.U_KNIGHT];
-               }
-               if(difficulty == Campaign.D_HARD)
-               {
-                  return [Unit.U_WINGIDON,Unit.U_WINGIDON,Unit.U_WINGIDON,Unit.U_KNIGHT];
-               }
-               return [Unit.U_WINGIDON,Unit.U_WINGIDON,Unit.U_WINGIDON,Unit.U_KNIGHT,Unit.U_KNIGHT];
-            case "Bone Pile: Marrowkai summon war":
-               if(difficulty == Campaign.D_NORMAL)
-               {
-                  return [Unit.U_SKELATOR,Unit.U_DEAD,Unit.U_KNIGHT];
-               }
-               if(difficulty == Campaign.D_HARD)
-               {
-                  return [Unit.U_SKELATOR,Unit.U_DEAD,Unit.U_DEAD,Unit.U_KNIGHT];
-               }
-               return [Unit.U_SKELATOR,Unit.U_DEAD,Unit.U_DEAD,Unit.U_DEAD,Unit.U_KNIGHT];
-            case "Medusa's Gates: The Chaos Capital is in sight. ":
-               if(difficulty == Campaign.D_NORMAL)
-               {
-                  return [Unit.U_MEDUSA,Unit.U_KNIGHT,Unit.U_WINGIDON,Unit.U_SKELATOR];
-               }
-               if(difficulty == Campaign.D_HARD)
-               {
-                  return [Unit.U_MEDUSA,Unit.U_KNIGHT,Unit.U_KNIGHT,Unit.U_WINGIDON,Unit.U_WINGIDON,Unit.U_SKELATOR];
-               }
-               return [Unit.U_MEDUSA,Unit.U_KNIGHT,Unit.U_KNIGHT,Unit.U_WINGIDON,Unit.U_WINGIDON,Unit.U_WINGIDON,Unit.U_SKELATOR];
-            default:
-               return null;
+            return this.campaignReinforcementManager.getCampaignReinforcementsForLevel(title,difficulty);
          }
+         return null;
       }
-
+      
       private function spawnEnemyReinforcements(unitTypes:Array) : void
       {
-         var unitType:int = 0;
-         var newUnit:Unit = null;
-         var attackMoveCommand:AttackMoveCommand = null;
-         var spawnWestwindBosses:Boolean = false;
-         var spawnFactionBosses:Boolean = false;
-         var spawnedBossTypeCounts:Object = null;
-         var i:int = 0;
-         var row:int = 0;
-         var column:int = 0;
-         var rowCount:int = 0;
-         var totalRows:int = 0;
-         var xPos:Number = NaN;
-         var yPos:Number = NaN;
-         var currentLevelTitle:String = null;
-         if(main != null && main.campaign != null && main.campaign.getCurrentLevel() != null)
+         if(this.campaignReinforcementManager != null)
          {
-            currentLevelTitle = main.campaign.getCurrentLevel().title;
-            spawnWestwindBosses = currentLevelTitle == "Rebels United";
-            spawnFactionBosses = this.isFactionBossLevel(currentLevelTitle);
-         }
-         if(spawnWestwindBosses)
-         {
-            this.grantWestwindBossResearch();
-         }
-         else if(spawnFactionBosses)
-         {
-            this.grantFactionBossResearch(currentLevelTitle);
-         }
-         spawnedBossTypeCounts = {};
-         var reinforcementUnits:Array = null;
-         if(spawnWestwindBosses)
-         {
-            reinforcementUnits = unitTypes.concat([game.teamB.getMinerType(),game.teamB.getMinerType(),game.teamB.getMinerType(),game.teamB.getMinerType(),game.teamB.getMinerType()]);
-         }
-         else
-         {
-            reinforcementUnits = unitTypes.concat([game.teamB.getMinerType(),game.teamB.getMinerType()]);
-         }
-         unitTypes = reinforcementUnits;
-         totalRows = Math.ceil(unitTypes.length / 4);
-         this.activateEnemyReinforcementShield();
-         this.playReinforcementSpawnEffects();
-         for(i = 0; i < unitTypes.length; i++)
-         {
-            unitType = unitTypes[i];
-            if(game.teamB.unitsAvailable != null && !(unitType in game.teamB.unitsAvailable))
-            {
-               game.teamB.unitsAvailable[unitType] = 1;
-            }
-            newUnit = game.unitFactory.getUnit(unitType);
-            game.teamB.spawn(newUnit,game);
-            if(spawnWestwindBosses)
-            {
-               if(!(unitType in spawnedBossTypeCounts))
-               {
-                  spawnedBossTypeCounts[unitType] = 0;
-               }
-               spawnedBossTypeCounts[unitType] += 1;
-               if(this.shouldPromoteWestwindBoss(unitType,int(spawnedBossTypeCounts[unitType])))
-               {
-                  this.configureWestwindBoss(newUnit);
-                  newUnit.enableCampaignBossEscape();
-               }
-            }
-            else if(spawnFactionBosses)
-            {
-               if(!(unitType in spawnedBossTypeCounts))
-               {
-                  spawnedBossTypeCounts[unitType] = 0;
-               }
-               spawnedBossTypeCounts[unitType] += 1;
-               if(this.shouldPromoteFactionBoss(currentLevelTitle,unitType,int(spawnedBossTypeCounts[unitType])))
-               {
-                  this.configureFactionBoss(newUnit,currentLevelTitle);
-               }
-            }
-            row = int(i / 4);
-            column = i % 4;
-            rowCount = Math.min(4,unitTypes.length - row * 4);
-            xPos = game.teamB.homeX + game.teamB.direction * (120 + row * 90);
-            yPos = Math.max(80,Math.min(game.map.height - 80,game.map.height / 2 + (column - (rowCount - 1) / 2) * 85 + (row - (totalRows - 1) / 2) * 35));
-            newUnit.x = newUnit.px = xPos;
-            newUnit.y = newUnit.py = yPos;
-            game.teamB.population += newUnit.population;
-            attackMoveCommand = new AttackMoveCommand(game);
-            attackMoveCommand.type = UnitCommand.ATTACK_MOVE;
-            attackMoveCommand.goalX = team.statue.px;
-            attackMoveCommand.goalY = game.map.height / 2;
-            attackMoveCommand.realX = team.statue.px;
-            attackMoveCommand.realY = game.map.height / 2;
-            newUnit.ai.setCommand(game,attackMoveCommand);
+            this.campaignReinforcementManager.spawnEnemyReinforcements(unitTypes);
          }
       }
-
+      
+      private function spawnShadowrathFlankReinforcements(difficulty:int) : void
+      {
+      }
+      
+      private function getShadowrathFlankCount(difficulty:int) : int
+      {
+         return difficulty == Campaign.D_NORMAL ? 2 : 3;
+      }
+      
+      private function getShadowrathFlankSpawnX() : Number
+      {
+         return team != null ? team.medianPosition : 0;
+      }
+      
       private function activateEnemyReinforcementShield() : void
       {
-         var shieldFrames:int = this.getEnemyReinforcementShieldFrames();
-         if(game == null || game.teamB == null || game.teamB.statue == null || shieldFrames <= 0)
-         {
-            return;
-         }
-         this.enemyReinforcementShieldUntilFrame = game.frame + shieldFrames;
       }
-
+      
       private function getEnemyReinforcementShieldFrames() : int
       {
          if(main == null || main.campaign == null)
@@ -1394,112 +1007,43 @@ package com.brockw.stickwar.campaign
          }
          return 150;
       }
-
+      
       public function isEnemyReinforcementShieldActive() : Boolean
       {
-         return game != null && game.teamB != null && game.teamB.statue != null && game.frame < this.enemyReinforcementShieldUntilFrame;
+         return this.campaignReinforcementManager != null && this.campaignReinforcementManager.isShieldActive();
       }
-
+      
       private function shouldPromoteWestwindBoss(unitType:int, spawnedCount:int) : Boolean
       {
-         switch(unitType)
-         {
-            case Unit.U_SPEARTON:
-            case Unit.U_ARCHER:
-            case Unit.U_NINJA:
-            case Unit.U_MAGIKILL:
-            case Unit.U_MONK:
-               return spawnedCount == 1;
-            default:
-               return false;
-         }
+         return this.campaignBossSpawner != null && this.campaignBossSpawner.shouldPromoteWestwindBoss(unitType,spawnedCount);
       }
-
+      
       private function configureWestwindBoss(unit:Unit) : void
       {
-         if(unit == null)
+         if(this.campaignBossSpawner != null)
          {
-            return;
+            this.campaignBossSpawner.configureWestwindBoss(unit);
          }
-         if(unit is Spearton)
-         {
-            Spearton(unit).makeBoss();
-            return;
-         }
-         if(unit is Archer)
-         {
-            Archer(unit).makeBoss();
-         }
-         else if(unit is Ninja)
-         {
-            Ninja(unit).makeBoss();
-         }
-         else if(unit is Magikill)
-         {
-            Magikill(unit).makeBoss();
-         }
-         else if(unit is Monk)
-         {
-            Monk(unit).makeBoss();
-         }
-         else if(unit is Knight)
-         {
-            Knight(unit).makeBoss();
-         }
-         else if(unit is Wingidon)
-         {
-            Wingidon(unit).makeBoss();
-         }
-         else if(unit is Skelator)
-         {
-            Skelator(unit).makeBoss();
-         }
-         unit.isBossMovementLocked = false;
       }
-
+      
       private function isFactionBossLevel(title:String) : Boolean
       {
-         return title == "Tutorial" || title == "Blot out the sun: Archidons Declare War" || title == "Silent Assassins: Ninjas Declare War" || title == "Magic in the Air: Wizards and monks Declare War " || title == "The Night is Dark: Juggerknights Attack" || title == "Shadow of the moon: Eclipsors Attack." || title == "Bone Pile: Marrowkai summon war" || title == "Medusa's Gates: The Chaos Capital is in sight. ";
+         return this.campaignBossSpawner != null && this.campaignBossSpawner.isFactionBossLevel(title);
       }
-
+      
       private function shouldPromoteFactionBoss(title:String, unitType:int, spawnedCount:int) : Boolean
       {
-         switch(title)
-         {
-            case "Tutorial":
-               return unitType == Unit.U_SPEARTON && spawnedCount == 1;
-            case "Blot out the sun: Archidons Declare War":
-               return unitType == Unit.U_ARCHER && spawnedCount == 1;
-            case "Silent Assassins: Ninjas Declare War":
-               return unitType == Unit.U_NINJA && spawnedCount == 1;
-            case "Magic in the Air: Wizards and monks Declare War ":
-               return (unitType == Unit.U_MAGIKILL || unitType == Unit.U_MONK) && spawnedCount == 1;
-            case "The Night is Dark: Juggerknights Attack":
-               return unitType == Unit.U_KNIGHT && spawnedCount == 1;
-            case "Shadow of the moon: Eclipsors Attack.":
-               return unitType == Unit.U_WINGIDON && spawnedCount == 1;
-            case "Bone Pile: Marrowkai summon war":
-               return unitType == Unit.U_SKELATOR && spawnedCount == 1;
-            case "Medusa's Gates: The Chaos Capital is in sight. ":
-               return (unitType == Unit.U_KNIGHT || unitType == Unit.U_WINGIDON || unitType == Unit.U_SKELATOR) && spawnedCount == 1;
-            default:
-               return false;
-         }
+         return this.campaignBossSpawner != null && this.campaignBossSpawner.shouldPromoteFactionBoss(title,unitType,spawnedCount);
       }
-
+      
       private function configureFactionBoss(unit:Unit, title:String = "") : void
       {
-         this.configureWestwindBoss(unit);
-         if(unit is Skelator)
+         if(this.campaignBossSpawner != null)
          {
-            Skelator(unit).makeBoss(title == "Medusa's Gates: The Chaos Capital is in sight. ");
-         }
-         if(unit != null && title != "Medusa's Gates: The Chaos Capital is in sight. ")
-         {
-            unit.enableCampaignBossEscape();
+            this.campaignBossSpawner.configureFactionBoss(unit,title);
          }
       }
-
+      
       private function playReinforcementSpawnEffects() : void
       {
          if(game == null || game.soundManager == null)
@@ -1510,67 +1054,28 @@ package com.brockw.stickwar.campaign
          game.soundManager.playSoundFullVolume("Rage2");
          game.soundManager.playSoundFullVolume("Rage3");
       }
-
+      
       private function grantWestwindBossResearch() : void
       {
-         if(game == null || game.teamB == null || game.teamB.tech == null)
+         if(this.campaignBossSpawner != null)
          {
-            return;
+            this.campaignBossSpawner.grantWestwindBossResearch();
          }
-         game.teamB.tech.isResearchedMap[Tech.ARCHIDON_FIRE] = true;
-         game.teamB.tech.isResearchedMap[Tech.BLOCK] = true;
-         game.teamB.tech.isResearchedMap[Tech.SHIELD_BASH] = true;
-         game.teamB.tech.isResearchedMap[Tech.CLOAK] = true;
-         game.teamB.tech.isResearchedMap[Tech.CLOAK_II] = true;
-         game.teamB.tech.isResearchedMap[Tech.MAGIKILL_WALL] = true;
-         game.teamB.tech.isResearchedMap[Tech.MAGIKILL_POISON] = true;
-         game.teamB.tech.isResearchedMap[Tech.MONK_CURE] = true;
-         game.teamB.tech.isResearchedMap[Tech.CASTLE_ARCHER_1] = true;
-         game.teamB.tech.isResearchedMap[Tech.CASTLE_ARCHER_2] = true;
-         game.teamB.tech.isResearchedMap[Tech.WINGIDON_SPEED] = true;
       }
-
+      
       private function grantFactionBossResearch(title:String) : void
       {
-         if(game == null || game.teamB == null || game.teamB.tech == null)
+         if(this.campaignBossSpawner != null)
          {
-            return;
-         }
-         switch(title)
-         {
-            case "Tutorial":
-               game.teamB.tech.isResearchedMap[Tech.BLOCK] = true;
-               game.teamB.tech.isResearchedMap[Tech.SHIELD_BASH] = true;
-               break;
-            case "Blot out the sun: Archidons Declare War":
-               game.teamB.tech.isResearchedMap[Tech.ARCHIDON_FIRE] = true;
-               break;
-            case "Silent Assassins: Ninjas Declare War":
-               game.teamB.tech.isResearchedMap[Tech.CLOAK] = true;
-               game.teamB.tech.isResearchedMap[Tech.CLOAK_II] = true;
-               break;
-            case "Magic in the Air: Wizards and monks Declare War ":
-               game.teamB.tech.isResearchedMap[Tech.MAGIKILL_WALL] = true;
-               game.teamB.tech.isResearchedMap[Tech.MAGIKILL_POISON] = true;
-               game.teamB.tech.isResearchedMap[Tech.MONK_CURE] = true;
-               break;
-            case "Shadow of the moon: Eclipsors Attack.":
-               game.teamB.tech.isResearchedMap[Tech.WINGIDON_SPEED] = true;
-               break;
-            case "Medusa's Gates: The Chaos Capital is in sight. ":
-               game.teamB.tech.isResearchedMap[Tech.WINGIDON_SPEED] = true;
-               game.teamB.tech.isResearchedMap[Tech.SKELETON_FIST_ATTACK] = true;
-               break;
-            case "Bone Pile: Marrowkai summon war":
-               game.teamB.tech.isResearchedMap[Tech.SKELETON_FIST_ATTACK] = true;
+            this.campaignBossSpawner.grantFactionBossResearch(title);
          }
       }
-
+      
       private function isShadowrathDisguiseLevelActive() : Boolean
       {
          return main != null && main.campaign != null && main.campaign.getCurrentLevel() != null && main.campaign.getCurrentLevel().title == SHADOWRATH_LEVEL_TITLE;
       }
-
+      
       private function updateShadowrathLevelDisguises() : void
       {
          var unit:Unit = null;
@@ -1601,18 +1106,18 @@ package com.brockw.stickwar.campaign
          snapshot = game.teamB.units.concat();
          for each(unit in snapshot)
          {
-            if(unit is Miner && Miner(unit).isShadowrathDisguise)
+            if(unit is Miner && unit.isShadowrathDisguise)
             {
-               ++disguisedCount;
+               disguisedCount++;
             }
-            else if(unit is Ninja && this.canShadowrathDisguise(Ninja(unit)))
+            else if(unit is Ninja && this.canShadowrathDisguise(unit))
             {
-               this.tryDisguiseShadowrath(Ninja(unit));
+               this.tryDisguiseShadowrath(unit);
             }
          }
          this.cachedDisguisedShadowrathCount = disguisedCount;
       }
-
+      
       private function updateShadowrathDisguiseCooldowns() : void
       {
          var unitId:String = null;
@@ -1644,7 +1149,7 @@ package com.brockw.stickwar.campaign
             }
          }
       }
-
+      
       private function processShadowrathRevealQueue() : void
       {
          var i:int = 0;
@@ -1656,7 +1161,7 @@ package com.brockw.stickwar.campaign
             entry.delay -= 1;
             if(entry.delay > 0)
             {
-               ++i;
+               i++;
             }
             else
             {
@@ -1670,25 +1175,25 @@ package com.brockw.stickwar.campaign
             }
          }
       }
-
+      
       private function queueRevealAllShadowrathFakeMiners() : void
       {
          var unit:Unit = null;
          var delay:int = 0;
          for each(unit in game.teamB.units)
          {
-            if(unit is Miner && Miner(unit).isShadowrathDisguise && !(unit.id in this.shadowrathRevealQueued))
+            if(unit is Miner && unit.isShadowrathDisguise && !(unit.id in this.shadowrathRevealQueued))
             {
                this.shadowrathRevealQueued[unit.id] = true;
                this.shadowrathRevealQueue.push({
-                  unitId: unit.id,
-                  delay: delay
+                  "unitId":unit.id,
+                  "delay":delay
                });
                delay += SHADOWRATH_REVEAL_STAGGER_FRAMES;
             }
          }
       }
-
+      
       private function startShadowrathRevealChain(trigger:Miner) : void
       {
          var unit:Unit = null;
@@ -1701,25 +1206,25 @@ package com.brockw.stickwar.campaign
          {
             this.shadowrathRevealQueued[trigger.id] = true;
             this.shadowrathRevealQueue.push({
-               unitId: trigger.id,
-               delay: 0
+               "unitId":trigger.id,
+               "delay":0
             });
          }
          delay = SHADOWRATH_REVEAL_STAGGER_FRAMES;
          for each(unit in game.teamB.units)
          {
-            if(unit is Miner && unit != trigger && Miner(unit).isShadowrathDisguise && !(unit.id in this.shadowrathRevealQueued))
+            if(unit is Miner && unit != trigger && unit.isShadowrathDisguise && !(unit.id in this.shadowrathRevealQueued))
             {
                this.shadowrathRevealQueued[unit.id] = true;
                this.shadowrathRevealQueue.push({
-                  unitId: unit.id,
-                  delay: delay
+                  "unitId":unit.id,
+                  "delay":delay
                });
                delay += SHADOWRATH_REVEAL_STAGGER_FRAMES;
             }
          }
       }
-
+      
       public function onShadowrathFakeMinerDamaged(miner:Miner) : void
       {
          if(miner == null || game == null || game.teamB == null || !this.isShadowrathDisguiseLevelActive() || !miner.isShadowrathDisguise || miner.team != game.teamB)
@@ -1728,7 +1233,7 @@ package com.brockw.stickwar.campaign
          }
          this.startShadowrathRevealChain(miner);
       }
-
+      
       private function canShadowrathDisguise(ninja:Ninja) : Boolean
       {
          if(ninja == null || !ninja.isAlive() || ninja.isGarrisoned || ninja.team != game.teamB)
@@ -1757,7 +1262,7 @@ package com.brockw.stickwar.campaign
          }
          return true;
       }
-
+      
       private function tryDisguiseShadowrath(ninja:Ninja, forceDebug:Boolean = false) : Boolean
       {
          var miner:Miner = null;
@@ -1766,7 +1271,7 @@ package com.brockw.stickwar.campaign
          {
             return false;
          }
-         miner = Miner(game.unitFactory.getUnit(Unit.U_MINER));
+         miner = game.unitFactory.getUnit(Unit.U_MINER);
          game.teamB.spawn(miner,game);
          miner.x = miner.px = ninja.px;
          miner.y = miner.py = ninja.py;
@@ -1780,9 +1285,9 @@ package com.brockw.stickwar.campaign
                game.teamB.removeUnitCompletely(miner,game);
                return false;
             }
-            MinerAi(miner.ai).targetOre = null;
-            MinerAi(miner.ai).isUnassigned = false;
-            MinerAi(miner.ai).isGoingForOre = false;
+            miner.ai.targetOre = null;
+            miner.ai.isUnassigned = false;
+            miner.ai.isGoingForOre = false;
             moveCommand = new MoveCommand(game);
             moveCommand.type = UnitCommand.MOVE;
             moveCommand.goalX = miner.px;
@@ -1801,7 +1306,7 @@ package com.brockw.stickwar.campaign
          ++this.cachedDisguisedShadowrathCount;
          return true;
       }
-
+      
       private function revealShadowrathFakeMiner(miner:Miner) : Ninja
       {
          var ninja:Ninja = null;
@@ -1813,8 +1318,8 @@ package com.brockw.stickwar.campaign
          }
          healthRatio = miner.maxHealth > 0 ? miner.health / miner.maxHealth : 1;
          healthRatio = Math.max(0.25,Math.min(1,healthRatio));
-         MinerAi(miner.ai).targetOre = null;
-         ninja = Ninja(game.unitFactory.getUnit(Unit.U_NINJA));
+         miner.ai.targetOre = null;
+         ninja = game.unitFactory.getUnit(Unit.U_NINJA);
          game.teamB.spawn(ninja,game);
          ninja.x = ninja.px = miner.px;
          ninja.y = ninja.py = miner.py;
@@ -1840,27 +1345,27 @@ package com.brockw.stickwar.campaign
          this.setShadowrathDisguiseCooldown(ninja.id,SHADOWRATH_REDISGUISE_COOLDOWN_FRAMES);
          return ninja;
       }
-
+      
       private function assignFakeMinerSlot(miner:Miner) : Boolean
       {
          var goldOre:Ore = this.getFreeGoldOreForEnemyMiner(miner);
          if(goldOre != null && goldOre.reserveMiningSpot(miner))
          {
-            MinerAi(miner.ai).isUnassigned = false;
-            MinerAi(miner.ai).isGoingForOre = true;
-            MinerAi(miner.ai).targetOre = goldOre;
+            miner.ai.isUnassigned = false;
+            miner.ai.isGoingForOre = true;
+            miner.ai.targetOre = goldOre;
             return true;
          }
          if(!miner.team.statue.isMineFull() && miner.team.statue.reserveMiningSpot(miner))
          {
-            MinerAi(miner.ai).isUnassigned = false;
-            MinerAi(miner.ai).isGoingForOre = false;
-            MinerAi(miner.ai).targetOre = miner.team.statue;
+            miner.ai.isUnassigned = false;
+            miner.ai.isGoingForOre = false;
+            miner.ai.targetOre = miner.team.statue;
             return true;
          }
          return false;
       }
-
+      
       private function resolveShadowrathFakeMinerPriority() : void
       {
          var unit:Unit = null;
@@ -1868,9 +1373,9 @@ package com.brockw.stickwar.campaign
          var needsSlot:Boolean = false;
          for each(unit in game.teamB.units)
          {
-            if(unit is Miner && !Miner(unit).isShadowrathDisguise)
+            if(unit is Miner && !unit.isShadowrathDisguise)
             {
-               if(MinerAi(unit.ai).targetOre == null)
+               if(unit.ai.targetOre == null)
                {
                   needsSlot = true;
                   break;
@@ -1883,19 +1388,18 @@ package com.brockw.stickwar.campaign
          }
          for each(unit in game.teamB.units)
          {
-            if(!(unit is Miner) || !Miner(unit).isShadowrathDisguise)
+            if(!(!(unit is Miner) || !unit.isShadowrathDisguise))
             {
-               continue;
+               miner = unit;
+               if(!this.reassignFakeMinerSlot(miner))
+               {
+                  this.startShadowrathRevealChain(miner);
+               }
+               break;
             }
-            miner = Miner(unit);
-            if(!this.reassignFakeMinerSlot(miner))
-            {
-               this.startShadowrathRevealChain(miner);
-            }
-            break;
          }
       }
-
+      
       private function reassignFakeMinerSlot(miner:Miner) : Boolean
       {
          var goldOre:Ore = null;
@@ -1904,32 +1408,32 @@ package com.brockw.stickwar.campaign
             return false;
          }
          goldOre = this.getFreeGoldOreForEnemyMiner(miner);
-         if(goldOre != null && goldOre != MinerAi(miner.ai).targetOre && goldOre.reserveMiningSpot(miner))
+         if(goldOre != null && goldOre != miner.ai.targetOre && goldOre.reserveMiningSpot(miner))
          {
-            MinerAi(miner.ai).isUnassigned = false;
-            MinerAi(miner.ai).isGoingForOre = true;
-            MinerAi(miner.ai).targetOre = goldOre;
+            miner.ai.isUnassigned = false;
+            miner.ai.isGoingForOre = true;
+            miner.ai.targetOre = goldOre;
             return true;
          }
-         if(MinerAi(miner.ai).targetOre != miner.team.statue && this.moveFakeMinerToPrayer(miner))
+         if(miner.ai.targetOre != miner.team.statue && this.moveFakeMinerToPrayer(miner))
          {
             return true;
          }
          return false;
       }
-
+      
       private function moveFakeMinerToPrayer(miner:Miner) : Boolean
       {
          if(miner == null || miner.team.statue.isMineFull() || !miner.team.statue.reserveMiningSpot(miner))
          {
             return false;
          }
-         MinerAi(miner.ai).isUnassigned = false;
-         MinerAi(miner.ai).isGoingForOre = false;
-         MinerAi(miner.ai).targetOre = miner.team.statue;
+         miner.ai.isUnassigned = false;
+         miner.ai.isGoingForOre = false;
+         miner.ai.targetOre = miner.team.statue;
          return true;
       }
-
+      
       private function getFreeGoldOreForEnemyMiner(miner:Miner) : Ore
       {
          var i:int = 0;
@@ -1937,53 +1441,58 @@ package com.brockw.stickwar.campaign
          {
             return null;
          }
-         if(miner.team.direction == 1)
+         if(miner.team.direction != 1)
          {
-            for(i = 0; i < game.map.gold.length / 2; i++)
+            i = game.map.gold.length - 1;
+            while(true)
             {
-               if(!game.map.gold[i].isMineFull())
+               if(i >= game.map.gold.length / 2)
                {
-                  return game.map.gold[i];
+                  if(!game.map.gold[i].isMineFull())
+                  {
+                     break;
+                  }
+                  i--;
                }
             }
+            return game.map.gold[i];
          }
-         else
+         i = 0;
+         while(i < game.map.gold.length / 2)
          {
-            for(i = game.map.gold.length - 1; i >= game.map.gold.length / 2; i--)
+            if(!game.map.gold[i].isMineFull())
             {
-               if(!game.map.gold[i].isMineFull())
-               {
-                  return game.map.gold[i];
-               }
+               return game.map.gold[i];
             }
+            i++;
          }
          return null;
       }
-
+      
       private function getDisguisedMinerById(unitId:int) : Miner
       {
-         if(game != null && unitId in game.units && game.units[unitId] is Miner && Miner(game.units[unitId]).isShadowrathDisguise)
+         if(game != null && unitId in game.units && game.units[unitId] is Miner && game.units[unitId].isShadowrathDisguise)
          {
-            return Miner(game.units[unitId]);
+            return game.units[unitId];
          }
          return null;
       }
-
+      
       private function getShadowrathDisguiseCooldown(unitId:int) : int
       {
          return unitId in this.shadowrathDisguiseCooldowns ? int(this.shadowrathDisguiseCooldowns[unitId]) : 0;
       }
-
+      
       private function setShadowrathDisguiseCooldown(unitId:int, frames:int) : void
       {
          this.shadowrathDisguiseCooldowns[unitId] = frames;
       }
-
+      
       private function setShadowrathDisguiseLock(unitId:int, frames:int) : void
       {
          this.shadowrathDisguiseLockUntil[unitId] = game != null ? game.frame + frames : frames;
       }
-
+      
       private function hasShadowrathDisguiseLock(unitId:int) : Boolean
       {
          if(!(unitId in this.shadowrathDisguiseLockUntil))
@@ -1992,7 +1501,7 @@ package com.brockw.stickwar.campaign
          }
          return game != null && int(this.shadowrathDisguiseLockUntil[unitId]) > game.frame;
       }
-
+      
       private function applyShadowrathInitialDisguiseCooldown() : void
       {
          var unit:Unit = null;
@@ -2004,7 +1513,7 @@ package com.brockw.stickwar.campaign
             }
          }
       }
-
+      
       private function applyInitialShadowrathSpawnLocks() : void
       {
          var unit:Unit = null;
@@ -2017,7 +1526,7 @@ package com.brockw.stickwar.campaign
             }
          }
       }
-
+      
       private function isEnemyNearUnit(unit:Unit, rangeX:Number, rangeY:Number) : Boolean
       {
          var enemy:Unit = null;
@@ -2030,132 +1539,12 @@ package com.brockw.stickwar.campaign
          }
          return false;
       }
-
-      private function tryDebugSpawnBosses() : void
-      {
-         if(userInterface == null || userInterface.keyBoardState == null || !this.debugModeEnabled || !userInterface.keyBoardState.isShift)
-         {
-            return;
-         }
-         if(this.debugSpawnSet == DEBUG_SET_ORDER)
-         {
-            this.tryDebugSpawnOrderSet();
-         }
-         else
-         {
-            this.tryDebugSpawnChaosSet();
-         }
-      }
-
-      private function tryDebugSpawnOrderSet() : void
-      {
-         if(userInterface.keyBoardState.isPressed(Keyboard.F1))
-         {
-            this.spawnDebugBoss(Unit.U_SPEARTON);
-         }
-         else if(userInterface.keyBoardState.isPressed(Keyboard.F2))
-         {
-            this.spawnDebugBoss(Unit.U_ARCHER);
-         }
-         else if(userInterface.keyBoardState.isPressed(Keyboard.F3))
-         {
-            this.spawnDebugBoss(Unit.U_NINJA);
-         }
-         else if(userInterface.keyBoardState.isPressed(Keyboard.F4))
-         {
-            this.spawnDebugBoss(Unit.U_MAGIKILL);
-         }
-         else if(userInterface.keyBoardState.isPressed(Keyboard.F5))
-         {
-            this.spawnDebugBoss(Unit.U_MONK);
-         }
-         else if(userInterface.keyBoardState.isPressed(49))
-         {
-            this.spawnDebugAlliedUnit(Unit.U_SPEARTON,1);
-         }
-         else if(userInterface.keyBoardState.isPressed(50))
-         {
-            this.spawnDebugAlliedUnit(Unit.U_ARCHER,2);
-         }
-         else if(userInterface.keyBoardState.isPressed(51))
-         {
-            this.spawnDebugAlliedGroupAtBase([Unit.U_MAGIKILL,Unit.U_MONK]);
-         }
-         else if(userInterface.keyBoardState.isPressed(52))
-         {
-            this.spawnDebugAlliedUnit(Unit.U_ENSLAVED_GIANT,1);
-         }
-         else if(userInterface.keyBoardState.isPressed(53))
-         {
-            this.spawnDebugAlliedUnit(Unit.U_NINJA,1);
-         }
-         else if(userInterface.keyBoardState.isPressed(54))
-         {
-            this.spawnDebugEnemyAtBase(Unit.U_SPEARTON,1);
-         }
-         else if(userInterface.keyBoardState.isPressed(55))
-         {
-            this.spawnDebugEnemyAtBase(Unit.U_ARCHER,2);
-         }
-         else if(userInterface.keyBoardState.isPressed(56))
-         {
-            this.spawnDebugShadowrathAtEnemyBase();
-         }
-         else if(userInterface.keyBoardState.isPressed(57))
-         {
-            this.spawnDebugEnemyGroupAtBase([Unit.U_MAGIKILL,Unit.U_MONK]);
-         }
-      }
-
-      private function tryDebugSpawnChaosSet() : void
-      {
-         if(userInterface.keyBoardState.isPressed(Keyboard.F1))
-         {
-            this.spawnDebugKnightBoss();
-         }
-         else if(userInterface.keyBoardState.isPressed(Keyboard.F2))
-         {
-            this.spawnDebugBoss(Unit.U_WINGIDON);
-         }
-         else if(userInterface.keyBoardState.isPressed(Keyboard.F3))
-         {
-            this.spawnDebugBoss(Unit.U_SKELATOR);
-         }
-         else if(userInterface.keyBoardState.isPressed(Keyboard.F4))
-         {
-            this.spawnDebugThumbnailBossLineup();
-         }
-         else if(userInterface.keyBoardState.isPressed(49))
-         {
-            this.spawnDebugEnemyAtBase(Unit.U_KNIGHT,1);
-         }
-         else if(userInterface.keyBoardState.isPressed(50))
-         {
-            this.spawnDebugEnemyAtBase(Unit.U_DEAD,1);
-         }
-         else if(userInterface.keyBoardState.isPressed(51))
-         {
-            this.spawnDebugEnemyAtBase(Unit.U_WINGIDON,1);
-         }
-         else if(userInterface.keyBoardState.isPressed(52))
-         {
-            this.spawnDebugEnemyAtBase(Unit.U_SKELATOR,1);
-         }
-         else if(userInterface.keyBoardState.isPressed(53))
-         {
-            this.spawnDebugEnemyAtBase(Unit.U_MEDUSA,1);
-         }
-         else if(userInterface.keyBoardState.isPressed(54))
-         {
-            this.damageDebugEnemyStatue(250);
-         }
-      }
-
-      private function spawnDebugKnightBoss() : void
+      
+      public function spawnDebugKnightBoss() : void
       {
          var boss:Unit = null;
-         var spawnX:Number = NaN;
-         var spawnY:Number = NaN;
+         var spawnX:Number = Number(NaN);
+         var spawnY:Number = Number(NaN);
          if(game == null || game.teamB == null || game.teamB.tech == null)
          {
             return;
@@ -2169,7 +1558,7 @@ package com.brockw.stickwar.campaign
          game.teamB.spawn(boss,game);
          if(boss is Knight)
          {
-            Knight(boss).makeBoss();
+            boss.makeBoss();
          }
          boss.isBossMovementLocked = false;
          spawnX = game.teamB.homeX + game.teamB.direction * 180;
@@ -2178,12 +1567,13 @@ package com.brockw.stickwar.campaign
          boss.y = boss.py = spawnY;
          game.teamB.population += boss.population;
          this.commandDebugBossForCurrentArmyState(boss);
+         this.applyDebugFrozenAttackModeToUnit(boss);
          game.projectileManager.initTowerSpawn(spawnX,spawnY,game.teamB,0.7);
          game.projectileManager.initSpawnDrip(spawnX,spawnY,game.teamB);
          game.soundManager.playSoundFullVolume("Rage1");
       }
-
-      private function damageDebugEnemyStatue(amount:Number) : void
+      
+      public function damageDebugEnemyStatue(amount:Number) : void
       {
          if(game == null || game.teamB == null || game.teamB.statue == null)
          {
@@ -2192,12 +1582,12 @@ package com.brockw.stickwar.campaign
          game.teamB.statue.health = Math.max(1,game.teamB.statue.health - amount);
          this.showDebugBossAbility("DEBUG: Enemy statue -" + amount + " HP");
       }
-
-      private function spawnDebugAlliedUnit(unitType:int, count:int) : void
+      
+      public function spawnDebugAlliedUnit(unitType:int, count:int) : void
       {
          var ally:Unit = null;
-         var spawnX:Number = NaN;
-         var spawnY:Number = NaN;
+         var spawnX:Number = Number(NaN);
+         var spawnY:Number = Number(NaN);
          var i:int = 0;
          var attackMoveCommand:AttackMoveCommand = null;
          if(game == null || game.teamA == null || game.teamB == null)
@@ -2210,7 +1600,8 @@ package com.brockw.stickwar.campaign
          }
          spawnX = game.teamA.homeX + game.teamA.direction * 220;
          spawnY = game.map.height / 2;
-         for(i = 0; i < count; i++)
+         i = 0;
+         while(i < count)
          {
             ally = game.unitFactory.getUnit(unitType);
             game.teamA.spawn(ally,game);
@@ -2226,14 +1617,15 @@ package com.brockw.stickwar.campaign
             attackMoveCommand.realX = game.teamB.statue.px;
             attackMoveCommand.realY = game.map.height / 2;
             ally.ai.setCommand(game,attackMoveCommand);
+            i++;
          }
       }
-
-      private function spawnDebugAlliedGroupAtBase(unitTypes:Array) : void
+      
+      public function spawnDebugAlliedGroupAtBase(unitTypes:Array) : void
       {
          var ally:Unit = null;
-         var spawnX:Number = NaN;
-         var spawnY:Number = NaN;
+         var spawnX:Number = Number(NaN);
+         var spawnY:Number = Number(NaN);
          var i:int = 0;
          var attackMoveCommand:AttackMoveCommand = null;
          if(game == null || game.teamA == null || game.teamB == null)
@@ -2246,7 +1638,8 @@ package com.brockw.stickwar.campaign
          }
          spawnX = game.teamA.homeX + game.teamA.direction * 220;
          spawnY = game.map.height / 2;
-         for(i = 0; i < unitTypes.length; i++)
+         i = 0;
+         while(i < unitTypes.length)
          {
             ally = game.unitFactory.getUnit(int(unitTypes[i]));
             game.teamA.spawn(ally,game);
@@ -2262,16 +1655,17 @@ package com.brockw.stickwar.campaign
             attackMoveCommand.realX = game.teamB.statue.px;
             attackMoveCommand.realY = game.map.height / 2;
             ally.ai.setCommand(game,attackMoveCommand);
+            i++;
          }
       }
-
-      private function spawnDebugBoss(unitType:int) : void
+      
+      public function spawnDebugBoss(unitType:int) : void
       {
          var boss:Unit = null;
          var ally:Unit = null;
-         var spawnX:Number = NaN;
-         var spawnY:Number = NaN;
-         var offsetY:Number = NaN;
+         var spawnX:Number = Number(NaN);
+         var spawnY:Number = Number(NaN);
+         var offsetY:Number = Number(NaN);
          var i:int = 0;
          if(game == null || game.teamB == null)
          {
@@ -2291,12 +1685,14 @@ package com.brockw.stickwar.campaign
          boss.y = boss.py = spawnY;
          game.teamB.population += boss.population;
          this.commandDebugBossForCurrentArmyState(boss);
+         this.applyDebugFrozenAttackModeToUnit(boss);
          game.projectileManager.initTowerSpawn(spawnX,spawnY,game.teamB,0.7);
          game.projectileManager.initSpawnDrip(spawnX,spawnY,game.teamB);
          game.soundManager.playSoundFullVolume("Rage1");
          if(unitType == Unit.U_SPEARTON)
          {
-            for(i = 0; i < 2; i++)
+            i = 0;
+            while(i < 2)
             {
                ally = game.unitFactory.getUnit(Unit.U_SPEARTON);
                game.teamB.spawn(ally,game);
@@ -2304,17 +1700,19 @@ package com.brockw.stickwar.campaign
                offsetY = i == 0 ? -25 : 25;
                ally.y = ally.py = spawnY + offsetY;
                game.teamB.population += ally.population;
+               this.applyDebugFrozenAttackModeToUnit(ally);
+               i++;
             }
          }
       }
-
-      private function spawnDebugThumbnailBossLineup() : void
+      
+      public function spawnDebugThumbnailBossLineup() : void
       {
          var bossTypes:Array = [Unit.U_SPEARTON,Unit.U_ARCHER,Unit.U_NINJA,Unit.U_MAGIKILL,Unit.U_MONK,Unit.U_KNIGHT,Unit.U_WINGIDON,Unit.U_SKELATOR,Unit.U_MEDUSA];
          var boss:Unit = null;
          var standCommand:StandCommand = null;
-         var spawnX:Number = NaN;
-         var spawnY:Number = NaN;
+         var spawnX:Number = Number(NaN);
+         var spawnY:Number = Number(NaN);
          var i:int = 0;
          if(game == null || game.teamA == null)
          {
@@ -2325,7 +1723,8 @@ package com.brockw.stickwar.campaign
          this.clearDebugThumbnailStage();
          spawnX = game.teamA.homeX + game.teamA.direction * 520;
          spawnY = game.map.height / 2;
-         for(i = 0; i < bossTypes.length; i++)
+         i = 0;
+         while(i < bossTypes.length)
          {
             this.ensureDebugUnitGroup(game.teamA,int(bossTypes[i]));
             boss = game.unitFactory.getUnit(int(bossTypes[i]));
@@ -2338,10 +1737,11 @@ package com.brockw.stickwar.campaign
             standCommand = new StandCommand(game);
             boss.ai.setCommand(game,standCommand);
             game.teamA.population += boss.population;
+            i++;
          }
          this.showDebugBossAbility("DEBUG: Thumbnail boss lineup spawned");
       }
-
+      
       private function clearDebugThumbnailStage() : void
       {
          var ore:Ore = null;
@@ -2358,7 +1758,7 @@ package com.brockw.stickwar.campaign
             {
                if(ore is Gold)
                {
-                  gold = Gold(ore);
+                  gold = ore;
                   gold.ore.visible = false;
                   gold.frontOre.visible = false;
                   gold.ore.mouseEnabled = false;
@@ -2391,7 +1791,7 @@ package com.brockw.stickwar.campaign
             }
          }
       }
-
+      
       private function ensureDebugUnitGroup(targetTeam:Team, unitType:int) : void
       {
          if(targetTeam == null || targetTeam.unitGroups == null)
@@ -2403,7 +1803,7 @@ package com.brockw.stickwar.campaign
             targetTeam.unitGroups[unitType] = [];
          }
       }
-
+      
       private function configureThumbnailBoss(unit:Unit) : void
       {
          if(unit == null)
@@ -2412,12 +1812,12 @@ package com.brockw.stickwar.campaign
          }
          if(unit is Medusa)
          {
-            Medusa(unit).enableSuperMedusa();
+            unit.enableSuperMedusa();
             return;
          }
          this.configureWestwindBoss(unit);
       }
-
+      
       private function commandDebugBossForCurrentArmyState(boss:Unit) : void
       {
          var attackMoveCommand:AttackMoveCommand = null;
@@ -2442,12 +1842,12 @@ package com.brockw.stickwar.campaign
          attackMoveCommand.realY = attackMoveCommand.goalY;
          boss.ai.setCommand(game,attackMoveCommand);
       }
-
+      
       private function spawnDebugEnemy(unitType:int) : void
       {
          var enemy:Unit = null;
-         var spawnX:Number = NaN;
-         var spawnY:Number = NaN;
+         var spawnX:Number = Number(NaN);
+         var spawnY:Number = Number(NaN);
          var attackMoveCommand:AttackMoveCommand = null;
          if(game == null || game.teamB == null)
          {
@@ -2475,13 +1875,14 @@ package com.brockw.stickwar.campaign
          attackMoveCommand.realX = game.teamA.statue.px;
          attackMoveCommand.realY = game.map.height / 2;
          enemy.ai.setCommand(game,attackMoveCommand);
+         this.applyDebugFrozenAttackModeToUnit(enemy);
       }
-
-      private function spawnDebugEnemyAtBase(unitType:int, count:int) : void
+      
+      public function spawnDebugEnemyAtBase(unitType:int, count:int) : void
       {
          var enemy:Unit = null;
-         var spawnX:Number = NaN;
-         var spawnY:Number = NaN;
+         var spawnX:Number = Number(NaN);
+         var spawnY:Number = Number(NaN);
          var i:int = 0;
          if(game == null || game.teamB == null)
          {
@@ -2493,7 +1894,8 @@ package com.brockw.stickwar.campaign
          }
          spawnX = game.teamB.homeX + game.teamB.direction * 220;
          spawnY = game.map.height / 2;
-         for(i = 0; i < count; i++)
+         i = 0;
+         while(i < count)
          {
             enemy = game.unitFactory.getUnit(unitType);
             game.teamB.spawn(enemy,game);
@@ -2502,14 +1904,50 @@ package com.brockw.stickwar.campaign
             game.teamB.population += enemy.population;
             game.projectileManager.initTowerSpawn(enemy.px,enemy.py,game.teamB,0.6);
             game.projectileManager.initSpawnDrip(enemy.px,enemy.py,game.teamB);
+            this.applyDebugFrozenAttackModeToUnit(enemy);
+            i++;
          }
       }
-
-      private function spawnDebugEnemyGroupAtBase(unitTypes:Array) : void
+      
+      public function spawnDebugUndeadMagikill() : void
+      {
+         var undead:Undead = null;
+         if(game == null || game.teamB == null)
+         {
+            return;
+         }
+         if(!this.canDebugSpawnUnitOnTeam(Unit.U_UNDEAD,game.teamB))
+         {
+            return;
+         }
+         undead = game.unitFactory.getUnit(Unit.U_UNDEAD);
+         if(undead == null)
+         {
+            return;
+         }
+         game.teamB.spawn(undead,game);
+         undead.px = game.map.width / 2;
+         undead.x = undead.px;
+         undead.py = game.map.height / 2;
+         undead.y = undead.py;
+         undead.turnedHeadSkin = "Undead Magikill";
+         undead.maxHealth = undead.health = game.xml.xml.Order.Units.swordwrath.health;
+         undead.healthBar.totalHealth = undead.maxHealth;
+         undead.healthBar.health = undead.health;
+         game.projectileManager.initTowerSpawn(undead.px,undead.py,game.teamB,0.6);
+         game.projectileManager.initSpawnDrip(undead.px,undead.py,game.teamB);
+         var attackMove:AttackMoveCommand = new AttackMoveCommand(game);
+         attackMove.goalX = game.teamA.statue.px;
+         attackMove.goalY = game.map.height / 2;
+         undead.ai.setCommand(game,attackMove);
+         this.applyDebugFrozenAttackModeToUnit(undead);
+      }
+      
+      public function spawnDebugEnemyGroupAtBase(unitTypes:Array) : void
       {
          var enemy:Unit = null;
-         var spawnX:Number = NaN;
-         var spawnY:Number = NaN;
+         var spawnX:Number = Number(NaN);
+         var spawnY:Number = Number(NaN);
          var i:int = 0;
          if(game == null || game.teamB == null)
          {
@@ -2521,7 +1959,8 @@ package com.brockw.stickwar.campaign
          }
          spawnX = game.teamB.homeX + game.teamB.direction * 220;
          spawnY = game.map.height / 2;
-         for(i = 0; i < unitTypes.length; i++)
+         i = 0;
+         while(i < unitTypes.length)
          {
             enemy = game.unitFactory.getUnit(int(unitTypes[i]));
             game.teamB.spawn(enemy,game);
@@ -2530,9 +1969,88 @@ package com.brockw.stickwar.campaign
             game.teamB.population += enemy.population;
             game.projectileManager.initTowerSpawn(enemy.px,enemy.py,game.teamB,0.6);
             game.projectileManager.initSpawnDrip(enemy.px,enemy.py,game.teamB);
+            this.applyDebugFrozenAttackModeToUnit(enemy);
+            i++;
          }
       }
-
+      
+      public function toggleDebugEnemyAiFreezeAttackMode() : void
+      {
+         if(game == null || game.teamB == null)
+         {
+            return;
+         }
+         this.debugEnemyAiFrozenAttackMode = !this.debugEnemyAiFrozenAttackMode;
+         if(this.debugEnemyAiFrozenAttackMode)
+         {
+            this.debugPreviousDoAiUpdates = this.doAiUpdates;
+            this.doAiUpdates = false;
+            if(this.enemyTeamAi != null)
+            {
+               this.enemyTeamAi.setUnitCreationEnabled(false);
+            }
+            this.forceDebugEnemyArmyAttackMove();
+            this.showDebugBossAbility("DEBUG: Enemy AI frozen; attack move forced");
+         }
+         else
+         {
+            this.doAiUpdates = this.debugPreviousDoAiUpdates;
+            if(this.enemyTeamAi != null)
+            {
+               this.enemyTeamAi.setUnitCreationEnabled(!this.debugEnemyTrainingLocked);
+            }
+            this.unlockDebugEnemyArmyMovement();
+            this.showDebugBossAbility("DEBUG: Enemy AI resumed");
+         }
+      }
+      
+      private function forceDebugEnemyArmyAttackMove() : void
+      {
+         var unit:Unit = null;
+         if(game == null || game.teamB == null)
+         {
+            return;
+         }
+         game.teamB.currentAttackState = Team.G_ATTACK;
+         for each(unit in game.teamB.units)
+         {
+            this.applyDebugFrozenAttackModeToUnit(unit);
+         }
+      }
+      
+      private function unlockDebugEnemyArmyMovement() : void
+      {
+         var unit:Unit = null;
+         if(game == null || game.teamB == null)
+         {
+            return;
+         }
+         for each(unit in game.teamB.units)
+         {
+            if(unit != null && unit.type != Unit.U_STATUE)
+            {
+               unit.isBossMovementLocked = false;
+            }
+         }
+      }
+      
+      private function applyDebugFrozenAttackModeToUnit(unit:Unit) : void
+      {
+         var attackMoveCommand:AttackMoveCommand = null;
+         if(!this.debugEnemyAiFrozenAttackMode || unit == null || game == null || game.teamA == null || unit.team != game.teamB || !unit.isAlive() || unit.type == Unit.U_STATUE || unit.type == Unit.U_CHAOS_TOWER || unit.ai == null)
+         {
+            return;
+         }
+         unit.isBossMovementLocked = true;
+         attackMoveCommand = new AttackMoveCommand(game);
+         attackMoveCommand.type = UnitCommand.ATTACK_MOVE;
+         attackMoveCommand.goalX = game.teamA.statue.px;
+         attackMoveCommand.goalY = game.map.height / 2;
+         attackMoveCommand.realX = game.teamA.statue.px;
+         attackMoveCommand.realY = game.map.height / 2;
+         unit.ai.setCommand(game,attackMoveCommand);
+      }
+      
       private function canDebugSpawnUnitGroupOnTeam(unitTypes:Array, targetTeam:Team) : Boolean
       {
          var unitType:int = 0;
@@ -2549,7 +2067,7 @@ package com.brockw.stickwar.campaign
          }
          return true;
       }
-
+      
       private function canDebugSpawnUnitOnTeam(unitType:int, targetTeam:Team) : Boolean
       {
          var expectedTeam:int = this.getDebugUnitTeamType(unitType);
@@ -2564,7 +2082,7 @@ package com.brockw.stickwar.campaign
          }
          return true;
       }
-
+      
       private function getDebugUnitTeamType(unitType:int) : int
       {
          switch(unitType)
@@ -2584,6 +2102,7 @@ package com.brockw.stickwar.campaign
             case Unit.U_WINGIDON:
             case Unit.U_SKELATOR:
             case Unit.U_DEAD:
+            case Unit.U_UNDEAD:
             case Unit.U_CAT:
             case Unit.U_KNIGHT:
             case Unit.U_MEDUSA:
@@ -2593,8 +2112,8 @@ package com.brockw.stickwar.campaign
                return -1;
          }
       }
-
-      private function killEnemyUnitsAndLockTraining() : void
+      
+      public function killEnemyUnitsAndLockTraining() : void
       {
          var unit:Unit = null;
          var snapshot:Array = null;
@@ -2623,54 +2142,15 @@ package com.brockw.stickwar.campaign
          }
          this.showDebugBossAbility("DEBUG: Enemy units killed; training locked");
       }
-
+      
       private function handleDebugHotkeys() : void
       {
-         if(userInterface == null || userInterface.keyBoardState == null || !userInterface.keyBoardState.isShift)
+         if(this.campaignDebugTools != null)
          {
-            return;
-         }
-         if(userInterface.keyBoardState.isPressed(Keyboard.F9))
-         {
-            this.debugModeEnabled = !this.debugModeEnabled;
-            if(!this.debugModeEnabled)
-            {
-               this.removeDebugOverlay();
-            }
-            else
-            {
-               this.showDebugEnabledLabel();
-            }
-            return;
-         }
-         if(this.debugModeEnabled)
-         {
-            if(userInterface.keyBoardState.isPressed(Keyboard.F8))
-            {
-               this.toggleDebugFullVision();
-               return;
-            }
-            if(userInterface.keyBoardState.isPressed(Keyboard.F6))
-            {
-               this.debugSpawnSet = DEBUG_SET_ORDER;
-               this.showDebugBossAbility("DEBUG SET: ORDER");
-               return;
-            }
-            if(userInterface.keyBoardState.isPressed(Keyboard.F7))
-            {
-               this.debugSpawnSet = DEBUG_SET_CHAOS;
-               this.showDebugBossAbility("DEBUG SET: CHAOS");
-               return;
-            }
-            if(userInterface.keyBoardState.isPressed(48))
-            {
-               this.killEnemyUnitsAndLockTraining();
-               return;
-            }
-            this.tryDebugSpawnBosses();
+            this.campaignDebugTools.handleHotkeys();
          }
       }
-
+      
       private function playDebugBackgroundMusic(name:String) : void
       {
          if(game == null || game.soundManager == null)
@@ -2680,146 +2160,17 @@ package com.brockw.stickwar.campaign
          game.soundManager.playSoundInBackground(name);
          this.showDebugBossAbility("DEBUG MUSIC: " + name);
       }
-
+      
       private function getDebugSpawnSetName() : String
       {
          return this.debugSpawnSet == DEBUG_SET_CHAOS ? "Chaos" : "Order";
       }
-
-      private function showDebugEnabledLabel() : void
-      {
-         var format:TextFormat = null;
-         if(this.debugOverlay != null)
-         {
-            if(!contains(this.debugOverlay))
-            {
-               addChild(this.debugOverlay);
-            }
-            return;
-         }
-         this.debugOverlay = new TextField();
-         format = new TextFormat("_typewriter",12,16776960,true);
-         this.debugOverlay.defaultTextFormat = format;
-         this.debugOverlay.selectable = false;
-         this.debugOverlay.mouseEnabled = false;
-         this.debugOverlay.multiline = false;
-         this.debugOverlay.wordWrap = false;
-         this.debugOverlay.background = true;
-         this.debugOverlay.backgroundColor = 0;
-         this.debugOverlay.border = true;
-         this.debugOverlay.borderColor = 16776960;
-         this.debugOverlay.width = 120;
-         this.debugOverlay.height = 20;
-         this.debugOverlay.x = 8;
-         this.debugOverlay.y = 8;
-         this.debugOverlay.text = "DEBUG ENABLED";
-         addChild(this.debugOverlay);
-      }
-
-      private function updateDebugOverlay() : void
-      {
-         var enemyState:String = null;
-         var playerState:String = null;
-         if(!this.debugModeEnabled)
-         {
-            return;
-         }
-         this.ensureDebugOverlay();
-         this.updateDebugAbilityToast();
-         enemyState = this.describeAttackState(game != null && game.teamB != null ? game.teamB.currentAttackState : -1);
-         playerState = this.describeAttackState(game != null && game.teamA != null ? game.teamA.currentAttackState : -1);
-         this.debugOverlay.text = "DEBUG MODE\n" + "set: " + this.getDebugSpawnSetName() + "\n" + "rt fps: " + this.formatNumber(this.debugLastRealtimeFps) + "\n" + "sim fps: " + this.formatNumber(simulation != null ? simulation.fps : 0) + "\n" + "frame ms: " + this.formatNumber(this.debugLastFrameMs) + "\n" + "frame: " + (game != null ? game.frame : 0) + "\n" + "mem MB: " + this.formatNumber(System.totalMemory / 1048576) + "\n" + "player AI: " + playerState + "\n" + "enemy AI: " + enemyState + "\n" + "boss queue: " + (this.rebelsBossQueueDebugText != null && this.rebelsBossQueueDebugText != "" ? this.rebelsBossQueueDebugText : "off") + "\n" + "units P/E: " + this.getUnitCount(game != null ? game.teamA : null) + "/" + this.getUnitCount(game != null ? game.teamB : null) + "\n" + "proj/fx: " + this.getProjectileCount() + "/" + this.getAirEffectCount() + "\n" + "prewarm queue: " + (this.delayedLevelPrewarmQueue != null ? this.delayedLevelPrewarmQueue.length : 0) + "\n" + "ms prewarm: " + this.debugLastPrewarmMs + "\n" + "ms enemy ai: " + this.debugLastEnemyAiMs + "\n" + "ms controller: " + this.debugLastControllerMs + "\n" + "ms core: " + this.debugLastCoreMs + "\n" + "ms total: " + this.debugLastTotalMs;
-      }
-
-      private function ensureDebugOverlay() : void
-      {
-         var format:TextFormat = null;
-         if(this.debugOverlay != null)
-         {
-            if(!contains(this.debugOverlay))
-            {
-               addChild(this.debugOverlay);
-            }
-            return;
-         }
-         this.debugOverlay = new TextField();
-         format = new TextFormat("_typewriter",14,16777215);
-         this.debugOverlay.defaultTextFormat = format;
-         this.debugOverlay.selectable = false;
-         this.debugOverlay.mouseEnabled = false;
-         this.debugOverlay.multiline = true;
-         this.debugOverlay.wordWrap = false;
-         this.debugOverlay.background = true;
-         this.debugOverlay.backgroundColor = 0;
-         this.debugOverlay.border = true;
-         this.debugOverlay.borderColor = 16777215;
-         this.debugOverlay.width = 270;
-         this.debugOverlay.height = 270;
-         this.debugOverlay.x = 8;
-         this.debugOverlay.y = 8;
-         addChild(this.debugOverlay);
-      }
-
-      private function updateDebugAbilityToast() : void
-      {
-         if(game == null || this.debugAbilityToastText == "" || game.frame > this.debugAbilityToastUntilFrame)
-         {
-            if(this.debugAbilityToast != null && contains(this.debugAbilityToast))
-            {
-               removeChild(this.debugAbilityToast);
-            }
-            return;
-         }
-         this.ensureDebugAbilityToast();
-         this.debugAbilityToast.text = this.debugAbilityToastText;
-      }
-
-      private function ensureDebugAbilityToast() : void
-      {
-         var format:TextFormat = null;
-         if(this.debugAbilityToast != null)
-         {
-            if(!contains(this.debugAbilityToast))
-            {
-               addChild(this.debugAbilityToast);
-            }
-            return;
-         }
-         this.debugAbilityToast = new TextField();
-         format = new TextFormat("_typewriter",14,16776960,true);
-         this.debugAbilityToast.defaultTextFormat = format;
-         this.debugAbilityToast.selectable = false;
-         this.debugAbilityToast.mouseEnabled = false;
-         this.debugAbilityToast.multiline = false;
-         this.debugAbilityToast.wordWrap = false;
-         this.debugAbilityToast.background = true;
-         this.debugAbilityToast.backgroundColor = 0;
-         this.debugAbilityToast.border = true;
-         this.debugAbilityToast.borderColor = 16776960;
-         this.debugAbilityToast.width = 260;
-         this.debugAbilityToast.height = 24;
-         this.debugAbilityToast.x = 286;
-         this.debugAbilityToast.y = 8;
-         addChild(this.debugAbilityToast);
-      }
-
-      private function removeDebugOverlay() : void
-      {
-         if(this.debugOverlay != null && contains(this.debugOverlay))
-         {
-            removeChild(this.debugOverlay);
-         }
-         if(this.debugAbilityToast != null && contains(this.debugAbilityToast))
-         {
-            removeChild(this.debugAbilityToast);
-         }
-      }
-
+      
       private function formatNumber(value:Number) : String
       {
          return value.toFixed(1);
       }
-
+      
       private function describeAttackState(state:int) : String
       {
          if(state == Team.G_ATTACK)
@@ -2832,7 +2183,7 @@ package com.brockw.stickwar.campaign
          }
          return "IDLE";
       }
-
+      
       private function getUnitCount(targetTeam:Team) : int
       {
          var count:int = 0;
@@ -2845,22 +2196,22 @@ package com.brockw.stickwar.campaign
          {
             if(unit != null && unit.isAlive())
             {
-               ++count;
+               count++;
             }
          }
          return count;
       }
-
+      
       private function getProjectileCount() : int
       {
          return game != null && game.projectileManager != null && game.projectileManager.projectiles != null ? game.projectileManager.projectiles.length : 0;
       }
-
+      
       private function getAirEffectCount() : int
       {
          return game != null && game.projectileManager != null && game.projectileManager.airEffects != null ? game.projectileManager.airEffects.length : 0;
       }
-
+      
       private function triggerDebugSpeartonBossSpecial() : void
       {
          var unit:Unit = null;
@@ -2871,15 +2222,15 @@ package com.brockw.stickwar.campaign
          this.grantWestwindBossResearch();
          for each(unit in game.teamB.units)
          {
-            if(unit is Spearton && Spearton(unit).isBoss && unit.isAlive())
+            if(unit is Spearton && unit.isBoss && unit.isAlive())
             {
-               Spearton(unit).resetBossSpecialDebugState();
-               Spearton(unit).tryBossBraceShieldSlam();
+               unit.resetBossSpecialDebugState();
+               unit.tryBossBraceShieldSlam();
                break;
             }
          }
       }
-
+      
       private function triggerDebugShadowrathEscapeEffect() : void
       {
          var unit:Unit = null;
@@ -2889,7 +2240,7 @@ package com.brockw.stickwar.campaign
          }
          for each(unit in game.teamB.units)
          {
-            if(unit is Ninja && Ninja(unit).isBoss && unit.isAlive())
+            if(unit is Ninja && unit.isBoss && unit.isAlive())
             {
                game.projectileManager.initWallExplosion(unit.px,unit.py,game.teamB);
                game.soundManager.playSound("mediumExplosion3",unit.px,unit.py);
@@ -2897,21 +2248,27 @@ package com.brockw.stickwar.campaign
             }
          }
       }
-
-      private function toggleDebugFullVision() : void
+      
+      public function toggleDebugFullVision() : void
       {
          if(game == null || game.fogOfWar == null)
          {
             return;
          }
-         game.fogOfWar.isFogOn = !game.fogOfWar.isFogOn;
+         this.debugFullVisionEnabled = !this.debugFullVisionEnabled;
+         game.fogOfWar.isFogOn = !this.debugFullVisionEnabled;
       }
-
-      private function spawnDebugShadowrathAtEnemyBase() : void
+      
+      public function get isDebugFullVisionEnabled() : Boolean
+      {
+         return this.debugFullVisionEnabled;
+      }
+      
+      public function spawnDebugShadowrathAtEnemyBase() : void
       {
          var enemy:Unit = null;
-         var spawnX:Number = NaN;
-         var spawnY:Number = NaN;
+         var spawnX:Number = Number(NaN);
+         var spawnY:Number = Number(NaN);
          var moveCommand:MoveCommand = null;
          if(game == null || game.teamB == null)
          {
@@ -2938,8 +2295,9 @@ package com.brockw.stickwar.campaign
          moveCommand.realX = spawnX;
          moveCommand.realY = spawnY;
          enemy.ai.setCommand(game,moveCommand);
+         this.applyDebugFrozenAttackModeToUnit(enemy);
       }
-
+      
       private function triggerDebugShadowrathDisguise() : void
       {
          var unit:Unit = null;
@@ -2955,11 +2313,11 @@ package com.brockw.stickwar.campaign
             {
                delete this.shadowrathDisguiseCooldowns[unit.id];
                delete this.shadowrathDisguiseLockUntil[unit.id];
-               this.tryDisguiseShadowrath(Ninja(unit),true);
+               this.tryDisguiseShadowrath(unit,true);
             }
          }
       }
-
+      
       public function getDisguisedShadowrathCount() : int
       {
          if(game == null || game.teamB == null)
@@ -2968,7 +2326,7 @@ package com.brockw.stickwar.campaign
          }
          return this.cachedDisguisedShadowrathCount;
       }
-
+      
       public function revealShadowrathDisguises(limit:int = -1) : int
       {
          var unit:Unit = null;
@@ -2982,19 +2340,92 @@ package com.brockw.stickwar.campaign
          snapshot = game.teamB.units.concat();
          for each(unit in snapshot)
          {
-            if(!(unit is Miner) || !Miner(unit).isShadowrathDisguise || !unit.isAlive())
+            if(!(!(unit is Miner) || !unit.isShadowrathDisguise || !unit.isAlive()))
             {
-               continue;
-            }
-            miner = Miner(unit);
-            this.revealShadowrathFakeMiner(miner);
-            ++revealed;
-            if(limit >= 0 && revealed >= limit)
-            {
-               break;
+               miner = unit;
+               this.revealShadowrathFakeMiner(miner);
+               revealed++;
+               if(limit >= 0 && revealed >= limit)
+               {
+                  break;
+               }
             }
          }
          return revealed;
       }
+      
+      private function tryWingidonBossSpawn() : void
+      {
+         var level:Level = null;
+         var attackCmd:AttackMoveCommand = null;
+         var wingidon:Wingidon = null;
+         var support:Wingidon = null;
+         var xPos:Number = Number.NaN;
+         var yPos:Number = Number.NaN;
+         var i:int = 0;
+         var supportCount:int = 2;
+         if(this._wingidonBossSpawned || game == null || game.teamB == null || game.teamB.statue == null || main == null || main.campaign == null)
+         {
+            return;
+         }
+         level = main.campaign.getCurrentLevel();
+         if(level == null || level.title != LEVEL_TITLE_ECLIPSORS_ATTACK)
+         {
+            return;
+         }
+         if(this.campaignReinforcementManager != null && this.campaignReinforcementManager.wingidonBossPreSpawned)
+         {
+            this._wingidonBossSpawned = true;
+            return;
+         }
+         if(game.teamB.statue.health > game.teamB.statue.maxHealth * 0.5)
+         {
+            return;
+         }
+         this._wingidonBossSpawned = true;
+         game.teamB.tech.isResearchedMap[Tech.WINGIDON_SPEED] = true;
+         wingidon = game.unitFactory.getUnit(Unit.U_WINGIDON);
+         game.teamB.spawn(wingidon,game);
+         wingidon.makeBoss();
+         wingidon.enableCampaignBossEscape();
+         xPos = game.teamB.homeX + game.teamB.direction * 180;
+         yPos = game.map.height / 2;
+         wingidon.px = wingidon.x = xPos;
+         wingidon.py = wingidon.y = yPos;
+         game.teamB.population += wingidon.population;
+         attackCmd = new AttackMoveCommand(game);
+         attackCmd.type = UnitCommand.ATTACK_MOVE;
+         attackCmd.goalX = game.teamA.statue.px;
+         attackCmd.goalY = game.map.height / 2;
+         attackCmd.realX = game.teamA.statue.px;
+         attackCmd.realY = game.map.height / 2;
+         wingidon.ai.setCommand(game,attackCmd);
+         i = 0;
+         while(i < supportCount)
+         {
+            support = game.unitFactory.getUnit(Unit.U_WINGIDON);
+            game.teamB.spawn(support,game);
+            xPos = game.teamB.homeX + game.teamB.direction * (180 + (i + 1) * 80);
+            yPos = Math.max(80,Math.min(game.map.height - 80,game.map.height / 2 + (i - 1) * 70));
+            support.px = support.x = xPos;
+            support.py = support.y = yPos;
+            game.teamB.population += support.population;
+            attackCmd = new AttackMoveCommand(game);
+            attackCmd.type = UnitCommand.ATTACK_MOVE;
+            attackCmd.goalX = game.teamA.statue.px;
+            attackCmd.goalY = game.map.height / 2;
+            attackCmd.realX = game.teamA.statue.px;
+            attackCmd.realY = game.map.height / 2;
+            support.ai.setCommand(game,attackCmd);
+            i++;
+         }
+         game.projectileManager.initTowerSpawn(game.teamB.homeX + game.teamB.direction * 180,game.map.height / 2,game.teamB,0.7);
+         game.projectileManager.initSpawnDrip(game.teamB.homeX + game.teamB.direction * 180,game.map.height / 2,game.teamB);
+         if(this.campaignReinforcementManager != null)
+         {
+            this.campaignReinforcementManager.wingidonBossPreSpawned = true;
+         }
+      }
    }
 }
+

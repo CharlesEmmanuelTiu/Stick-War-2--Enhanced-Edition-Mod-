@@ -11,6 +11,7 @@ package com.brockw.stickwar.engine
    
    public class Background extends Entity
    {
+      
       private var layers:Vector.<MovieClip>;
       
       private var _mapLength:int;
@@ -38,7 +39,8 @@ package com.brockw.stickwar.engine
          this.layers = new Vector.<MovieClip>();
          this.mapLength = 0;
          ++main.main.loadingFraction;
-         for(var i:int = layerList.length - 1; i >= 0; i--)
+         var i:int = layerList.length - 1;
+         while(i >= 0)
          {
             m = layerList[i];
             ++main.main.loadingFraction;
@@ -52,7 +54,8 @@ package com.brockw.stickwar.engine
             ++main.main.loadingFraction;
             boundingRect = new Rectangle(0,0,main.stage.stageWidth + 1,main.stage.stageHeight);
             ++main.main.loadingFraction;
-            for(x = 0; x < m.width; x += main.stage.stageWidth)
+            x = 0;
+            while(x < m.width)
             {
                boundingRect.x = 0;
                b = new BitmapData(main.stage.stageWidth + 1,main.stage.stageHeight,true,0);
@@ -65,6 +68,7 @@ package com.brockw.stickwar.engine
                newBitmap.cacheAsBitmap = true;
                ++main.main.loadingFraction;
                newBitmap.x = x;
+               x += main.stage.stageWidth;
             }
             this.splitLayersOnScreen.push(-1);
             ++main.main.loadingFraction;
@@ -74,6 +78,7 @@ package com.brockw.stickwar.engine
             this.layerContainers.push(s);
             addChild(s);
             ++main.main.loadingFraction;
+            i--;
          }
          this.time = 0;
          py = 0;
@@ -86,10 +91,11 @@ package com.brockw.stickwar.engine
       
       public function update(game:StickWar) : void
       {
-         var p:Number = NaN;
+         var p:Number = Number(NaN);
          var dest:* = undefined;
          var piece:int = 0;
-         for(var i:int = 0; i < this.layers.length; i++)
+         var i:int = 0;
+         while(i < this.layers.length)
          {
             if(game.gameScreen.hasMovingBackground || i == this.layers.length - 1)
             {
@@ -118,6 +124,7 @@ package com.brockw.stickwar.engine
                   this.moveAround(i,piece,dest);
                }
             }
+            i++;
          }
       }
       

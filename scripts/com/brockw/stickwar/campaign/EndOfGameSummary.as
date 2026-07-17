@@ -57,7 +57,8 @@ package com.brockw.stickwar.campaign
          }
          var maxLength:int = 0;
          var maxRetryLength:int = 0;
-         for(i = 0; i < this.main.campaign.levels.length; i++)
+         i = 0;
+         while(i < this.main.campaign.levels.length)
          {
             l = this.main.campaign.levels[i];
             retryText = "";
@@ -73,8 +74,10 @@ package com.brockw.stickwar.campaign
             {
                maxLength = l.title.length;
             }
+            i++;
          }
-         for(i = 0; i < this.main.campaign.levels.length; i++)
+         i = 0;
+         while(i < this.main.campaign.levels.length)
          {
             l = this.main.campaign.levels[i];
             if(l.bestTime < 0)
@@ -89,18 +92,23 @@ package com.brockw.stickwar.campaign
             }
             else
             {
-               for(j = 0; j < maxRetryLength; j++)
+               j = 0;
+               while(j < maxRetryLength)
                {
+                  j++;
                }
             }
-            for(j = l.title.length; j < maxLength; j++)
+            j = l.title.length;
+            while(j < maxLength)
             {
                newTitle += " ";
+               j++;
             }
             this.summaryMc.endOfGameText.text += "\n" + (newTitle + " " + PostGameScreen.getTimeFormat(l.bestTime));
             this.summaryMc.endOfGameText.text += retryText;
             total += l.totalTime;
             best += l.bestTime;
+            i++;
          }
          if(this.main.campaign.difficultyLevel == Campaign.D_NORMAL)
          {

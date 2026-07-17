@@ -1,40 +1,51 @@
 package com.brockw.stickwar.engine.units
 {
    import com.brockw.game.Util;
+   import com.brockw.stickwar.campaign.CampaignGameScreen;
    import com.brockw.stickwar.engine.ActionInterface;
    import com.brockw.stickwar.engine.Ai.*;
    import com.brockw.stickwar.engine.Ai.command.*;
    import com.brockw.stickwar.engine.Entity;
    import com.brockw.stickwar.engine.StickWar;
-   import com.brockw.stickwar.campaign.CampaignGameScreen;
    import com.brockw.stickwar.engine.Team.Team;
    import com.brockw.stickwar.engine.Team.Tech;
    import com.brockw.stickwar.market.MarketItem;
    import flash.display.MovieClip;
+   import flash.geom.ColorTransform;
    import flash.geom.Point;
    
    public class Monk extends Unit
    {
       
+      private static var WEAPON_REACH:int;
+      
       private static const BOSS_WEAPON_SKIN:String = "Golden Staff";
       
       private static const BOSS_REVIVE_RANGE:Number = 180;
-
+      
       private static const BOSS_REVIVE_HEALTH_RATIO:Number = 0.7;
-
+      
       private static const BOSS_MAGIKILL_RESCUE_SAFE_RADIUS:Number = 260;
-
+      
       private static const BOSS_DESPERATION_RADIUS:Number = 220;
-
+      
       private static const BOSS_REAR_GAP:Number = 140;
-
+      
       private static const BOSS_SHADOWRATH_HEAL_MULTIPLIER:Number = 2;
       
-      private static const BOSS_REVIVE_COOLDOWN_FRAMES:int = 30 * 30;
+      private static const BOSS_PLAYER_REVIVE_RANGE:Number = 600;
+      
+      private static const BOSS_AUTO_REVIVE_SCAN_INTERVAL:int = 15;
+      
+      private static const BOSS_REVIVE_RETREAT_FRAMES:int = 30;
       
       private static const BOSS_DAMAGE_TAKEN_MULTIPLIER:Number = 1 / 1.65;
       
-      private static var WEAPON_REACH:int;
+      private static const BOSS_FOG_REVEAL_COOLDOWN:int = 30 * 90;
+      
+      private static const BOSS_FOG_REVEAL_DURATION:int = 30 * 5;
+      
+      private static const BOSS_FOG_REVEAL_SPEED:Number = 10;
       
       private var cureSpellCooldown:SpellCooldown;
       
@@ -49,7 +60,7 @@ package com.brockw.stickwar.engine.units
       private var isSlowing:Boolean;
       
       private var isShielding:Boolean;
-
+      
       private var isReviving:Boolean;
       
       private var spellX:Number;
@@ -59,7 +70,7 @@ package com.brockw.stickwar.engine.units
       private var _isCureToggled:Boolean;
       
       private var cureTarget:Unit;
-
+      
       private var bossSecondCureTarget:Unit;
       
       private var _healAmount:Number;
@@ -73,16 +84,50 @@ package com.brockw.stickwar.engine.units
       private var _isBoss:Boolean;
       
       private var bossReviveCooldownFrames:int;
-
+      
       private var bossReviveTarget:Unit;
-
+      
       private var bossDamagedUntilFrame:int;
+      
+      private var _isPlayerBoss:Boolean;
+      
+      private var _isAutoReviveToggled:Boolean;
+      
+      private var playerReviveTarget:Unit;
+      
+      public var playerReviveIsManual:Boolean;
+      
+      private var playerReviveWalkTarget:Unit;
+      
+      private var autoReviveScanCooldown:int;
+      
+      private var bossReviveRetreatFrames:int;
+      
+      private var bossReviveCooldownMax:int;
+      
+      private var bossFogRevealCooldownFrames:int;
+      
+      private var _fogRevealPhase:int;
+      
+      private var _fogRevealActiveFrames:int;
+      
+      private var _fogRevealTargetX:Number;
+      
+      private var _fogRevealTargetReachedX:Number;
       
       public function Monk(game:StickWar)
       {
          super(game);
          _mc = new _cleric();
          this.init(game);
+         if(game != null)
+         {
+            this.bossReviveCooldownMax = game.xml.xml.Order.Units.monk.revive.cooldown;
+         }
+         else
+         {
+            this.bossReviveCooldownMax = 1350;
+         }
          addChild(_mc);
          ai = new MonkAi(this);
          initSync();
@@ -91,7 +136,7 @@ package com.brockw.stickwar.engine.units
       
       public static function setItem(mc:MovieClip, weapon:String, armor:String, misc:String) : void
       {
-         var m:_cleric = _cleric(mc);
+         var m:_cleric = mc;
          if(Boolean(m.mc.clericwand))
          {
             if(weapon != "")
@@ -127,8 +172,8 @@ package com.brockw.stickwar.engine.units
          _mc.width *= _scale;
          _mc.height *= _scale;
          _state = S_RUN;
-         MovieClip(_mc.mc.gotoAndPlay(1));
-         MovieClip(_mc.gotoAndStop(1));
+         _mc.mc.gotoAndPlay(1);
+         _mc.gotoAndStop(1);
          drawShadow();
          this.healSpellCooldown = new SpellCooldown(game.xml.xml.Order.Units.monk.heal.effect,game.xml.xml.Order.Units.monk.heal.cooldown,game.xml.xml.Order.Units.monk.heal.mana);
          this.cureSpellCooldown = new SpellCooldown(game.xml.xml.Order.Units.monk.cure.effect,game.xml.xml.Order.Units.monk.cure.cooldown,game.xml.xml.Order.Units.monk.cure.mana);
@@ -146,6 +191,18 @@ package com.brockw.stickwar.engine.units
          this.bossReviveCooldownFrames = 0;
          this.bossReviveTarget = null;
          this.bossDamagedUntilFrame = 0;
+         this._isPlayerBoss = false;
+         this._isAutoReviveToggled = false;
+         this.playerReviveTarget = null;
+         this.playerReviveWalkTarget = null;
+         this.autoReviveScanCooldown = 0;
+         this.bossReviveRetreatFrames = 0;
+         this.playerReviveIsManual = false;
+         this.bossFogRevealCooldownFrames = 0;
+         this._fogRevealPhase = 0;
+         this._fogRevealActiveFrames = 0;
+         this._fogRevealTargetX = 0;
+         this._fogRevealTargetReachedX = 0;
       }
       
       override public function setBuilding() : void
@@ -166,9 +223,19 @@ package com.brockw.stickwar.engine.units
          {
             --this.bossReviveCooldownFrames;
          }
+         if(this.autoReviveScanCooldown > 0)
+         {
+            --this.autoReviveScanCooldown;
+         }
+         if(this.bossFogRevealCooldownFrames > 0)
+         {
+            --this.bossFogRevealCooldownFrames;
+         }
+         this.updatePlayerReviveWalk(game);
          this.healSpellCooldown.update();
          this.cureSpellCooldown.update();
          this.slowSpellCooldown.update();
+         this.updateBossFogReveal(game);
          updateCommon(game);
          if(!isDieing)
          {
@@ -176,7 +243,7 @@ package com.brockw.stickwar.engine.units
             {
                _mc.gotoAndStop(_currentDual.attackLabel);
                moveDualPartner(_dualPartner,_currentDual.xDiff);
-               if(MovieClip(_mc.mc).currentFrame == MovieClip(_mc.mc).totalFrames)
+               if(_mc.mc.currentFrame == _mc.mc.totalFrames)
                {
                   _mc.gotoAndStop("run");
                   _isDualing = false;
@@ -189,7 +256,7 @@ package com.brockw.stickwar.engine.units
             else if(this.isHealing == true)
             {
                _mc.gotoAndStop("attack_1");
-               if(MovieClip(_mc.mc).currentFrame == 25 && !hasHit)
+               if(_mc.mc.currentFrame == 25 && !hasHit)
                {
                   if(this.healTarget != null)
                   {
@@ -198,7 +265,7 @@ package com.brockw.stickwar.engine.units
                   }
                   hasHit = true;
                }
-               if(MovieClip(_mc.mc).currentFrame == MovieClip(_mc.mc).totalFrames)
+               if(_mc.mc.currentFrame == _mc.mc.totalFrames)
                {
                   this.isHealing = false;
                   _state = S_RUN;
@@ -207,7 +274,7 @@ package com.brockw.stickwar.engine.units
             else if(this.isCuring == true)
             {
                _mc.gotoAndStop("attack_2");
-               if(MovieClip(_mc.mc).currentFrame == 25 && !hasHit)
+               if(_mc.mc.currentFrame == 25 && !hasHit)
                {
                   if(this.cureTarget != null)
                   {
@@ -221,9 +288,9 @@ package com.brockw.stickwar.engine.units
                   }
                   hasHit = true;
                }
-               if(MovieClip(_mc.mc).currentFrame == MovieClip(_mc.mc).totalFrames)
+               if(_mc.mc.currentFrame == _mc.mc.totalFrames)
                {
-                  MovieClip(_mc.mc).gotoAndStop(1);
+                  _mc.mc.gotoAndStop(1);
                   this.isCuring = false;
                   this.bossSecondCureTarget = null;
                   _state = S_RUN;
@@ -232,7 +299,7 @@ package com.brockw.stickwar.engine.units
             else if(this.isSlowing == true)
             {
                _mc.gotoAndStop("attack_1");
-               if(MovieClip(_mc.mc).currentFrame == Math.floor(MovieClip(_mc.mc).totalFrames / 2) && !hasHit)
+               if(_mc.mc.currentFrame == Math.floor(_mc.mc.totalFrames / 2) && !hasHit)
                {
                   if(int(this.spellX) in game.units)
                   {
@@ -243,7 +310,7 @@ package com.brockw.stickwar.engine.units
                   }
                   hasHit = true;
                }
-               if(MovieClip(_mc.mc).currentFrame == MovieClip(_mc.mc).totalFrames)
+               if(_mc.mc.currentFrame == _mc.mc.totalFrames)
                {
                   this.isSlowing = false;
                   _state = S_RUN;
@@ -252,14 +319,14 @@ package com.brockw.stickwar.engine.units
             else if(this.isReviving == true)
             {
                _mc.gotoAndStop("attack_2");
-               if(MovieClip(_mc.mc).currentFrame == 25 && !hasHit)
+               if(_mc.mc.currentFrame == 25 && !hasHit)
                {
                   this.performBossRevive(game);
                   hasHit = true;
                }
-               if(MovieClip(_mc.mc).currentFrame == MovieClip(_mc.mc).totalFrames)
+               if(_mc.mc.currentFrame == _mc.mc.totalFrames)
                {
-                  MovieClip(_mc.mc).gotoAndStop(1);
+                  _mc.mc.gotoAndStop(1);
                   this.isReviving = false;
                   this.bossReviveTarget = null;
                   _state = S_RUN;
@@ -285,7 +352,7 @@ package com.brockw.stickwar.engine.units
                   {
                   }
                }
-               if(MovieClip(_mc.mc).totalFrames == MovieClip(_mc.mc).currentFrame)
+               if(_mc.mc.totalFrames == _mc.mc.currentFrame)
                {
                   _state = S_RUN;
                }
@@ -297,7 +364,7 @@ package com.brockw.stickwar.engine.units
             if(_isDualing)
             {
                _mc.gotoAndStop(_currentDual.defendLabel);
-               if(MovieClip(_mc.mc).currentFrame == MovieClip(_mc.mc).totalFrames)
+               if(_mc.mc.currentFrame == _mc.mc.totalFrames)
                {
                   isDualing = false;
                   mc.filters = [];
@@ -312,9 +379,9 @@ package com.brockw.stickwar.engine.units
                isDead = true;
             }
          }
-         if(!isDead && MovieClip(_mc.mc).currentFrame == MovieClip(_mc.mc).totalFrames)
+         if(!isDead && _mc.mc.currentFrame == _mc.mc.totalFrames)
          {
-            MovieClip(_mc.mc).gotoAndStop(1);
+            _mc.mc.gotoAndStop(1);
          }
          if(isDead)
          {
@@ -322,16 +389,16 @@ package com.brockw.stickwar.engine.units
          }
          else
          {
-            MovieClip(_mc.mc).nextFrame();
+            _mc.mc.nextFrame();
             _mc.mc.stop();
          }
          if(this.isBoss)
          {
-            Monk.setItem(_cleric(mc),BOSS_WEAPON_SKIN,"","");
+            Monk.setItem(mc,BOSS_WEAPON_SKIN,"","");
          }
          else if(!hasDefaultLoadout)
          {
-            Monk.setItem(_cleric(mc),team.loadout.getItem(this.type,MarketItem.T_WEAPON),"","");
+            Monk.setItem(mc,team.loadout.getItem(this.type,MarketItem.T_WEAPON),"","");
          }
       }
       
@@ -343,6 +410,15 @@ package com.brockw.stickwar.engine.units
          {
             a.setAction(1,0,UnitCommand.CURE);
          }
+         if(this.isBoss && this._isPlayerBoss)
+         {
+            a.setAction(0,1,UnitCommand.FOG_REVEAL);
+            if(team.tech.isResearched(Tech.MONK_BOSS_REVIVE) && (team.techAllowed == null || Tech.BOSS_MONK_UNLOCK in team.techAllowed))
+            {
+               a.setAction(2,0,UnitCommand.MONK_BOSS_REVIVE);
+               a.setAction(1,1,UnitCommand.MONK_BOSS_AUTO_REVIVE_TOGGLE);
+            }
+         }
       }
       
       override public function attack() : void
@@ -352,11 +428,11 @@ package com.brockw.stickwar.engine.units
          {
             id = team.game.random.nextInt() % this._attackLabels.length;
             _mc.gotoAndStop("attack_" + this._attackLabels[id]);
-            MovieClip(_mc.mc).gotoAndStop(1);
+            _mc.mc.gotoAndStop(1);
             _state = S_ATTACK;
             hasHit = false;
             attackStartFrame = team.game.frame;
-            framesInAttack = MovieClip(_mc.mc).totalFrames;
+            framesInAttack = _mc.mc.totalFrames;
             trace(framesInAttack);
          }
       }
@@ -379,12 +455,12 @@ package com.brockw.stickwar.engine.units
          }
          return false;
       }
-
+      
       public function isBossPriorityHealTarget(target:Unit) : Boolean
       {
-         return this.isBoss && target != null && target.team == this.team && target is Ninja && Ninja(target).isBoss && Ninja(target).bossIsRetreating && target.health < target.maxHealth;
+         return false;
       }
-
+      
       public function getHealAmountForTarget(target:Unit) : Number
       {
          if(this.isBossPriorityHealTarget(target))
@@ -406,7 +482,7 @@ package com.brockw.stickwar.engine.units
             team.game.soundManager.playSound("PoisonCureSpellStart",px,py);
          }
       }
-
+      
       private function getSecondBossCureTarget(firstTarget:Unit) : Unit
       {
          var poisoned:Unit = null;
@@ -427,7 +503,7 @@ package com.brockw.stickwar.engine.units
          if(!this.isSlowing && this.slowSpellCooldown.spellActivate(this.team))
          {
             this.spellX = target;
-            if(int(target) in team.game.units)
+            if(target in team.game.units)
             {
                t = team.game.units[target];
                forceFaceDirection(t.px - this.px);
@@ -524,17 +600,30 @@ package com.brockw.stickwar.engine.units
       {
          this._healDuration = value;
       }
-
-      public function makeBoss() : void
+      
+      override public function makeBoss(enableDeathBurst:Boolean = false) : void
       {
          this._isBoss = true;
          this.isBossUnit = true;
          this.hasDefaultLoadout = true;
          this.bossAbilitySpawnLockFrames = 30 * 2;
          this.healAmount *= 1.2;
-         this.healDuration *= 0.75;
+         this.enableCampaignBossEscape();
+         if(this.team != null && !this.team.isAi)
+         {
+            this._isPlayerBoss = true;
+            this._isAutoReviveToggled = true;
+         }
+         var ct:ColorTransform = new ColorTransform();
+         ct.redMultiplier = 1.18;
+         ct.greenMultiplier = 1.05;
+         ct.blueMultiplier = 1.28;
+         ct.redOffset = 15;
+         ct.greenOffset = 10;
+         ct.blueOffset = 35;
+         this._mc.transform.colorTransform = ct;
       }
-
+      
       override public function damage(type:int, amount:int, inflictor:Entity, modifier:Number = 1) : void
       {
          var previousHealth:Number = this.health;
@@ -548,31 +637,31 @@ package com.brockw.stickwar.engine.units
             this.bossDamagedUntilFrame = this.team.game.frame + 30 * 2;
          }
       }
-
+      
       public function get isBoss() : Boolean
       {
          return this._isBoss;
       }
-
+      
       public function bossWasRecentlyDamaged(game:StickWar) : Boolean
       {
          return game != null && game.frame < this.bossDamagedUntilFrame;
       }
-
+      
       public function canBossReviveNow() : Boolean
       {
-         if(this.isBoss && this.team != null && this.team.game != null && this.team.game.gameScreen is CampaignGameScreen && !CampaignGameScreen(this.team.game.gameScreen).canUseRebelsUnitedBossAbility(this,"mericRevive"))
+         if(this.isBoss && this.team != null && this.team.game != null && this.team.game.gameScreen is CampaignGameScreen && !this.team.game.gameScreen.canUseRebelsUnitedBossAbility(this,"mericRevive"))
          {
             return false;
          }
          return this.isBoss && !this.hasBossAbilitySpawnLock() && this.bossReviveCooldownFrames <= 0 && !this.isBusy();
       }
-
+      
       public function get bossReviveRange() : Number
       {
          return BOSS_REVIVE_RANGE;
       }
-
+      
       public function getSafeMagikillBossCorpseForRescue(game:StickWar) : Unit
       {
          var corpse:Unit = null;
@@ -589,12 +678,12 @@ package com.brockw.stickwar.engine.units
          }
          return null;
       }
-
+      
       public function canBossRescueCorpse(game:StickWar, corpse:Unit) : Boolean
       {
          return corpse != null && this.canBossReviveNow() && corpse.isBossUnit && corpse.type == Unit.U_MAGIKILL && this.team.deadUnits.indexOf(corpse) != -1 && this.isBossCorpseAreaSafe(game,corpse);
       }
-
+      
       public function tryBossReviveTarget(game:StickWar, corpse:Unit) : Boolean
       {
          if(!this.canBossRescueCorpse(game,corpse) || Math.abs(corpse.px - this.px) > BOSS_REVIVE_RANGE)
@@ -609,7 +698,7 @@ package com.brockw.stickwar.engine.units
          game.soundManager.playSound("PoisonCureSpellStart",px,py);
          return true;
       }
-
+      
       public function tryBossRevive(game:StickWar) : Boolean
       {
          var deadUnits:Array = null;
@@ -631,7 +720,7 @@ package com.brockw.stickwar.engine.units
          game.soundManager.playSound("PoisonCureSpellStart",px,py);
          return true;
       }
-
+      
       private function isBossCorpseAreaSafe(game:StickWar, corpse:Unit) : Boolean
       {
          var enemy:Unit = null;
@@ -648,7 +737,7 @@ package com.brockw.stickwar.engine.units
          }
          return true;
       }
-
+      
       private function performBossRevive(game:StickWar) : void
       {
          var reviveUnit:Unit = null;
@@ -667,7 +756,7 @@ package com.brockw.stickwar.engine.units
          this.team.spawn(reviveUnit,game);
          if(this.bossReviveTarget.isBossUnit && reviveUnit is Magikill)
          {
-            Magikill(reviveUnit).makeBoss();
+            reviveUnit.makeBoss();
          }
          reviveUnit.health = reviveUnit.maxHealth * BOSS_REVIVE_HEALTH_RATIO;
          reviveUnit.x = reviveUnit.px = this.bossReviveTarget.px;
@@ -679,12 +768,12 @@ package com.brockw.stickwar.engine.units
             deadUnits.splice(index,1);
          }
          this.team.removeUnitCompletely(this.bossReviveTarget,game);
-         this.bossReviveCooldownFrames = BOSS_REVIVE_COOLDOWN_FRAMES;
+         this.bossReviveCooldownFrames = this.bossReviveCooldownMax;
          game.projectileManager.initTowerSpawn(reviveUnit.px,reviveUnit.py,this.team,0.5);
          game.projectileManager.initHealEffect(reviveUnit.px,reviveUnit.y,reviveUnit.py,this.team,reviveUnit,true);
          game.soundManager.playSound("PoisonCureSpellFinish",reviveUnit.px,reviveUnit.py);
       }
-
+      
       private function getBestReviveCandidate(deadUnits:Array) : Unit
       {
          var corpse:Unit = null;
@@ -695,20 +784,19 @@ package com.brockw.stickwar.engine.units
          var desperationRevive:Boolean = this.shouldUseDesperationRevive();
          for each(corpse in deadUnits)
          {
-            if(corpse == null || corpse.isBossSummoned || Math.abs(corpse.px - this.px) > BOSS_REVIVE_RANGE || corpse.isBossUnit && corpse.type != Unit.U_MAGIKILL)
+            if(!(corpse == null || corpse.isBossSummoned || corpse.forceTowerSpawnVisual || Math.abs(corpse.px - this.px) > BOSS_REVIVE_RANGE || corpse.isBossUnit && corpse.type != Unit.U_MAGIKILL))
             {
-               continue;
-            }
-            priority = this.getRevivePriority(corpse,inCombat,desperationRevive);
-            if(priority > bestPriority)
-            {
-               bestPriority = priority;
-               best = corpse;
+               priority = this.getRevivePriority(corpse,inCombat,desperationRevive);
+               if(priority > bestPriority)
+               {
+                  bestPriority = priority;
+                  best = corpse;
+               }
             }
          }
          return best;
       }
-
+      
       private function getRevivePriority(corpse:Unit, inCombat:Boolean, desperationRevive:Boolean) : int
       {
          if(corpse.isBossUnit && corpse.type == Unit.U_MAGIKILL)
@@ -773,7 +861,7 @@ package com.brockw.stickwar.engine.units
          }
          return 1;
       }
-
+      
       private function shouldUseDesperationRevive() : Boolean
       {
          var ally:Unit = null;
@@ -784,32 +872,31 @@ package com.brockw.stickwar.engine.units
          {
             if(ally != null && ally != this && ally.isAlive() && !ally.isGarrisoned && Math.abs(ally.px - this.px) < BOSS_DESPERATION_RADIUS)
             {
-               ++nearbyLivingAllies;
+               nearbyLivingAllies++;
             }
          }
          for each(enemy in this.team.enemyTeam.units)
          {
             if(enemy != null && enemy.isAlive() && enemy.isTargetable() && Math.abs(enemy.px - this.px) < BOSS_DESPERATION_RADIUS)
             {
-               ++threateningEnemies;
+               threateningEnemies++;
             }
          }
          return nearbyLivingAllies == 0 && threateningEnemies > 0;
       }
-
+      
       public function getBossRearLineX() : Number
       {
          var ally:Unit = null;
          var anchor:Unit = null;
          for each(ally in this.team.units)
          {
-            if(ally == null || ally == this || !ally.isAlive() || ally.isGarrisoned || ally is Monk || ally.type == Unit.U_MINER || ally.type == Unit.U_CHAOS_MINER)
+            if(!(ally == null || ally == this || !ally.isAlive() || ally.isGarrisoned || ally is Monk || ally.type == Unit.U_MINER || ally.type == Unit.U_CHAOS_MINER))
             {
-               continue;
-            }
-            if(anchor == null || ally.team.direction * ally.px > ally.team.direction * anchor.px)
-            {
-               anchor = ally;
+               if(anchor == null || ally.team.direction * ally.px > ally.team.direction * anchor.px)
+               {
+                  anchor = ally;
+               }
             }
          }
          if(anchor == null)
@@ -817,6 +904,270 @@ package com.brockw.stickwar.engine.units
             return this.team.homeX + this.team.direction * 160;
          }
          return anchor.px - this.team.direction * BOSS_REAR_GAP;
+      }
+      
+      public function get isPlayerBoss() : Boolean
+      {
+         return this._isPlayerBoss;
+      }
+      
+      public function get isAutoReviveToggled() : Boolean
+      {
+         return this._isAutoReviveToggled;
+      }
+      
+      public function set isAutoReviveToggled(value:Boolean) : void
+      {
+         this._isAutoReviveToggled = value;
+      }
+      
+      public function getReviveCooldownFraction() : Number
+      {
+         return this.bossReviveCooldownFrames / this.bossReviveCooldownMax;
+      }
+      
+      public function getFogRevealCooldownFraction() : Number
+      {
+         return this.bossFogRevealCooldownFrames / BOSS_FOG_REVEAL_COOLDOWN;
+      }
+      
+      public function bossFogReveal(game:StickWar) : void
+      {
+         if(!this.isBoss || !this._isPlayerBoss || this.hasBossAbilitySpawnLock() || this.isBusy() || this.bossFogRevealCooldownFrames > 0)
+         {
+            return;
+         }
+         if(this._fogRevealPhase != 0)
+         {
+            game.gameScreen.userInterface.helpMessage.showMessage("Fog Reveal already casted");
+            return;
+         }
+         if(game.fogOfWar.isNightfallActive)
+         {
+            game.gameScreen.userInterface.helpMessage.showMessage("Nightfall is blocking your spell");
+            return;
+         }
+         if(game.gameScreen is CampaignGameScreen && game.main != null && game.main.campaign != null && game.main.campaign.getCurrentLevel() != null)
+         {
+            if(game.main.campaign.getCurrentLevel().title.indexOf("Ambush:") == 0)
+            {
+               game.gameScreen.userInterface.helpMessage.showMessage("Can\'t use Fog Reveal in Ambush levels");
+               return;
+            }
+         }
+         if(!game.team.bypassMana && game.team.mana < 80)
+         {
+            return;
+         }
+         if(!game.team.bypassMana)
+         {
+            game.team.mana -= 80;
+         }
+         this.isHealing = true;
+         _state = S_ATTACK;
+         hasHit = false;
+         this._fogRevealPhase = 1;
+         this._fogRevealActiveFrames = 0;
+         this._fogRevealTargetReachedX = game.team.getVisionRange();
+         this._fogRevealTargetX = this.team.enemyTeam.homeX;
+         game.fogOfWar.isForwardPositionLocked = true;
+         game.fogOfWar.lockedForwardPosition = this._fogRevealTargetReachedX;
+         this.bossFogRevealCooldownFrames = BOSS_FOG_REVEAL_COOLDOWN;
+         this.bossAbilitySpawnLockFrames = 30 * 2;
+      }
+      
+      private function updateBossFogReveal(game:StickWar) : void
+      {
+         if(this._fogRevealPhase == 0)
+         {
+            return;
+         }
+         if(game.fogOfWar.isNightfallActive)
+         {
+            this._fogRevealPhase = 0;
+            game.fogOfWar.isForwardPositionLocked = false;
+            return;
+         }
+         var naturalPos:Number = game.team.getVisionRange();
+         if(this._fogRevealPhase == 1)
+         {
+            this._fogRevealTargetReachedX = Math.min(this._fogRevealTargetReachedX + BOSS_FOG_REVEAL_SPEED,this._fogRevealTargetX);
+            game.fogOfWar.lockedForwardPosition = Math.max(naturalPos,this._fogRevealTargetReachedX);
+            if(this._fogRevealTargetReachedX >= this._fogRevealTargetX)
+            {
+               this._fogRevealPhase = 2;
+               this._fogRevealActiveFrames = BOSS_FOG_REVEAL_DURATION;
+            }
+         }
+         else if(this._fogRevealPhase == 2)
+         {
+            --this._fogRevealActiveFrames;
+            if(this._fogRevealActiveFrames <= 0)
+            {
+               this._fogRevealPhase = 3;
+            }
+         }
+         else if(this._fogRevealPhase == 3)
+         {
+            this._fogRevealTargetReachedX = Math.max(this._fogRevealTargetReachedX - BOSS_FOG_REVEAL_SPEED,naturalPos);
+            game.fogOfWar.lockedForwardPosition = this._fogRevealTargetReachedX;
+            if(this._fogRevealTargetReachedX <= naturalPos)
+            {
+               this._fogRevealPhase = 0;
+               game.fogOfWar.isForwardPositionLocked = false;
+            }
+         }
+      }
+      
+      public function canPlayerBossReviveUnit(target:Unit) : Boolean
+      {
+         if(target == null || target.isBossSummoned || target.forceTowerSpawnVisual)
+         {
+            return false;
+         }
+         if(target.isBossUnit)
+         {
+            if(target.type == Unit.U_MAGIKILL && this.team != null && this.team.countAlivePlayerBosses() + this.team.countQueuedPlayerBosses() >= 3)
+            {
+               return false;
+            }
+            if(target.type == Unit.U_MAGIKILL)
+            {
+               return true;
+            }
+            return false;
+         }
+         return true;
+      }
+      
+      public function tryPlayerBossReviveTarget(corpse:Unit) : Boolean
+      {
+         if(!this._isPlayerBoss || !this.isBoss || this.hasBossAbilitySpawnLock() || this.bossReviveCooldownFrames > 0 || this.isBusy())
+         {
+            return false;
+         }
+         if(!this.canPlayerBossReviveUnit(corpse))
+         {
+            return false;
+         }
+         this.playerReviveTarget = corpse;
+         this.playerReviveWalkTarget = corpse;
+         return true;
+      }
+      
+      private function updatePlayerReviveWalk(game:StickWar) : void
+      {
+         if(this.bossReviveRetreatFrames > 0)
+         {
+            _state = S_RUN;
+            this.walk(-team.direction,0,-team.direction);
+            --this.bossReviveRetreatFrames;
+            return;
+         }
+         if(this.playerReviveWalkTarget == null)
+         {
+            return;
+         }
+         if(!this.playerReviveIsManual && this.bossWasRecentlyDamaged(game))
+         {
+            this.playerReviveWalkTarget = null;
+            this.playerReviveTarget = null;
+            this.bossReviveRetreatFrames = BOSS_REVIVE_RETREAT_FRAMES;
+            this.autoReviveScanCooldown = 60;
+            return;
+         }
+         if(!this.playerReviveWalkTarget.isAlive() && this.team.deadUnits.indexOf(this.playerReviveWalkTarget) == -1)
+         {
+            this.playerReviveWalkTarget = null;
+            this.playerReviveTarget = null;
+            return;
+         }
+         if(Math.abs(this.playerReviveWalkTarget.px - this.px) <= BOSS_REVIVE_RANGE)
+         {
+            if(this.canBossReviveNow() && this.canPlayerBossReviveUnit(this.playerReviveWalkTarget))
+            {
+               this.bossReviveTarget = this.playerReviveWalkTarget;
+               this.forceFaceDirection(this.bossReviveTarget.px - this.px);
+               this.isReviving = true;
+               this._state = S_ATTACK;
+               this.hasHit = false;
+               game.soundManager.playSound("PoisonCureSpellStart",this.px,this.py);
+            }
+            this.playerReviveWalkTarget = null;
+            this.playerReviveTarget = null;
+            return;
+         }
+         this.walk((this.playerReviveWalkTarget.px - this.px) / 100,(this.playerReviveWalkTarget.py - this.py) / 100,this.playerReviveWalkTarget.px - this.px);
+         this.faceDirection(this.playerReviveWalkTarget.px - this.px);
+      }
+      
+      public function getAutoRevivePriority(corpse:Unit) : int
+      {
+         if(corpse == null || corpse.isBossSummoned || corpse.forceTowerSpawnVisual)
+         {
+            return -1;
+         }
+         if(corpse.isBossUnit && corpse.type == Unit.U_MAGIKILL)
+         {
+            return 1000;
+         }
+         if(corpse.isBossUnit)
+         {
+            return -1;
+         }
+         switch(corpse.type)
+         {
+            case Unit.U_SPEARTON:
+               return 100;
+            case Unit.U_NINJA:
+               return 90;
+            case Unit.U_MAGIKILL:
+               return 80;
+            case Unit.U_ARCHER:
+               return 60;
+            case Unit.U_SWORDWRATH:
+               return 50;
+            case Unit.U_MINER:
+               return 10;
+            default:
+               return 20;
+         }
+      }
+      
+      public function playerBossCheckAutoRevive(game:StickWar) : void
+      {
+         if(!this._isPlayerBoss || !this._isAutoReviveToggled || !this.canBossReviveNow())
+         {
+            return;
+         }
+         if(team.techAllowed != null && !(Tech.BOSS_MONK_UNLOCK in team.techAllowed))
+         {
+            return;
+         }
+         if(this.autoReviveScanCooldown > 0)
+         {
+            return;
+         }
+         this.autoReviveScanCooldown = BOSS_AUTO_REVIVE_SCAN_INTERVAL;
+         var best:Unit = null;
+         var bestPriority:int = -1;
+         var corpse:Unit = null;
+         for each(corpse in this.team.deadUnits)
+         {
+            if(!(corpse == null || !this.canPlayerBossReviveUnit(corpse) || Math.abs(corpse.px - this.px) > BOSS_PLAYER_REVIVE_RANGE))
+            {
+               var priority:int = this.getAutoRevivePriority(corpse);
+               if(priority > bestPriority)
+               {
+                  bestPriority = priority;
+                  best = corpse;
+               }
+            }
+         }
+         if(best != null)
+         {
+            this.tryPlayerBossReviveTarget(best);
+         }
       }
    }
 }

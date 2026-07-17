@@ -64,7 +64,7 @@ package com.brockw.stickwar.engine
       
       public function refresh() : void
       {
-         var c:Sprite = Sprite(this._game.cursorSprite);
+         var c:Sprite = this._game.cursorSprite;
          if(Boolean(this._currentMove))
          {
             this._currentMove.cleanUpPreClick(c);
@@ -115,7 +115,7 @@ package com.brockw.stickwar.engine
       public function drawCoolDown(box:MovieClip, fraction:Number) : void
       {
          var s:Sprite = null;
-         s = Sprite(box.getChildByName("overlay"));
+         s = box.getChildByName("overlay");
          var mc:DisplayObject = box.getChildByName("mc");
          box.removeChild(s);
          box.addChild(s);
@@ -136,7 +136,7 @@ package com.brockw.stickwar.engine
       public function drawToggle(box:MovieClip, enabled:Boolean) : void
       {
          var s:Sprite = null;
-         s = Sprite(box.getChildByName("overlay"));
+         s = box.getChildByName("overlay");
          var mc:DisplayObject = box.getChildByName("mc");
          box.removeChild(s);
          box.addChild(s);
@@ -161,7 +161,8 @@ package com.brockw.stickwar.engine
          var i:int = 0;
          if(this.currentEntity != null)
          {
-            for(i = 0; i < this.currentActions.length; i++)
+            i = 0;
+            while(i < this.currentActions.length)
             {
                if(this.currentActions[i] < 0)
                {
@@ -175,13 +176,14 @@ package com.brockw.stickwar.engine
                   }
                   if(!this.team.tech.getTechAllowed(this.currentActions[i]))
                   {
-                     MovieClip(this.actionsToButtonMap[this.currentActions[i]]).getChildByName("mc").alpha = 0.2;
+                     this.actionsToButtonMap[this.currentActions[i]].getChildByName("mc").alpha = 0.2;
                   }
                   else
                   {
-                     MovieClip(this.actionsToButtonMap[this.currentActions[i]]).getChildByName("mc").alpha = 1;
+                     this.actionsToButtonMap[this.currentActions[i]].getChildByName("mc").alpha = 1;
                   }
                }
+               i++;
             }
          }
       }
@@ -191,14 +193,17 @@ package com.brockw.stickwar.engine
          var i:int = 0;
          var m:MovieClip = null;
          var s:Sprite = null;
-         var min:Number = NaN;
+         var min:Number = Number(NaN);
          var j:int = 0;
-         var v:Number = NaN;
+         var v:Number = Number(NaN);
          var action:int = 0;
          var t:TechItem = null;
          var c:UnitCommand = null;
          var candidate:UnitCommand = null;
-         for(i = 0; i < gameScreen.game.postCursors.length; i++)
+         var stageMouseX:Number = gameScreen.stage.mouseX;
+         var stageMouseY:Number = gameScreen.stage.mouseY;
+         i = 0;
+         while(i < gameScreen.game.postCursors.length)
          {
             m = gameScreen.game.postCursors[i];
             if(m.currentFrame != m.totalFrames)
@@ -207,13 +212,14 @@ package com.brockw.stickwar.engine
             }
             else
             {
-               s = Sprite(gameScreen.game.cursorSprite);
+               s = gameScreen.game.cursorSprite;
                if(s.contains(m))
                {
                   s.removeChild(m);
                }
                gameScreen.game.postCursors.splice(i,1);
             }
+            i++;
          }
          if(gameScreen.userInterface.selectedUnits.hasChanged && this._currentMove != null)
          {
@@ -221,7 +227,8 @@ package com.brockw.stickwar.engine
          }
          if(this.currentEntity != null)
          {
-            for(i = 0; i < this.currentActions.length; i++)
+            i = 0;
+            for(; i < this.currentActions.length; i++)
             {
                if(this.currentActions[i] < 0)
                {
@@ -235,39 +242,41 @@ package com.brockw.stickwar.engine
                   }
                   if(!this.team.tech.getTechAllowed(this.currentActions[i]))
                   {
-                     MovieClip(this.actionsToButtonMap[this.currentActions[i]]).getChildByName("mc").alpha = 0.2;
+                     this.actionsToButtonMap[this.currentActions[i]].getChildByName("mc").alpha = 0.2;
                   }
                   else
                   {
-                     MovieClip(this.actionsToButtonMap[this.currentActions[i]]).getChildByName("mc").alpha = 1;
+                     this.actionsToButtonMap[this.currentActions[i]].getChildByName("mc").alpha = 1;
                   }
                }
                else
                {
-                  if(UnitCommand(this.actions[this.currentActions[i]]).hasCoolDown)
+                  if(this.actions[this.currentActions[i]].hasCoolDown)
                   {
                      if(gameScreen.userInterface.selectedUnits.unitTypes[this.currentEntity.type].length == 0)
                      {
                         continue;
                      }
-                     min = UnitCommand(this.actions[this.currentActions[i]]).coolDownTime(gameScreen.userInterface.selectedUnits.unitTypes[this.currentEntity.type][0]);
-                     for(j = 1; j < gameScreen.userInterface.selectedUnits.unitTypes[this.currentEntity.type].length; j++)
+                     min = Number(this.actions[this.currentActions[i]].coolDownTime(gameScreen.userInterface.selectedUnits.unitTypes[this.currentEntity.type][0]));
+                     j = 1;
+                     while(j < gameScreen.userInterface.selectedUnits.unitTypes[this.currentEntity.type].length)
                      {
-                        v = UnitCommand(this.actions[this.currentActions[i]]).coolDownTime(gameScreen.userInterface.selectedUnits.unitTypes[this.currentEntity.type][j]);
+                        v = Number(this.actions[this.currentActions[i]].coolDownTime(gameScreen.userInterface.selectedUnits.unitTypes[this.currentEntity.type][j]));
                         if(v < min)
                         {
                            min = v;
                         }
+                        j++;
                      }
                      this.drawCoolDown(this.actionsToButtonMap[this.currentActions[i]],min);
                   }
-                  if(UnitCommand(this.actions[this.currentActions[i]]).isToggle)
+                  if(this.actions[this.currentActions[i]].isToggle)
                   {
-                     this.drawToggle(this.actionsToButtonMap[this.currentActions[i]],UnitCommand(this.actions[this.currentActions[i]]).isToggled(this.currentEntity));
+                     this.drawToggle(this.actionsToButtonMap[this.currentActions[i]],this.actions[this.currentActions[i]].isToggled(this.currentEntity));
                   }
-                  else if(!UnitCommand(this.actions[this.currentActions[i]]).hasCoolDown)
+                  else if(!this.actions[this.currentActions[i]].hasCoolDown)
                   {
-                     s = Sprite(this.actionsToButtonMap[this.currentActions[i]].getChildByName("overlay"));
+                     s = this.actionsToButtonMap[this.currentActions[i]].getChildByName("overlay");
                      s.graphics.clear();
                   }
                }
@@ -277,9 +286,9 @@ package com.brockw.stickwar.engine
          {
             if(this._currentMove.type in this.actionsToButtonMap)
             {
-               MovieClip(this.actionsToButtonMap[this._currentMove.type]).alpha = 0.2;
+               this.actionsToButtonMap[this._currentMove.type].alpha = 0.2;
             }
-            if(gameScreen.userInterface.mouseState.mouseDown && this.stage.mouseY <= 700 - 75)
+            if(gameScreen.userInterface.mouseState.mouseDown && stageMouseY <= 700 - 75)
             {
                if(this._currentMove.type != UnitCommand.MOVE && gameScreen.userInterface.mouseState.isRightClick == true)
                {
@@ -287,7 +296,7 @@ package com.brockw.stickwar.engine
                   gameScreen.userInterface.mouseState.mouseDown = false;
                   gameScreen.userInterface.mouseState.isRightClick = false;
                }
-               else if(!(this._currentMove.type == UnitCommand.MOVE && gameScreen.userInterface.mouseState.isRightClick != true && this.stage.mouseY > 700 - 125))
+               else if(!(this._currentMove.type == UnitCommand.MOVE && gameScreen.userInterface.mouseState.isRightClick != true && stageMouseY > 700 - 125))
                {
                   if(!(gameScreen.userInterface.mouseState.isRightClick == false && gameScreen.userInterface.keyBoardState.isShift))
                   {
@@ -296,11 +305,30 @@ package com.brockw.stickwar.engine
                      gameScreen.userInterface.mouseState.clicked = false;
                      Mouse.show();
                      this._currentMove.team = gameScreen.team;
-                     if(gameScreen.game.mouseOverUnit != null)
+                     if(this._currentMove.type == UnitCommand.MONK_BOSS_REVIVE)
+                     {
+                        this._currentMove.targetId = -1;
+                        var bx:Number = gameScreen.game.battlefield.mouseX;
+                        var by:Number = gameScreen.game.battlefield.mouseY;
+                        var bestDist:Number = 99999;
+                        for each(var corpse in gameScreen.team.deadUnits)
+                        {
+                           if(corpse != null && !corpse.forceTowerSpawnVisual)
+                           {
+                              var d:Number = Math.abs(corpse.px - bx) + Math.abs(corpse.py - by);
+                              if(d < 50 && d < bestDist)
+                              {
+                                 bestDist = d;
+                                 this._currentMove.targetId = corpse.id;
+                              }
+                           }
+                        }
+                     }
+                     else if(gameScreen.game.mouseOverUnit != null)
                      {
                         if(gameScreen.game.mouseOverUnit is Unit)
                         {
-                           if(!Unit(gameScreen.game.mouseOverUnit).isTargetable())
+                           if(!gameScreen.game.mouseOverUnit.isTargetable())
                            {
                               this._currentMove.targetId = -1;
                            }
@@ -331,20 +359,21 @@ package com.brockw.stickwar.engine
                }
             }
          }
-         if(this._currentMove == null || this._currentMove != null && !this.clicked || this._currentMove == UnitCommand(this.actions[UnitCommand.MOVE]) || this.clicked)
+         if(this._currentMove == null || this._currentMove != null && !this.clicked || this._currentMove == this.actions[UnitCommand.MOVE] || this.clicked)
          {
-            for(action = 0; action < this.currentActions.length; action++)
+            action = 0;
+            for(; action < this.currentActions.length; action++)
             {
                if(this.currentActions[action] < 0)
                {
                   t = this.team.tech.upgrades[this.currentActions[action]];
-                  if(MovieClip(this.actionsToButtonMap[this.currentActions[action]]).hitTestPoint(gameScreen.stage.mouseX,gameScreen.stage.mouseY,true))
+                  if(this.actionsToButtonMap[this.currentActions[action]].hitTestPoint(stageMouseX,stageMouseY,true))
                   {
                      gameScreen.game.team.updateButtonOver(gameScreen.game,t.name,t.tip,t.researchTime,t.cost,t.mana,0);
                   }
-                  if(gameScreen.userInterface.keyBoardState.isDownForAction(t.hotKey) || gameScreen.userInterface.mouseState.clicked && MovieClip(this.actionsToButtonMap[this.currentActions[action]]).hitTestPoint(gameScreen.stage.mouseX,gameScreen.stage.mouseY,false))
+                  if(gameScreen.userInterface.keyBoardState.isDownForAction(t.hotKey) || gameScreen.userInterface.mouseState.clicked && this.actionsToButtonMap[this.currentActions[action]].hitTestPoint(stageMouseX,stageMouseY,false))
                   {
-                     MovieClip(this.actionsToButtonMap[this.currentActions[action]]).alpha = 0.2;
+                     this.actionsToButtonMap[this.currentActions[action]].alpha = 0.2;
                      c = new TechCommand(gameScreen.game);
                      c.goalX = this.currentActions[action];
                      c.goalY = this.team.id;
@@ -353,22 +382,22 @@ package com.brockw.stickwar.engine
                   }
                   else
                   {
-                     MovieClip(this.actionsToButtonMap[this.currentActions[action]]).alpha = 1;
+                     this.actionsToButtonMap[this.currentActions[action]].alpha = 1;
                   }
                }
                else
                {
-                  if(MovieClip(this.actionsToButtonMap[this.currentActions[action]]).hitTestPoint(gameScreen.stage.mouseX,gameScreen.stage.mouseY,false))
+                  if(this.actionsToButtonMap[this.currentActions[action]].hitTestPoint(stageMouseX,stageMouseY,false))
                   {
                      if(this.currentActions[action] == UnitCommand.CURE && this.currentEntity is Magikill)
                      {
-                        if(Magikill(this.currentEntity).autoCastMode == 0)
+                        if(this.currentEntity.autoCastMode == 0)
                         {
-                           gameScreen.game.team.updateButtonOver(gameScreen.game,"Auto Cast","Magikill autocasts all valid spells. Click to switch to Meteor Only.",0,0,0,0);
+                           gameScreen.game.team.updateButtonOver(gameScreen.game,"Auto Cast","Magikill autocasts all valid spells. Click to switch to Mana Save.",0,0,0,0);
                         }
-                        else if(Magikill(this.currentEntity).autoCastMode == 1)
+                        else if(this.currentEntity.autoCastMode == 1)
                         {
-                           gameScreen.game.team.updateButtonOver(gameScreen.game,"Meteor Only","Magikill only autocasts Meteor. Click to switch to Disabled Autocast.",0,0,0,0);
+                           gameScreen.game.team.updateButtonOver(gameScreen.game,"Mana Save","Magikill saves mana by only auto-casting free abilities. Click to switch to Disabled Autocast.",0,0,0,0);
                         }
                         else
                         {
@@ -377,7 +406,7 @@ package com.brockw.stickwar.engine
                      }
                      else if(this.currentActions[action] == UnitCommand.HEAL && this.currentEntity is Archer)
                      {
-                        if(Archer(this.currentEntity).isAutoKiteToggled)
+                        if(this.currentEntity.isAutoKiteToggled)
                         {
                            gameScreen.game.team.updateButtonOver(gameScreen.game,"Auto Kite","Archidons retreat while reloading if enemies get too close. Click to disable auto kite.",0,0,0,0);
                         }
@@ -388,7 +417,18 @@ package com.brockw.stickwar.engine
                      }
                      else if(this.currentActions[action] == UnitCommand.CURE && this.currentEntity is Ninja)
                      {
-                        if(Ninja(this.currentEntity).isAutoCloakToggled)
+                        if(this.currentEntity.isBoss)
+                        {
+                           if(this.currentEntity.isAutoCloakToggled)
+                           {
+                              gameScreen.game.team.updateButtonOver(gameScreen.game,"Auto Ability Cycle","Ninja boss automatically cycles abilities when enemies approach. Click to disable auto cycle.",0,0,0,0);
+                           }
+                           else
+                           {
+                              gameScreen.game.team.updateButtonOver(gameScreen.game,"Manual Ability Cycle","Ninja boss only uses abilities when commanded. Click to enable auto cycle.",0,0,0,0);
+                           }
+                        }
+                        else if(this.currentEntity.isAutoCloakToggled)
                         {
                            gameScreen.game.team.updateButtonOver(gameScreen.game,"Auto Cloak","Shadowrath automatically cloaks when enemies come within engage range. Click to disable auto cloak.",0,0,0,0);
                         }
@@ -399,64 +439,90 @@ package com.brockw.stickwar.engine
                      }
                      else
                      {
-                        gameScreen.game.team.updateButtonOverXML(gameScreen.game,UnitCommand(this.actions[this.currentActions[action]]).xmlInfo);
+                        gameScreen.game.team.updateButtonOverXML(gameScreen.game,this.actions[this.currentActions[action]].xmlInfo);
                      }
                   }
-                  if(UnitCommand(this.actions[this.currentActions[action]]).isActivatable)
+                  if(this.actions[this.currentActions[action]].isActivatable)
                   {
-                     candidate = UnitCommand(this.actions[this.currentActions[action]]);
-                     if(gameScreen.userInterface.keyBoardState.isDownForAction(UnitCommand(this.actions[this.currentActions[action]]).hotKey) || gameScreen.userInterface.mouseState.clicked && MovieClip(this.actionsToButtonMap[this.currentActions[action]]).hitTestPoint(gameScreen.stage.mouseX,gameScreen.stage.mouseY,false))
+                     candidate = this.actions[this.currentActions[action]];
+                     if(gameScreen.userInterface.keyBoardState.isDownForAction(this.actions[this.currentActions[action]].hotKey) || gameScreen.userInterface.mouseState.clicked && this.actionsToButtonMap[this.currentActions[action]].hitTestPoint(stageMouseX,stageMouseY,false))
                      {
                         gameScreen.userInterface.mouseState.clicked = false;
                         if(this.currentActions[action] == UnitCommand.CURE && this.currentEntity is Magikill)
                         {
-                           UnitCommand(this.actions[this.currentActions[action]]).prepareNetworkedMove(gameScreen);
+                           this.actions[UnitCommand.CURE].toggleTargetState = (this.currentEntity.autoCastMode + 1) % 3;
+                           this.actions[this.currentActions[action]].prepareNetworkedMove(gameScreen);
                            if(this.actionsToButtonMap[this.currentActions[action]] != null)
                            {
-                              MovieClip(this.actionsToButtonMap[this.currentActions[action]]).alpha = 0.2;
-                           }
-                           continue;
-                        }
-                        min = candidate.coolDownTime(gameScreen.userInterface.selectedUnits.unitTypes[this.currentEntity.type][0]);
-                        for(j = 1; j < gameScreen.userInterface.selectedUnits.unitTypes[this.currentEntity.type].length; j++)
-                        {
-                           v = candidate.coolDownTime(gameScreen.userInterface.selectedUnits.unitTypes[this.currentEntity.type][j]);
-                           if(v < min)
-                           {
-                              min = v;
-                           }
-                        }
-                        if(candidate.getGoldRequired() > this.team.gold)
-                        {
-                           gameScreen.userInterface.helpMessage.showMessage("Not enough gold to cast ");
-                        }
-                        else if(candidate.getManaRequired() > this.team.mana)
-                        {
-                           gameScreen.userInterface.helpMessage.showMessage("Not enough mana to cast ");
-                        }
-                        else if(min != 0)
-                        {
-                           gameScreen.userInterface.helpMessage.showMessage("Ability is on cooldown");
-                        }
-                        else if(!UnitCommand(this.actions[this.currentActions[action]]).requiresMouseInput)
-                        {
-                           UnitCommand(this.actions[this.currentActions[action]]).prepareNetworkedMove(gameScreen);
-                           if(this.actionsToButtonMap[this.currentActions[action]] != null)
-                           {
-                              MovieClip(this.actionsToButtonMap[this.currentActions[action]]).alpha = 0.2;
+                              this.actionsToButtonMap[this.currentActions[action]].alpha = 0.2;
                            }
                         }
                         else
                         {
-                           this.refresh();
-                           this._currentMove = UnitCommand(this.actions[this.currentActions[action]]);
-                           Mouse.hide();
-                           this.clicked = false;
+                           if((this.currentActions[action] == UnitCommand.ARCHER_FIRE || this.currentActions[action] == UnitCommand.ARCHER_BOSS_ARROW_STORM || this.currentActions[action] == UnitCommand.ARCHER_BOSS_EXPLOSION) && this.currentEntity is Archer)
+                           {
+                              if(this.currentEntity.hasBossSpecialArrowLoaded())
+                              {
+                                 gameScreen.userInterface.helpMessage.showMessage("Special arrow already loaded");
+                                 continue;
+                              }
+                           }
+                           min = candidate.coolDownTime(gameScreen.userInterface.selectedUnits.unitTypes[this.currentEntity.type][0]);
+                           j = 1;
+                           while(j < gameScreen.userInterface.selectedUnits.unitTypes[this.currentEntity.type].length)
+                           {
+                              v = candidate.coolDownTime(gameScreen.userInterface.selectedUnits.unitTypes[this.currentEntity.type][j]);
+                              if(v < min)
+                              {
+                                 min = v;
+                              }
+                              j++;
+                           }
+                           if(candidate.getGoldRequired() > this.team.gold)
+                           {
+                              gameScreen.userInterface.helpMessage.showMessage("Not enough gold to cast ");
+                           }
+                           else if(candidate.getManaRequired() > this.team.mana)
+                           {
+                              gameScreen.userInterface.helpMessage.showMessage("Not enough mana to cast ");
+                           }
+                           else if(min != 0)
+                           {
+                              gameScreen.userInterface.helpMessage.showMessage("Ability is on cooldown");
+                           }
+                           else if(!this.actions[this.currentActions[action]].requiresMouseInput)
+                           {
+                              var triggerType:int = int(this.currentActions[action]);
+                              if(triggerType == UnitCommand.CURE && !(this.currentEntity is Magikill))
+                              {
+                                 this.actions[UnitCommand.CURE].toggleTargetState = this.actions[UnitCommand.CURE].isToggled(this.currentEntity) ? 0 : 1;
+                              }
+                              else if(triggerType == UnitCommand.HEAL)
+                              {
+                                 this.actions[UnitCommand.HEAL].toggleTargetState = this.actions[UnitCommand.HEAL].isToggled(this.currentEntity) ? 0 : 1;
+                              }
+                              else if(triggerType == UnitCommand.ARCHER_BOSS_AUTO_TOGGLE)
+                              {
+                                 this.actions[UnitCommand.ARCHER_BOSS_AUTO_TOGGLE].toggleTargetState = this.actions[UnitCommand.ARCHER_BOSS_AUTO_TOGGLE].isToggled(this.currentEntity) ? 0 : 1;
+                              }
+                              this.actions[triggerType].prepareNetworkedMove(gameScreen);
+                              if(this.actionsToButtonMap[triggerType] != null)
+                              {
+                                 this.actionsToButtonMap[triggerType].alpha = 0.2;
+                              }
+                           }
+                           else
+                           {
+                              this.refresh();
+                              this._currentMove = this.actions[this.currentActions[action]];
+                              Mouse.hide();
+                              this.clicked = false;
+                           }
                         }
                      }
                      else
                      {
-                        MovieClip(this.actionsToButtonMap[this.currentActions[action]]).alpha = 1;
+                        this.actionsToButtonMap[this.currentActions[action]].alpha = 1;
                      }
                   }
                }
@@ -468,21 +534,21 @@ package com.brockw.stickwar.engine
             {
                if(Boolean(this._currentMove))
                {
-                  this._currentMove.cleanUpPreClick(Sprite(gameScreen.game.cursorSprite));
+                  this._currentMove.cleanUpPreClick(gameScreen.game.cursorSprite);
                }
-               if(this._currentMove.drawCursorPostClick(Sprite(gameScreen.game.cursorSprite),gameScreen))
+               if(this._currentMove.drawCursorPostClick(gameScreen.game.cursorSprite,gameScreen))
                {
                   this._currentMove = null;
                }
             }
             else
             {
-               this._currentMove.drawCursorPreClick(Sprite(gameScreen.game.cursorSprite),gameScreen);
+               this._currentMove.drawCursorPreClick(gameScreen.game.cursorSprite,gameScreen);
             }
          }
          if(gameScreen.userInterface.selectedUnits.hasFinishedSelecting && this._currentMove == null && gameScreen.userInterface.selectedUnits.interactsWith != 0 && gameScreen.userInterface.selectedUnits.interactsWith != Unit.I_IS_BUILDING)
          {
-            this._currentMove = UnitCommand(this.actions[UnitCommand.MOVE]);
+            this._currentMove = this.actions[UnitCommand.MOVE];
             Mouse.hide();
             this.clicked = false;
          }
@@ -494,19 +560,23 @@ package com.brockw.stickwar.engine
          var x:int = 0;
          var s:Sprite = null;
          var c:DisplayObject = null;
-         for(var y:int = 0; y < COLS; y++)
+         var y:int = 0;
+         while(y < COLS)
          {
-            for(x = 0; x < ROWS; x++)
+            x = 0;
+            while(x < ROWS)
             {
-               s = Sprite(MovieClip(this.boxes[y * COLS + x]).getChildByName("overlay"));
+               s = this.boxes[y * COLS + x].getChildByName("overlay");
                s.graphics.clear();
-               MovieClip(this.boxes[y * COLS + x]).alpha = 1;
-               c = MovieClip(this.boxes[y * COLS + x]).getChildByName("mc");
+               this.boxes[y * COLS + x].alpha = 1;
+               c = this.boxes[y * COLS + x].getChildByName("mc");
                if(c != null)
                {
-                  MovieClip(this.boxes[y * COLS + x]).removeChild(c);
+                  this.boxes[y * COLS + x].removeChild(c);
                }
+               x++;
             }
+            y++;
          }
          for(key in this.actionsToButtonMap)
          {
@@ -538,35 +608,35 @@ package com.brockw.stickwar.engine
             if(type in this.team.tech.upgrades)
             {
                t = this.team.tech.upgrades[type];
-               MovieClip(this.boxes[y * COLS + x]).visible = true;
+               this.boxes[y * COLS + x].visible = true;
                b = t.mc;
                b.x = -b.width / 2;
                b.y = -b.height / 2;
                b.name = "mc";
-               MovieClip(this.boxes[y * COLS + x]).addChild(b);
-               this.actionsToButtonMap[type] = MovieClip(this.boxes[y * COLS + x]);
+               this.boxes[y * COLS + x].addChild(b);
+               this.actionsToButtonMap[type] = this.boxes[y * COLS + x];
                this.currentActions.push(type);
             }
          }
          else if(type == UnitCommand.NO_COMMAND)
          {
-            MovieClip(this.boxes[y * COLS + x]).visible = true;
+            this.boxes[y * COLS + x].visible = true;
          }
          else
          {
-            MovieClip(this.boxes[y * COLS + x]).visible = true;
-            b = UnitCommand(this.actions[type]).buttonBitmap;
+            this.boxes[y * COLS + x].visible = true;
+            b = this.actions[type].buttonBitmap;
             b.x = -b.width / 2;
             b.y = -b.height / 2;
             b.name = "mc";
-            MovieClip(this.boxes[y * COLS + x]).addChild(b);
-            this.actionsToButtonMap[type] = MovieClip(this.boxes[y * COLS + x]);
+            this.boxes[y * COLS + x].addChild(b);
+            this.actionsToButtonMap[type] = this.boxes[y * COLS + x];
             this.currentActions.push(type);
          }
-         var s:Sprite = Sprite(MovieClip(this.boxes[y * COLS + x]).getChildByName("overlay"));
-         var mc:DisplayObject = MovieClip(this.boxes[y * COLS + x]).getChildByName("mc");
-         MovieClip(this.boxes[y * COLS + x]).removeChild(s);
-         MovieClip(this.boxes[y * COLS + x]).addChild(s);
+         var s:Sprite = this.boxes[y * COLS + x].getChildByName("overlay");
+         var mc:DisplayObject = this.boxes[y * COLS + x].getChildByName("mc");
+         this.boxes[y * COLS + x].removeChild(s);
+         this.boxes[y * COLS + x].addChild(s);
       }
       
       private function setUpActions() : void
@@ -606,6 +676,20 @@ package com.brockw.stickwar.engine
          this.actions[new BomberDetonateCommand(this._game).type] = new BomberDetonateCommand(this._game);
          this.actions[new RemoveWallCommand(this._game).type] = new RemoveWallCommand(this._game);
          this.actions[new RemoveTowerCommand(this._game).type] = new RemoveTowerCommand(this._game);
+         this.actions[new SpeartonBossBraceCommand(this._game).type] = new SpeartonBossBraceCommand(this._game);
+         this.actions[new ArcherBossTripleShotCommand(this._game).type] = new ArcherBossTripleShotCommand(this._game);
+         this.actions[new ArcherBossPoisonExecuteCommand(this._game).type] = new ArcherBossPoisonExecuteCommand(this._game);
+         this.actions[new ArcherBossArrowStormCommand(this._game).type] = new ArcherBossArrowStormCommand(this._game);
+         this.actions[new ArcherBossExplosionCommand(this._game).type] = new ArcherBossExplosionCommand(this._game);
+         this.actions[new ArcherBossAutoToggleCommand(this._game).type] = new ArcherBossAutoToggleCommand(this._game);
+         this.actions[new NinjaCloak3Command(this._game).type] = new NinjaCloak3Command(this._game);
+         this.actions[new NinjaShadowCloneCommand(this._game).type] = new NinjaShadowCloneCommand(this._game);
+         this.actions[new MonkBossReviveCommand(this._game).type] = new MonkBossReviveCommand(this._game);
+         this.actions[new MonkBossAutoReviveToggleCommand(this._game).type] = new MonkBossAutoReviveToggleCommand(this._game);
+         this.actions[new MagikillSummonCommand(this._game).type] = new MagikillSummonCommand(this._game);
+         this.actions[new Nuke2Command(this._game).type] = new Nuke2Command(this._game);
+         this.actions[new LightningStunCommand(this._game).type] = new LightningStunCommand(this._game);
+         this.actions[new FogRevealCommand(this._game).type] = new FogRevealCommand(this._game);
       }
       
       public function get currentMove() : UnitCommand

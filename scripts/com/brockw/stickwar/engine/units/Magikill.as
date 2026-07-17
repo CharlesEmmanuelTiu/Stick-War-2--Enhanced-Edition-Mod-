@@ -1,18 +1,20 @@
 package com.brockw.stickwar.engine.units
 {
    import com.brockw.game.Util;
+   import com.brockw.stickwar.campaign.CampaignGameScreen;
    import com.brockw.stickwar.engine.ActionInterface;
    import com.brockw.stickwar.engine.Ai.*;
    import com.brockw.stickwar.engine.Ai.command.*;
    import com.brockw.stickwar.engine.Entity;
    import com.brockw.stickwar.engine.StickWar;
-   import com.brockw.stickwar.campaign.CampaignGameScreen;
    import com.brockw.stickwar.engine.Team.*;
    import com.brockw.stickwar.market.MarketItem;
    import flash.display.MovieClip;
    
    public class Magikill extends Unit
    {
+      
+      private static var WEAPON_REACH:int;
       
       private static const BOSS_STAFF_SKIN:String = "Basic Wooden Staff";
       
@@ -23,40 +25,38 @@ package com.brockw.stickwar.engine.units
       private static const BOSS_SUMMON_COOLDOWN_FRAMES:int = 30 * 15;
       
       private static const BOSS_SUMMON_RADIUS:Number = 220;
-
+      
       private static const BOSS_SUMMON_SPEARTON_MAX:int = 3;
-
+      
       private static const BOSS_SUMMON_SWORDWRATH_MAX:int = 2;
-
+      
       private static const BOSS_SUMMON_ARCHER_MAX:int = 2;
-
-      private static const BOSS_SUMMON_COMMIT_RANGE:Number = 600;
-
+      
+      private static const BOSS_SUMMON_NINJA_MAX:int = 2;
+      
       private static const BOSS_SUMMON_SOUND_SCREEN_PADDING:Number = 160;
-
-      private static const BOSS_METEOR_CHAIN_DAMAGE_SCALE:Number = 0.75;
-
+      
+      private static const BOSS_METEOR_CHAIN_DAMAGE_SCALE:Number = 0.5;
+      
       private static const BOSS_METEOR_CHAIN_SPREAD_X:Number = 220;
-
+      
       private static const BOSS_METEOR_CHAIN_SPREAD_Y:Number = 110;
-
+      
       private static const BOSS_METEOR_CHAIN_MIN_OFFSET_X:Number = 120;
-
+      
       private static const BOSS_METEOR_CHAIN_MIN_OFFSET_Y:Number = 45;
-
+      
       private static const BOSS_METEOR_CHAIN_MIN_DISTANCE_FROM_MAIN:Number = 120;
-
+      
       private static const BOSS_METEOR_CHAIN_MIN_DISTANCE_BETWEEN:Number = 140;
-
+      
       private static const BOSS_METEOR_CHAIN_PLACEMENT_ATTEMPTS:int = 5;
-
+      
       private static const BOSS_METEOR_CHAIN_FIRST_DELAY:int = 8;
-
+      
       private static const BOSS_METEOR_CHAIN_SECOND_DELAY:int = 16;
       
       private static const BOSS_DAMAGE_TAKEN_MULTIPLIER:Number = 1 / 1.8;
-      
-      private static var WEAPON_REACH:int;
       
       private var stunSpellCooldown:SpellCooldown;
       
@@ -69,7 +69,7 @@ package com.brockw.stickwar.engine.units
       private var isNuking:Boolean;
       
       private var isPoisonDarting:Boolean;
-
+      
       private var isSummoning:Boolean;
       
       private var spellX:Number;
@@ -77,20 +77,26 @@ package com.brockw.stickwar.engine.units
       private var spellY:Number;
       
       private var explosionDamage:Number;
-
+      
       private var _autoCastMode:int;
+      
+      public var allowAiAutoCast:Boolean;
       
       private var _isOnInitialSpawnMove:Boolean;
       
       private var _isBoss:Boolean;
       
+      private var _isPlayerBoss:Boolean;
+      
       private var bossSummonCooldownFrames:int;
       
       private var bossSummonedUnits:Array;
-
+      
       private var bossMeteorChainQueue:Array;
-
+      
       private var bossDamagedUntilFrame:int;
+      
+      private var _swordwrathClearedForUpgrade:Boolean;
       
       public function Magikill(game:StickWar)
       {
@@ -106,7 +112,7 @@ package com.brockw.stickwar.engine.units
       
       public static function setItem(mc:MovieClip, weapon:String, armor:String, misc:String) : void
       {
-         var m:_magikill = _magikill(mc);
+         var m:_magikill = mc;
          if(Boolean(m.mc.wizhat))
          {
             if(armor != "")
@@ -135,6 +141,11 @@ package com.brockw.stickwar.engine.units
          return WEAPON_REACH;
       }
       
+      override public function canAttackAir() : Boolean
+      {
+         return true;
+      }
+      
       override public function playDeathSound() : void
       {
          team.game.soundManager.playSound("MagikillDeath",px,py);
@@ -159,8 +170,8 @@ package com.brockw.stickwar.engine.units
          _mc.width *= _scale;
          _mc.height *= _scale;
          _state = S_RUN;
-         MovieClip(_mc.mc.gotoAndPlay(1));
-         MovieClip(_mc.gotoAndStop(1));
+         _mc.mc.gotoAndPlay(1);
+         _mc.gotoAndStop(1);
          drawShadow();
          this.stunSpellCooldown = new SpellCooldown(game.xml.xml.Order.Units.magikill.electricWall.effect,game.xml.xml.Order.Units.magikill.electricWall.cooldown,game.xml.xml.Order.Units.magikill.electricWall.mana);
          this.nukeSpellCooldown = new SpellCooldown(game.xml.xml.Order.Units.magikill.nuke.effect,game.xml.xml.Order.Units.magikill.nuke.cooldown,game.xml.xml.Order.Units.magikill.nuke.mana);
@@ -172,10 +183,12 @@ package com.brockw.stickwar.engine.units
          this._autoCastMode = 2;
          this._isOnInitialSpawnMove = true;
          this._isBoss = false;
+         this._isPlayerBoss = false;
          this.bossSummonCooldownFrames = 0;
          this.bossSummonedUnits = [];
          this.bossMeteorChainQueue = [];
          this.bossDamagedUntilFrame = 0;
+         this._swordwrathClearedForUpgrade = false;
       }
       
       override public function setBuilding() : void
@@ -194,9 +207,23 @@ package com.brockw.stickwar.engine.units
          {
             --this.bossSummonCooldownFrames;
          }
-         if(this.isBoss)
+         if(this.isBoss && this.isSummonUpgradeActive())
          {
-            this.updateBossSummons(game);
+            if(!this._swordwrathClearedForUpgrade)
+            {
+               this._swordwrathClearedForUpgrade = true;
+               for each(var sw in this.bossSummonedUnits)
+               {
+                  if(sw != null && sw.isAlive() && sw.type == Unit.U_SWORDWRATH)
+                  {
+                     sw.isDieing = true;
+                  }
+               }
+            }
+         }
+         else
+         {
+            this._swordwrathClearedForUpgrade = false;
          }
          this.updateBossMeteorChain(game);
          this.stunSpellCooldown.update();
@@ -209,7 +236,7 @@ package com.brockw.stickwar.engine.units
             {
                _mc.gotoAndStop(_currentDual.attackLabel);
                moveDualPartner(_dualPartner,_currentDual.xDiff);
-               if(MovieClip(_mc.mc).currentFrame == MovieClip(_mc.mc).totalFrames)
+               if(_mc.mc.currentFrame == _mc.mc.totalFrames)
                {
                   _mc.gotoAndStop("run");
                   _isDualing = false;
@@ -222,17 +249,20 @@ package com.brockw.stickwar.engine.units
             else if(this.isNuking == true)
             {
                _mc.gotoAndStop("attack_1");
-               if(MovieClip(_mc.mc).currentFrame == 36 && !hasHit)
+               if(_mc.mc.currentFrame == 36 && !hasHit)
                {
                   game.soundManager.playSoundRandom("mediumExplosion",3,this.spellX,this.spellY);
                   game.projectileManager.initNuke(this.spellX,this.spellY,this,this.explosionDamage);
                   if(this.isBoss)
                   {
-                     this.queueBossMeteorChain(game,this.spellX,this.spellY);
+                     if(!this._isPlayerBoss || this.team.tech.isResearched(Tech.MAGIKILL_NUKE_2))
+                     {
+                        this.queueBossMeteorChain(game,this.spellX,this.spellY);
+                     }
                   }
                   hasHit = true;
                }
-               if(MovieClip(_mc.mc).currentFrame == MovieClip(_mc.mc).totalFrames)
+               if(_mc.mc.currentFrame == _mc.mc.totalFrames)
                {
                   this.isNuking = false;
                   _state = S_RUN;
@@ -241,13 +271,13 @@ package com.brockw.stickwar.engine.units
             else if(this.isStunning == true)
             {
                _mc.gotoAndStop("electricAttack");
-               if(MovieClip(_mc.mc).currentFrame == 47 && !hasHit)
+               if(_mc.mc.currentFrame == 47 && !hasHit)
                {
                   game.soundManager.playSound("electricWall",this.spellX,this.spellY);
                   game.projectileManager.initStun(this.spellX,this.spellY,game.xml.xml.Order.Units.magikill.electricWallDamage,this);
                   hasHit = true;
                }
-               if(MovieClip(_mc.mc).currentFrame == MovieClip(_mc.mc).totalFrames)
+               if(_mc.mc.currentFrame == _mc.mc.totalFrames)
                {
                   this.isStunning = false;
                   _state = S_RUN;
@@ -256,13 +286,13 @@ package com.brockw.stickwar.engine.units
             else if(this.isPoisonDarting == true)
             {
                _mc.gotoAndStop("poisonAttack");
-               if(MovieClip(_mc.mc).currentFrame == 44 && !hasHit)
+               if(_mc.mc.currentFrame == 44 && !hasHit)
                {
                   game.soundManager.playSound("AcidSpraySound",px,py);
                   game.projectileManager.initPoisonSpray(this.spellX,this.spellY,this);
                   hasHit = true;
                }
-               if(MovieClip(_mc.mc).currentFrame == MovieClip(_mc.mc).totalFrames)
+               if(_mc.mc.currentFrame == _mc.mc.totalFrames)
                {
                   this.isPoisonDarting = false;
                   _state = S_RUN;
@@ -271,12 +301,12 @@ package com.brockw.stickwar.engine.units
             else if(this.isSummoning == true)
             {
                _mc.gotoAndStop("electricAttack");
-               if(MovieClip(_mc.mc).currentFrame == 47 && !hasHit)
+               if(_mc.mc.currentFrame == 47 && !hasHit)
                {
                   this.performBossSummonGuards(game);
                   hasHit = true;
                }
-               if(MovieClip(_mc.mc).currentFrame == MovieClip(_mc.mc).totalFrames)
+               if(_mc.mc.currentFrame == _mc.mc.totalFrames)
                {
                   this.isSummoning = false;
                   _state = S_RUN;
@@ -299,7 +329,7 @@ package com.brockw.stickwar.engine.units
                {
                   hasHit = this.checkForHit();
                }
-               if(MovieClip(_mc.mc).totalFrames == MovieClip(_mc.mc).currentFrame)
+               if(_mc.mc.totalFrames == _mc.mc.currentFrame)
                {
                   _state = S_RUN;
                }
@@ -315,7 +345,7 @@ package com.brockw.stickwar.engine.units
             if(_isDualing)
             {
                _mc.gotoAndStop(_currentDual.defendLabel);
-               if(MovieClip(_mc.mc).currentFrame == MovieClip(_mc.mc).totalFrames)
+               if(_mc.mc.currentFrame == _mc.mc.totalFrames)
                {
                   isDualing = false;
                   mc.filters = [];
@@ -330,9 +360,9 @@ package com.brockw.stickwar.engine.units
                isDead = true;
             }
          }
-         if(!isDead && MovieClip(_mc.mc).currentFrame == MovieClip(_mc.mc).totalFrames)
+         if(!isDead && _mc.mc.currentFrame == _mc.mc.totalFrames)
          {
-            MovieClip(_mc.mc).gotoAndStop(1);
+            _mc.mc.gotoAndStop(1);
          }
          Util.animateMovieClip(_mc,0);
          if(mc.mc.wizhat != null)
@@ -353,18 +383,25 @@ package com.brockw.stickwar.engine.units
          }
          if(this.isBoss)
          {
-            Magikill.setItem(_magikill(mc),BOSS_STAFF_SKIN,BOSS_HAT_SKIN,BOSS_BEARD_SKIN);
+            Magikill.setItem(mc,BOSS_STAFF_SKIN,BOSS_HAT_SKIN,BOSS_BEARD_SKIN);
          }
          else if(!hasDefaultLoadout)
          {
-            Magikill.setItem(_magikill(mc),team.loadout.getItem(this.type,MarketItem.T_WEAPON),team.loadout.getItem(this.type,MarketItem.T_ARMOR),team.loadout.getItem(this.type,MarketItem.T_MISC));
+            Magikill.setItem(mc,team.loadout.getItem(this.type,MarketItem.T_WEAPON),team.loadout.getItem(this.type,MarketItem.T_ARMOR),team.loadout.getItem(this.type,MarketItem.T_MISC));
          }
       }
       
       override public function setActionInterface(a:ActionInterface) : void
       {
          super.setActionInterface(a);
-         a.setAction(0,0,UnitCommand.NUKE);
+         if(this._isPlayerBoss && team.tech.isResearched(Tech.MAGIKILL_NUKE_2))
+         {
+            a.setAction(0,0,UnitCommand.NUKE_2);
+         }
+         else
+         {
+            a.setAction(0,0,UnitCommand.NUKE);
+         }
          a.setAction(0,1,UnitCommand.CURE);
          if(team.tech.isResearched(Tech.MAGIKILL_POISON))
          {
@@ -372,7 +409,18 @@ package com.brockw.stickwar.engine.units
          }
          if(team.tech.isResearched(Tech.MAGIKILL_WALL))
          {
-            a.setAction(2,0,UnitCommand.STUN);
+            if(this._isPlayerBoss && team.tech.isResearched(Tech.MAGIKILL_LIGHTNING_STUN))
+            {
+               a.setAction(2,0,UnitCommand.LIGHTNING_STUN);
+            }
+            else
+            {
+               a.setAction(2,0,UnitCommand.STUN);
+            }
+         }
+         if(this.isBoss)
+         {
+            a.setAction(1,1,UnitCommand.MAGIKILL_SUMMON);
          }
       }
       
@@ -383,7 +431,7 @@ package com.brockw.stickwar.engine.units
          {
             id = team.game.random.nextInt() % this._attackLabels.length;
             _mc.gotoAndStop("attack_" + this._attackLabels[id]);
-            MovieClip(_mc.mc).gotoAndStop(1);
+            _mc.mc.gotoAndStop(1);
             _state = S_ATTACK;
             hasHit = false;
          }
@@ -428,7 +476,7 @@ package com.brockw.stickwar.engine.units
             hasHit = false;
             _state = S_ATTACK;
             _mc.gotoAndStop("attack_1");
-            MovieClip(_mc.mc).gotoAndStop(1);
+            _mc.mc.gotoAndStop(1);
             team.game.soundManager.playSound("fulminateSound",px,py);
          }
       }
@@ -466,6 +514,11 @@ package com.brockw.stickwar.engine.units
          return this.poisonDartSpellCooldown.cooldown();
       }
       
+      public function summonCooldown() : Number
+      {
+         return this.bossSummonCooldownFrames / BOSS_SUMMON_COOLDOWN_FRAMES;
+      }
+      
       override public function mayAttack(target:Unit) : Boolean
       {
          if(isIncapacitated())
@@ -500,43 +553,43 @@ package com.brockw.stickwar.engine.units
             this.isPoisonDarting = false;
          }
       }
-
+      
       public function get isMeteorOnlyToggled() : Boolean
       {
          return this._autoCastMode == 1;
       }
-
+      
       public function set isMeteorOnlyToggled(value:Boolean) : void
       {
          this._autoCastMode = value ? 1 : 0;
       }
-
+      
       public function get autoCastMode() : int
       {
          return this._autoCastMode;
       }
-
+      
       public function set autoCastMode(value:int) : void
       {
          this._autoCastMode = value;
       }
-
+      
       public function get isAutoCastEnabled() : Boolean
       {
          return this._autoCastMode != 2;
       }
-
+      
       public function get isOnInitialSpawnMove() : Boolean
       {
          return this._isOnInitialSpawnMove;
       }
-
+      
       public function set isOnInitialSpawnMove(value:Boolean) : void
       {
          this._isOnInitialSpawnMove = value;
       }
-
-      public function makeBoss() : void
+      
+      override public function makeBoss(enableDeathBurst:Boolean = false) : void
       {
          this._isBoss = true;
          this.isBossUnit = true;
@@ -546,8 +599,12 @@ package com.brockw.stickwar.engine.units
          this.autoCastMode = 2;
          this.bossMeteorChainQueue = [];
          this.bossDamagedUntilFrame = 0;
+         if(this.team != null && !this.team.isAi)
+         {
+            this._isPlayerBoss = true;
+         }
       }
-
+      
       override public function damage(type:int, amount:int, inflictor:Entity, modifier:Number = 1) : void
       {
          var previousHealth:Number = this.health;
@@ -561,26 +618,44 @@ package com.brockw.stickwar.engine.units
             this.bossDamagedUntilFrame = this.team.game.frame + 30 * 3;
          }
       }
-
+      
       public function get isBoss() : Boolean
       {
          return this._isBoss;
       }
-
+      
+      public function get isPlayerBoss() : Boolean
+      {
+         return this._isPlayerBoss;
+      }
+      
+      public function set isPlayerBoss(value:Boolean) : void
+      {
+         this._isPlayerBoss = value;
+      }
+      
       public function bossWasRecentlyDamaged(game:StickWar) : Boolean
       {
          return game != null && game.frame < this.bossDamagedUntilFrame;
       }
-
+      
       public function tryBossSummonGuards(game:StickWar) : Boolean
       {
          if(!this.isBoss || this.hasBossAbilitySpawnLock() || this.bossSummonCooldownFrames > 0 || !this.canBossSummonAnyGuardType() || !this.notInSpell())
          {
             return false;
          }
-         if(game.gameScreen is CampaignGameScreen && !CampaignGameScreen(game.gameScreen).canUseRebelsUnitedBossAbility(this,"magikillSummon"))
+         if(this.isSummonUpgradeActive() && this.team.mana < 70)
          {
             return false;
+         }
+         if(game.gameScreen is CampaignGameScreen && !game.gameScreen.canUseRebelsUnitedBossAbility(this,"magikillSummon"))
+         {
+            return false;
+         }
+         if(this.isSummonUpgradeActive())
+         {
+            this.team.mana -= 70;
          }
          forceFaceDirection(this.team.enemyTeam.statue.px - this.px);
          this.isSummoning = true;
@@ -590,7 +665,12 @@ package com.brockw.stickwar.engine.units
          this.bossSummonCooldownFrames = BOSS_SUMMON_COOLDOWN_FRAMES;
          return true;
       }
-
+      
+      public function isSummonUpgradeActive() : Boolean
+      {
+         return this._isPlayerBoss && this.team != null && this.team.tech.isResearched(Tech.MAGIKILL_SUMMON_UPGRADE);
+      }
+      
       private function performBossSummonGuards(game:StickWar) : void
       {
          var availableSummons:Array = [];
@@ -598,20 +678,28 @@ package com.brockw.stickwar.engine.units
          var summonCount:int = 0;
          var i:int = 0;
          var newUnit:Unit = null;
+         var upgradeActive:Boolean = this.isSummonUpgradeActive();
          this.pruneBossSummonList();
          if(!this.canBossSummonAnyGuardType())
          {
             return;
          }
-         if(this.countLivingBossSummonsByType(Unit.U_SWORDWRATH) < BOSS_SUMMON_SWORDWRATH_MAX)
+         if(upgradeActive)
+         {
+            if(this.countLivingBossSummonsByType(Unit.U_NINJA) < BOSS_SUMMON_NINJA_MAX)
+            {
+               availableSummons.push(Unit.U_NINJA);
+            }
+         }
+         else if(this.countLivingBossSummonsByType(Unit.U_SWORDWRATH) < BOSS_SUMMON_SWORDWRATH_MAX)
          {
             availableSummons.push(Unit.U_SWORDWRATH);
          }
-         if(this.countLivingBossSummonsByType(Unit.U_ARCHER) < BOSS_SUMMON_ARCHER_MAX)
+         if(this.countLivingBossSummonsByType(Unit.U_ARCHER) < (upgradeActive ? 2 : BOSS_SUMMON_ARCHER_MAX))
          {
             availableSummons.push(Unit.U_ARCHER);
          }
-         if(this.countLivingBossSummonsByType(Unit.U_SPEARTON) < BOSS_SUMMON_SPEARTON_MAX)
+         if(this.canBossSummonType(Unit.U_SPEARTON))
          {
             availableSummons.push(Unit.U_SPEARTON);
          }
@@ -625,26 +713,69 @@ package com.brockw.stickwar.engine.units
          {
             game.soundManager.playSoundRandom("GhostTower",2,this.px,this.py);
          }
-         for(i = 0; i < summonCount; i++)
+         i = 0;
+         while(i < summonCount)
          {
             if(!this.canBossSummonType(summonType))
             {
-               return;
+               break;
             }
             newUnit = game.unitFactory.getUnit(summonType);
+            if(newUnit is Ninja)
+            {
+               newUnit.releaseFromBossPool();
+            }
+            else if(newUnit is Spearton)
+            {
+               newUnit.releaseFromBossPool();
+            }
             this.team.spawn(newUnit,game);
-            newUnit.isBossSummoned = true;
+            newUnit.isBossSummoned = false;
             newUnit.isTowerSpawned = false;
             newUnit.forceTowerSpawnVisual = true;
+            newUnit.population = 0;
             newUnit.x = newUnit.px = this.px - this.team.direction * (40 + this.countLivingBossSummons() * 25);
             newUnit.y = newUnit.py = Math.max(70,Math.min(game.map.height - 70,this.py + (this.countLivingBossSummons() - 1) * 35));
-            this.team.population += newUnit.population;
+            var nearestEnemy:Unit = null;
+            var nearestDist:Number = 600;
+            for each(var candidate in this.team.enemyTeam.units)
+            {
+               if(candidate != null && candidate.isAlive())
+               {
+                  var dist:Number = Math.abs(candidate.px - newUnit.px);
+                  if(dist < nearestDist)
+                  {
+                     nearestDist = dist;
+                     nearestEnemy = candidate;
+                  }
+               }
+            }
+            if(nearestEnemy != null)
+            {
+               var attackMove:AttackMoveCommand = new AttackMoveCommand(game);
+               attackMove.goalX = nearestEnemy.px;
+               attackMove.goalY = game.map.height / 2;
+               newUnit.ai.setCommand(game,attackMove);
+            }
+            else
+            {
+               var stand:StandCommand = new StandCommand(game);
+               newUnit.ai.setCommand(game,stand);
+            }
             game.projectileManager.initTowerSpawn(newUnit.px,newUnit.py,this.team,0.6);
             game.projectileManager.initSpawnDrip(newUnit.px,newUnit.py,this.team);
             this.bossSummonedUnits.push(newUnit);
+            if(summonType == Unit.U_SPEARTON || summonType == Unit.U_NINJA)
+            {
+               newUnit.maxHealth /= 2;
+               newUnit.health = newUnit.maxHealth;
+               newUnit.healthBar.totalHealth = newUnit.maxHealth;
+               newUnit.healthBar.health = newUnit.health;
+            }
+            i++;
          }
       }
-
+      
       private function isBossSummonSoundInView(game:StickWar) : Boolean
       {
          if(game == null || game.map == null)
@@ -653,7 +784,7 @@ package com.brockw.stickwar.engine.units
          }
          return this.px >= game.screenX - BOSS_SUMMON_SOUND_SCREEN_PADDING && this.px <= game.screenX + game.map.screenWidth + BOSS_SUMMON_SOUND_SCREEN_PADDING;
       }
-
+      
       public function clearBossSummonsOnDeath() : void
       {
          var summoned:Unit = null;
@@ -665,7 +796,7 @@ package com.brockw.stickwar.engine.units
             }
          }
       }
-
+      
       private function countLivingBossSummons() : int
       {
          var summoned:Unit = null;
@@ -674,12 +805,12 @@ package com.brockw.stickwar.engine.units
          {
             if(summoned != null && summoned.isAlive() && Math.abs(summoned.px - this.px) < BOSS_SUMMON_RADIUS * 2)
             {
-               ++count;
+               count++;
             }
          }
          return count;
       }
-
+      
       private function countLivingBossSummonsByType(type:int) : int
       {
          var summoned:Unit = null;
@@ -688,41 +819,75 @@ package com.brockw.stickwar.engine.units
          {
             if(summoned != null && summoned.isAlive() && summoned.type == type)
             {
-               ++count;
+               count++;
             }
          }
          return count;
       }
-
-      private function canBossSummonAnyGuardType() : Boolean
+      
+      public function getLivingBossSummonedUnits() : Array
       {
+         var living:Array = [];
+         var summoned:Unit = null;
+         for each(summoned in this.bossSummonedUnits)
+         {
+            if(summoned != null && summoned.isAlive())
+            {
+               living.push(summoned);
+            }
+         }
+         return living;
+      }
+      
+      public function canBossSummonAnyGuardType() : Boolean
+      {
+         if(this.isSummonUpgradeActive())
+         {
+            return this.canBossSummonType(Unit.U_SPEARTON) || this.canBossSummonType(Unit.U_NINJA) || this.canBossSummonType(Unit.U_ARCHER);
+         }
          return this.canBossSummonType(Unit.U_SPEARTON) || this.canBossSummonType(Unit.U_SWORDWRATH) || this.canBossSummonType(Unit.U_ARCHER);
       }
-
+      
       private function canBossSummonType(type:int) : Boolean
       {
          switch(type)
          {
             case Unit.U_SPEARTON:
-               return this.countLivingBossSummonsByType(type) < BOSS_SUMMON_SPEARTON_MAX;
+               if(this.isSummonUpgradeActive())
+               {
+                  return this.countLivingBossSummonsByType(type) < 2;
+               }
+               return this.countLivingBossSummonsByType(type) < 1;
+               break;
             case Unit.U_SWORDWRATH:
                return this.countLivingBossSummonsByType(type) < BOSS_SUMMON_SWORDWRATH_MAX;
+            case Unit.U_NINJA:
+               return this.countLivingBossSummonsByType(type) < BOSS_SUMMON_NINJA_MAX;
             case Unit.U_ARCHER:
+               if(this.isSummonUpgradeActive())
+               {
+                  return this.countLivingBossSummonsByType(type) < 2;
+               }
                return this.countLivingBossSummonsByType(type) < BOSS_SUMMON_ARCHER_MAX;
+               break;
             default:
                return false;
          }
       }
-
+      
       private function getBossSummonSpawnCountForType(type:int) : int
       {
          if(type == Unit.U_SPEARTON)
          {
             return 1;
          }
-         return 2;
+         if(this.isSummonUpgradeActive() && type == Unit.U_ARCHER)
+         {
+            return 2;
+         }
+         return 1;
       }
-
+      
       private function updateBossMeteorChain(game:StickWar) : void
       {
          var readIndex:int = 0;
@@ -732,7 +897,8 @@ package com.brockw.stickwar.engine.units
          {
             return;
          }
-         for(readIndex = 0; readIndex < this.bossMeteorChainQueue.length; readIndex++)
+         readIndex = 0;
+         while(readIndex < this.bossMeteorChainQueue.length)
          {
             entry = this.bossMeteorChainQueue[readIndex];
             if(game.frame >= int(entry.frame))
@@ -743,12 +909,13 @@ package com.brockw.stickwar.engine.units
             else
             {
                this.bossMeteorChainQueue[writeIndex] = entry;
-               ++writeIndex;
+               writeIndex++;
             }
+            readIndex++;
          }
          this.bossMeteorChainQueue.length = writeIndex;
       }
-
+      
       private function queueBossMeteorChain(game:StickWar, centerX:Number, centerY:Number) : void
       {
          var first:Object = this.pickBossMeteorChainPoint(game,centerX,centerY,null,-1);
@@ -756,38 +923,40 @@ package com.brockw.stickwar.engine.units
          this.queueBossMeteorChainExplosion(game,first.x,first.y,BOSS_METEOR_CHAIN_FIRST_DELAY);
          this.queueBossMeteorChainExplosion(game,second.x,second.y,BOSS_METEOR_CHAIN_SECOND_DELAY);
       }
-
+      
       private function pickBossMeteorChainPoint(game:StickWar, centerX:Number, centerY:Number, avoid:Object, fallbackSide:int) : Object
       {
          var i:int = 0;
-         var x:Number = NaN;
-         var y:Number = NaN;
-         for(i = 0; i < BOSS_METEOR_CHAIN_PLACEMENT_ATTEMPTS; i++)
+         var x:Number = Number(NaN);
+         var y:Number = Number(NaN);
+         i = 0;
+         while(i < BOSS_METEOR_CHAIN_PLACEMENT_ATTEMPTS)
          {
             x = centerX + (game.random.nextNumber() * 2 - 1) * BOSS_METEOR_CHAIN_SPREAD_X;
             y = Math.max(70,Math.min(game.map.height - 70,centerY + (game.random.nextNumber() * 2 - 1) * BOSS_METEOR_CHAIN_SPREAD_Y));
             if(this.isBossMeteorChainPointValid(x,y,centerX,centerY,avoid))
             {
                return {
-                  x: x,
-                  y: y
+                  "x":x,
+                  "y":y
                };
             }
+            i++;
          }
          x = centerX + fallbackSide * (BOSS_METEOR_CHAIN_MIN_OFFSET_X + BOSS_METEOR_CHAIN_MIN_DISTANCE_BETWEEN);
          y = Math.max(70,Math.min(game.map.height - 70,centerY + fallbackSide * BOSS_METEOR_CHAIN_MIN_OFFSET_Y));
          return {
-            x: x,
-            y: y
+            "x":x,
+            "y":y
          };
       }
-
+      
       private function isBossMeteorChainPointValid(x:Number, y:Number, centerX:Number, centerY:Number, avoid:Object) : Boolean
       {
          var dx:Number = x - centerX;
          var dy:Number = y - centerY;
-         var avoidDx:Number = NaN;
-         var avoidDy:Number = NaN;
+         var avoidDx:Number = Number(NaN);
+         var avoidDy:Number = Number(NaN);
          if(dx * dx + dy * dy < BOSS_METEOR_CHAIN_MIN_DISTANCE_FROM_MAIN * BOSS_METEOR_CHAIN_MIN_DISTANCE_FROM_MAIN)
          {
             return false;
@@ -803,106 +972,34 @@ package com.brockw.stickwar.engine.units
          }
          return true;
       }
-
+      
       private function queueBossMeteorChainExplosion(game:StickWar, x:Number, y:Number, delayFrames:int) : void
       {
          this.bossMeteorChainQueue.push({
-            x: x,
-            y: y,
-            frame: game.frame + delayFrames
+            "x":x,
+            "y":y,
+            "frame":game.frame + delayFrames
          });
       }
-
-      private function updateBossSummons(game:StickWar) : void
-      {
-         var summoned:Unit = null;
-         this.pruneBossSummonList();
-         for each(summoned in this.bossSummonedUnits)
-         {
-            if(summoned == null || !summoned.isAlive())
-            {
-               continue;
-            }
-            if(!summoned.isBossMovementLocked && this.isBossSummonInCombat(summoned))
-            {
-               this.commitBossSummon(game,summoned);
-            }
-            else if(summoned.isBossMovementLocked && !this.isBossSummonInCombat(summoned))
-            {
-               this.releaseBossSummonToArmy(game,summoned);
-            }
-         }
-      }
-
-      private function commitBossSummon(game:StickWar, summoned:Unit) : void
-      {
-         var target:Unit = summoned.ai.getClosestTarget();
-         var attackMove:AttackMoveCommand = new AttackMoveCommand(game);
-         summoned.isBossMovementLocked = true;
-         attackMove.type = UnitCommand.ATTACK_MOVE;
-         if(target != null && target.isAlive() && target.team != summoned.team)
-         {
-            attackMove.goalX = target.px;
-            attackMove.goalY = target.py;
-            attackMove.realX = target.px;
-            attackMove.realY = target.py;
-         }
-         else
-         {
-            attackMove.goalX = this.team.enemyTeam.statue.px;
-            attackMove.goalY = game.map.height / 2;
-            attackMove.realX = attackMove.goalX;
-            attackMove.realY = attackMove.goalY;
-         }
-         summoned.ai.setCommand(game,attackMove);
-      }
-
-      private function releaseBossSummonToArmy(game:StickWar, summoned:Unit) : void
-      {
-         var attackMove:AttackMoveCommand = null;
-         var move:MoveCommand = null;
-         summoned.isBossMovementLocked = false;
-         if(this.team.currentAttackState == Team.G_ATTACK)
-         {
-            attackMove = new AttackMoveCommand(game);
-            attackMove.type = UnitCommand.ATTACK_MOVE;
-            attackMove.goalX = this.team.enemyTeam.statue.px;
-            attackMove.goalY = game.map.height / 2;
-            attackMove.realX = attackMove.goalX;
-            attackMove.realY = attackMove.goalY;
-            summoned.ai.setCommand(game,attackMove);
-            return;
-         }
-         move = new MoveCommand(game);
-         move.type = UnitCommand.MOVE;
-         move.goalX = this.team.homeX + this.team.direction * 600;
-         move.goalY = game.map.height / 2;
-         move.realX = move.goalX;
-         move.realY = move.goalY;
-         summoned.ai.setCommand(game,move);
-      }
-
-      private function isBossSummonInCombat(summoned:Unit) : Boolean
-      {
-         var target:Unit = summoned.ai.getClosestTarget();
-         return target != null && target.team != summoned.team && target.isTargetable() && summoned.sqrDistanceToTarget(target) < BOSS_SUMMON_COMMIT_RANGE * BOSS_SUMMON_COMMIT_RANGE;
-      }
-
+      
       private function pruneBossSummonList() : void
       {
          var readIndex:int = 0;
          var writeIndex:int = 0;
          var summoned:Unit = null;
-         for(readIndex = 0; readIndex < this.bossSummonedUnits.length; readIndex++)
+         readIndex = 0;
+         while(readIndex < this.bossSummonedUnits.length)
          {
             summoned = this.bossSummonedUnits[readIndex];
             if(summoned != null && summoned.isAlive())
             {
                this.bossSummonedUnits[writeIndex] = summoned;
-               ++writeIndex;
+               writeIndex++;
             }
+            readIndex++;
          }
          this.bossSummonedUnits.length = writeIndex;
       }
    }
 }
+

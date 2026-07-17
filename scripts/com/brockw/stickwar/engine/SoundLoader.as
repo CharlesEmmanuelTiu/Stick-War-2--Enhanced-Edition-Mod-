@@ -194,9 +194,24 @@ package com.brockw.stickwar.engine
          soundManager.addSound("GiantGrowl6",GiantGrowl6,1,3);
          soundManager.addSound("BodyfallSound",BodyfallSound,1,6);
          soundManager.addSound("battleOfTheShadowElves",Battle_Of_The_Shadow_Elves,1,2);
-         soundManager.addSound("enteringTheStronghold",Entering_The_Stronghold,1,2);
-         soundManager.addSound("fieldOfMemories",Field_Of_Memories,1,1);
+         soundManager.addSound("enteringTheStronghold",Entering_The_Stronghold,1,1.5);
+         soundManager.addSound("fieldOfMemories",Field_Of_Memories,1,1.5);
          soundManager.addSound("orderInGame",Battle_Of_The_Shadow_Elves,1,2);
+         soundManager.addSound("ironHit1",Iron_Hit1,10,0.6);
+         soundManager.addSound("ironHit2",Iron_Hit2,10,0.6);
+         soundManager.addSound("ironHit3",Iron_Hit3,10,0.6);
+         soundManager.addSound("ironHit4",Iron_Hit4,10,0.6);
+         soundManager.addSound("Nightfall",NightFog,1,1);
+         soundManager.addSound("necromancer_1",necromancer_1,1);
+         soundManager.addSound("necromancer_2",necromancer_2,1);
+         soundManager.addSound("necromancer_3",necromancer_3,1);
+         soundManager.addSound("rainfall",rainfall,1,0.5);
+         soundManager.addSound("thunder1",thunder1,1,1);
+         soundManager.addSound("thunder2",thunder2,1,1);
+         soundManager.addSound("thunder3",thunder3,1,1);
+         soundManager.addSound("thunder4",thunder4,1,1);
+         soundManager.addSound("thunder5",thunder5,1,0.6);
+         soundManager.addSound("thunder6",thunder6,1,1);
       }
    }
 }

@@ -26,9 +26,21 @@ package com.brockw.stickwar.engine.Team.Order
          {
             a.setAction(0,0,Tech.MAGIKILL_POISON);
          }
+         else if(!tech.isResearched(Tech.MAGIKILL_NUKE_2) && !tech.isHideBossTechs())
+         {
+            a.setAction(0,0,Tech.MAGIKILL_NUKE_2);
+         }
          if(!tech.isResearched(Tech.MAGIKILL_WALL))
          {
             a.setAction(1,0,Tech.MAGIKILL_WALL);
+         }
+         else if(!tech.isResearched(Tech.MAGIKILL_LIGHTNING_STUN) && !tech.isHideBossTechs())
+         {
+            a.setAction(1,0,Tech.MAGIKILL_LIGHTNING_STUN);
+         }
+         if(!tech.isResearched(Tech.MAGIKILL_SUMMON_UPGRADE) && !tech.isHideBossTechs())
+         {
+            a.setAction(2,0,Tech.MAGIKILL_SUMMON_UPGRADE);
          }
       }
    }

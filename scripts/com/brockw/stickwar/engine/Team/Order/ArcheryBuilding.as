@@ -46,6 +46,14 @@ package com.brockw.stickwar.engine.Team.Order
          {
             a.setAction(0,0,Tech.CASTLE_ARCHER_3);
          }
+         if(!tech.isResearched(Tech.ARCHER_BOSS_ARROW_STORM) && !tech.isHideBossTechs())
+         {
+            a.setAction(1,0,Tech.ARCHER_BOSS_ARROW_STORM);
+         }
+         if(!tech.isResearched(Tech.ARCHER_BOSS_EXPLOSION_ARROW) && !tech.isHideBossTechs())
+         {
+            a.setAction(1,1,Tech.ARCHER_BOSS_EXPLOSION_ARROW);
+         }
       }
    }
 }

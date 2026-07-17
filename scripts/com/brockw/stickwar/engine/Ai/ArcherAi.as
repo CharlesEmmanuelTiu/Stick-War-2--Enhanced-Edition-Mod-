@@ -6,6 +6,7 @@ package com.brockw.stickwar.engine.Ai
    
    public class ArcherAi extends RangedAi
    {
+      
       public function ArcherAi(s:Archer)
       {
          super(s);
@@ -23,31 +24,48 @@ package com.brockw.stickwar.engine.Ai
          {
             return;
          }
-         if(Archer(unit).isBoss)
+         if(unit.isBoss)
          {
             this.mayKite = true;
-            Archer(unit).tryBossAbilities(game);
-            Archer(unit).isBossMovementLocked = false;
-            if(Archer(unit).handleBossExplosionSetupMovement(game))
+            unit.tryBossAbilities(game);
+            unit.isBossMovementLocked = false;
+            if(unit.handleBossExplosionSetupMovement(game))
             {
                return;
             }
          }
          if(unit.team == unit.team.game.team)
          {
-            this.mayKite = Archer(unit).isAutoKiteToggled;
+            this.mayKite = unit.isAutoKiteToggled;
          }
          if(currentCommand.type == UnitCommand.HEAL)
          {
-            Archer(unit).isAutoKiteToggled = !Archer(unit).isAutoKiteToggled;
-            this.mayKite = Archer(unit).isAutoKiteToggled;
+            unit.isAutoKiteToggled = currentCommand.realX != 0;
+            this.mayKite = unit.isAutoKiteToggled;
             restoreMove(game);
             super.update(game);
             return;
          }
          if(currentCommand.type == UnitCommand.ARCHER_FIRE)
          {
-            Archer(unit).archerFireArrow();
+            unit.archerFireArrow();
+            nextMove(game);
+         }
+         if(currentCommand.type == UnitCommand.ARCHER_BOSS_AUTO_TOGGLE)
+         {
+            unit.bossAutoAbilityEnabled = currentCommand.realX != 0;
+            restoreMove(game);
+            super.update(game);
+            return;
+         }
+         if(currentCommand.type == UnitCommand.ARCHER_BOSS_ARROW_STORM)
+         {
+            unit.tryBossArrowStormManual(unit.team.game);
+            nextMove(game);
+         }
+         if(currentCommand.type == UnitCommand.ARCHER_BOSS_EXPLOSION)
+         {
+            unit.tryBossExplosionArrowManual(unit.team.game);
             nextMove(game);
          }
          super.update(game);

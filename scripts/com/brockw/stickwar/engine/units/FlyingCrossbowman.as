@@ -8,7 +8,7 @@ package com.brockw.stickwar.engine.units
    import flash.display.MovieClip;
    import flash.geom.Point;
    
-   public class FlyingCrossbowman extends RangedUnit
+   public class FlyingCrossbowman extends com.brockw.stickwar.engine.units.RangedUnit
    {
       
       private static var WEAPON_REACH:int;
@@ -29,7 +29,7 @@ package com.brockw.stickwar.engine.units
       
       public static function setItem(mc:MovieClip, weapon:String, armor:String, misc:String) : void
       {
-         var m:_flyingcrossbowmanMc = _flyingcrossbowmanMc(mc);
+         var m:_flyingcrossbowmanMc = mc;
          if(Boolean(m.mc.body))
          {
             if(Boolean(m.mc.body.head))
@@ -85,14 +85,14 @@ package com.brockw.stickwar.engine.units
          _mc.height *= _scale;
          _hitBoxWidth = 25;
          _state = S_RUN;
-         MovieClip(_mc.mc.gotoAndPlay(1));
-         MovieClip(_mc.gotoAndStop(1));
+         _mc.mc.gotoAndPlay(1); //unpopped
+         _mc.gotoAndStop(1); //unpopped
          py = 0;
          pz = -flyingHeight * (game.backScale + py / game.map.height * (game.frontScale - game.backScale));
          y = -100;
          if(game != null)
          {
-            MovieClip(mc.mc.wings).gotoAndPlay(Math.floor(MovieClip(mc.mc.wings).totalFrames * game.random.nextNumber()));
+            mc.mc.wings.gotoAndPlay(Math.floor(mc.mc.wings.totalFrames * game.random.nextNumber()));
          }
          drawShadow();
          this.healthBar.y = -mc.mc.height * 1.1;
@@ -119,18 +119,18 @@ package com.brockw.stickwar.engine.units
          if(_mc.mc.body != null && _mc.mc.body.legs != null)
          {
             _mc.mc.body.legs.rotation = getDirection() * _dx / _maxVelocity * game.xml.xml.Order.Units.flyingCrossbowman.legRotateAngleWhenFlying;
-            MovieClip(mc.mc.body.legs).nextFrame();
-            if(MovieClip(mc.mc.body.legs).currentFrame == MovieClip(mc.mc.body.legs).totalFrames)
+            mc.mc.body.legs.nextFrame();
+            if(mc.mc.body.legs.currentFrame == mc.mc.body.legs.totalFrames)
             {
-               MovieClip(mc.mc.body.legs).gotoAndStop(1);
+               mc.mc.body.legs.gotoAndStop(1);
             }
          }
          if(mc.mc.wings != null)
          {
-            MovieClip(mc.mc.wings).nextFrame();
-            if(MovieClip(mc.mc.wings).currentFrame == MovieClip(mc.mc.wings).totalFrames)
+            mc.mc.wings.nextFrame();
+            if(mc.mc.wings.currentFrame == mc.mc.wings.totalFrames)
             {
-               MovieClip(mc.mc.wings).gotoAndStop(1);
+               mc.mc.wings.gotoAndStop(1);
             }
          }
          if(!isDieing)
@@ -150,7 +150,7 @@ package com.brockw.stickwar.engine.units
             {
                _mc.gotoAndStop(_currentDual.attackLabel);
                moveDualPartner(_dualPartner,_currentDual.xDiff);
-               if(MovieClip(_mc.mc).currentFrame == MovieClip(_mc.mc).totalFrames)
+               if(_mc.mc.currentFrame == _mc.mc.totalFrames)
                {
                   _isDualing = false;
                   _state = S_RUN;
@@ -167,11 +167,11 @@ package com.brockw.stickwar.engine.units
             }
             else if(_state == S_ATTACK)
             {
-               if(MovieClip(_mc.mc).currentFrame > MovieClip(_mc.mc).totalFrames / 2 && !hasHit)
+               if(_mc.mc.currentFrame > _mc.mc.totalFrames / 2 && !hasHit)
                {
                   hasHit = this.checkForHit();
                }
-               if(MovieClip(_mc.mc).totalFrames == MovieClip(_mc.mc).currentFrame)
+               if(_mc.mc.totalFrames == _mc.mc.currentFrame)
                {
                   _state = S_RUN;
                }
@@ -190,25 +190,25 @@ package com.brockw.stickwar.engine.units
             }
             this.team.removeUnit(this,game);
          }
-         if(!isDead && MovieClip(_mc.mc).currentFrame == MovieClip(_mc.mc).totalFrames)
+         if(!isDead && _mc.mc.currentFrame == _mc.mc.totalFrames)
          {
-            MovieClip(_mc.mc).gotoAndStop(1);
+            _mc.mc.gotoAndStop(1);
          }
          if(!isDead && _mc.mc.wings != null)
          {
-            MovieClip(_mc.mc).gotoAndStop(_mc.mc.wings.currentFrame);
+            _mc.mc.gotoAndStop(_mc.mc.wings.currentFrame);
          }
          if(isDead)
          {
             Util.animateMovieClip(_mc,3);
-            MovieClip(_mc.mc.wings).gotoAndStop(1);
+            _mc.mc.wings.gotoAndStop(1);
             if(_mc.mc.body != null && _mc.mc.body.quiver != null)
             {
-               MovieClip(_mc.mc.body.quiver).gotoAndStop(1);
+               _mc.mc.body.quiver.gotoAndStop(1);
             }
             else if(_mc.mc.quiver != null)
             {
-               MovieClip(_mc.mc.quiver).gotoAndStop(1);
+               _mc.mc.quiver.gotoAndStop(1);
             }
             if(_mc.mc.arms != null)
             {

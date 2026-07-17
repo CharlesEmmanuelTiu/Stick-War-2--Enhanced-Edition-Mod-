@@ -23,16 +23,19 @@ package com.brockw.game
          this.poolClass = c;
          this.fIndex = 0;
          this.free = new Vector.<Object>(capacity,false);
-         for(var i:int = 0; i < capacity; i++)
+         var i:int = 0;
+         while(i < capacity)
          {
             this.free[i] = new c(game);
+            i++;
          }
          this.fIndex = 0;
       }
       
       public function cleanUp() : void
       {
-         for(var i:int = 0; i < this.free.length; i++)
+         var i:int = 0;
+         while(i < this.free.length)
          {
             if(this.free[i] != null)
             {
@@ -43,6 +46,7 @@ package com.brockw.game
             {
                trace("that things would have happened");
             }
+            i++;
          }
       }
       
@@ -52,9 +56,11 @@ package com.brockw.game
          if(this.fIndex >= this.capacity)
          {
             this.free = new Vector.<Object>(2 * this.capacity,false);
-            for(i = this.capacity; i < 2 * this.capacity; i++)
+            i = this.capacity;
+            while(i < 2 * this.capacity)
             {
                this.free[i] = new this.poolClass(this.game);
+               i++;
             }
             this.capacity *= 2;
          }
@@ -68,8 +74,11 @@ package com.brockw.game
       
       public function returnItem(item:Object) : void
       {
-         --this.fIndex;
-         this.free[this.fIndex] = item;
+         if(this.fIndex > 0)
+         {
+            --this.fIndex;
+            this.free[this.fIndex] = item;
+         }
       }
    }
 }

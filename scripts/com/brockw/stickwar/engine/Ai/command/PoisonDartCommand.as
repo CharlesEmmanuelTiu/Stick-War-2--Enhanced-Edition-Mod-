@@ -10,7 +10,7 @@ package com.brockw.stickwar.engine.Ai.command
    public class PoisonDartCommand extends UnitCommand
    {
       
-      public static const actualButtonBitmap:Bitmap = new Bitmap(new MagikillSummon());
+      public static const actualButtonBitmap:Bitmap = new Bitmap(new poisonSprayBitmap());
       
       private var poisonRange:Number;
       
@@ -77,12 +77,12 @@ package com.brockw.stickwar.engine.Ai.command
       
       override public function coolDownTime(entity:Entity) : Number
       {
-         return Magikill(entity).poisonDartCooldown();
+         return entity.poisonDartCooldown();
       }
       
       override public function isFinished(unit:Unit) : Boolean
       {
-         return Magikill(unit).poisonDartCooldown() != 0;
+         return unit.poisonDartCooldown() != 0;
       }
       
       override public function inRange(entity:Entity) : Boolean

@@ -86,7 +86,7 @@ package com.brockw.stickwar.singleplayer
             {
                if(unit is Unit && !(unit is Statue))
                {
-                  u = Unit(unit);
+                  u = unit;
                   u.damage(0,u.maxHealth * 2,null);
                }
             }
@@ -120,11 +120,11 @@ package com.brockw.stickwar.singleplayer
          e.winner = game.winner.id;
          e.turn = simulation.turn;
          simulation.processMove(e);
-         Main(main).postGameScreen.setReplayFile(simulation.gameReplay.toString(game));
-         Main(main).postGameScreen.setWinner(e.winner,team.type,team.realName,team.enemyTeam.realName,team.id);
-         Main(main).postGameScreen.setRecords(game.economyRecords,game.militaryRecords);
-         Main(main).postGameScreen.setMode(PostGameScreen.M_SINGLEPLAYER);
-         Main(main).showScreen("postGame");
+         main.postGameScreen.setReplayFile(simulation.gameReplay.toString(game));
+         main.postGameScreen.setWinner(e.winner,team.type,team.realName,team.enemyTeam.realName,team.id);
+         main.postGameScreen.setRecords(game.economyRecords,game.militaryRecords);
+         main.postGameScreen.setMode(PostGameScreen.M_SINGLEPLAYER);
+         main.showScreen("postGame");
       }
       
       override public function doMove(move:Move, id:int) : void

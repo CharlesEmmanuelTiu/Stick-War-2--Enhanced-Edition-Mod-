@@ -79,7 +79,7 @@ package com.brockw.stickwar.campaign.controllers
          var giant:Giant = null;
          var game:StickWar = null;
          var u1:Unit = null;
-         var frontPosition:Number = NaN;
+         var frontPosition:Number = Number(NaN);
          var m:MoveCommand = null;
          var r:int = 0;
          if(Boolean(this.message))
@@ -123,7 +123,7 @@ package com.brockw.stickwar.campaign.controllers
                unit.ai.mayAttack = false;
             }
             gameScreen.userInterface.selectedUnits.clear();
-            CampaignGameScreen(gameScreen).doAiUpdates = false;
+            gameScreen.doAiUpdates = false;
             gameScreen.userInterface.isGlobalsEnabled = false;
          }
          if(this.state == S_BEFORE_CUTSCENE)
@@ -137,13 +137,10 @@ package com.brockw.stickwar.campaign.controllers
                {
                   numGiants = 0;
                }
-               else
+               else if(!this.openingGiantAttackIssued)
                {
-                  if(!this.openingGiantAttackIssued)
-                  {
-                     this.orderOpeningGiantAttackMove(gameScreen,giant);
-                     this.openingGiantAttackIssued = true;
-                  }
+                  this.orderOpeningGiantAttackMove(gameScreen,giant);
+                  this.openingGiantAttackIssued = true;
                }
             }
             if(numGiants == 0)
@@ -172,33 +169,33 @@ package com.brockw.stickwar.campaign.controllers
                this.state = S_FADE_IN;
                this.counter = 0;
                game = gameScreen.game;
-               u1 = EnslavedGiant(game.unitFactory.getUnit(Unit.U_ENSLAVED_GIANT));
+               u1 = game.unitFactory.getUnit(Unit.U_ENSLAVED_GIANT);
                gameScreen.team.spawn(u1,game);
                u1.px = gameScreen.team.enemyTeam.statue.x - 200;
                u1.py = game.map.height / 2;
                u1.ai.setCommand(game,new HoldCommand(game));
                u1.ai.mayAttack = false;
-               u1 = Swordwrath(game.unitFactory.getUnit(Unit.U_SWORDWRATH));
+               u1 = game.unitFactory.getUnit(Unit.U_SWORDWRATH);
                gameScreen.team.spawn(u1,game);
                u1.px = gameScreen.team.enemyTeam.statue.x - 200 + 50;
                u1.py = game.map.height / 4;
                u1.ai.setCommand(game,new HoldCommand(game));
-               u1 = Swordwrath(game.unitFactory.getUnit(Unit.U_SWORDWRATH));
+               u1 = game.unitFactory.getUnit(Unit.U_SWORDWRATH);
                gameScreen.team.spawn(u1,game);
                u1.px = gameScreen.team.enemyTeam.statue.x - 200 + 50;
                u1.py = 3 * game.map.height / 4;
                u1.ai.setCommand(game,new HoldCommand(game));
-               u1 = Spearton(game.unitFactory.getUnit(Unit.U_SPEARTON));
+               u1 = game.unitFactory.getUnit(Unit.U_SPEARTON);
                gameScreen.team.spawn(u1,game);
                u1.px = gameScreen.team.enemyTeam.statue.x - 200 - 50;
                u1.py = game.map.height / 4;
                u1.ai.setCommand(game,new HoldCommand(game));
-               u1 = Spearton(game.unitFactory.getUnit(Unit.U_SPEARTON));
+               u1 = game.unitFactory.getUnit(Unit.U_SPEARTON);
                gameScreen.team.spawn(u1,game);
                u1.px = gameScreen.team.enemyTeam.statue.x - 200 - 50;
                u1.py = 3 * game.map.height / 4;
                u1.ai.setCommand(game,new HoldCommand(game));
-               u1 = Medusa(game.unitFactory.getUnit(Unit.U_MEDUSA));
+               u1 = game.unitFactory.getUnit(Unit.U_MEDUSA);
                gameScreen.team.enemyTeam.spawn(u1,game);
                this.medusa = u1;
                u1.ai.setCommand(game,new HoldCommand(game));
@@ -384,7 +381,7 @@ package com.brockw.stickwar.campaign.controllers
          }
          super.update(gameScreen);
       }
-
+      
       private function orderOpeningGiantAttackMove(gameScreen:GameScreen, giant:Giant) : void
       {
          var attackMove:AttackMoveCommand = null;
@@ -403,7 +400,7 @@ package com.brockw.stickwar.campaign.controllers
          giant.ai.mayMoveToAttack = true;
          giant.ai.setCommand(gameScreen.game,attackMove);
       }
-
+      
       private function spawnRebelBossRepresentative(gameScreen:GameScreen, game:StickWar, unitType:int, px:Number, py:Number, goalX:Number, goalY:Number) : Unit
       {
          var unit:Unit = game.unitFactory.getUnit(unitType);
@@ -421,7 +418,7 @@ package com.brockw.stickwar.campaign.controllers
          this.promoteRebelBossRepresentative(unit);
          return unit;
       }
-
+      
       private function promoteRebelBossRepresentative(unit:Unit) : void
       {
          if(unit == null)
@@ -431,23 +428,23 @@ package com.brockw.stickwar.campaign.controllers
          unit.hasDefaultLoadout = true;
          if(unit is Spearton)
          {
-            Spearton(unit).makeBoss();
+            unit.makeBoss();
          }
          else if(unit is Archer)
          {
-            Archer(unit).makeBoss();
+            unit.makeBoss();
          }
          else if(unit is Ninja)
          {
-            Ninja(unit).makeBoss();
+            unit.makeBoss();
          }
          else if(unit is Magikill)
          {
-            Magikill(unit).makeBoss();
+            unit.makeBoss();
          }
          else if(unit is Monk)
          {
-            Monk(unit).makeBoss();
+            unit.makeBoss();
          }
          unit.bossAbilitySpawnLockFrames = 999999;
       }

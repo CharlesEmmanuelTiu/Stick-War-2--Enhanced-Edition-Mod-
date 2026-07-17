@@ -41,6 +41,12 @@ package com.brockw.stickwar.engine
       
       private var targetBackgroundVolume:Number;
       
+      private var ambientLoopChannel:SoundChannel;
+      
+      private var ambientLoopName:String;
+      
+      public var ambientLoopRestartCount:int;
+      
       private var timer:Timer;
       
       public function SoundManager(main:BaseMain)
@@ -51,9 +57,11 @@ package com.brockw.stickwar.engine
          this.main = main;
          this.playing = [];
          this.waiting = [];
-         for(var i:int = 0; i < 20; i++)
+         var i:int = 0;
+         while(i < 20)
          {
             this.waiting.push(new SoundChannel());
+            i++;
          }
          this.lastX = this.lastY = 0;
          this.backgroundLoop = null;
@@ -70,6 +78,7 @@ package com.brockw.stickwar.engine
       public function cleanUp() : void
       {
          this.backgroundLoop.stop();
+         this.stopAmbientLoop();
       }
       
       public function setPosition(x:Number, y:Number) : void
@@ -94,6 +103,12 @@ package com.brockw.stickwar.engine
          {
             this.backgroundLoop.soundTransform = s;
          }
+         if(this.ambientLoopChannel != null && this.ambientLoopName != "")
+         {
+            var at:SoundTransform = new SoundTransform();
+            at.volume = this.isSound ? this.volumeMap[this.ambientLoopName] : 0;
+            this.ambientLoopChannel.soundTransform = at;
+         }
       }
       
       public function addSound(name:String, s:Class, n:int, soundModifier:Number = 1) : void
@@ -108,6 +123,16 @@ package com.brockw.stickwar.engine
       
       public function playSoundInBackground(name:String, startTime:Number = 0) : void
       {
+         this.playSoundInBackgroundWithLoop(name,startTime,true);
+      }
+      
+      public function playSoundInBackgroundOnce(name:String, startTime:Number = 0) : void
+      {
+         this.playSoundInBackgroundWithLoop(name,startTime,false);
+      }
+      
+      private function playSoundInBackgroundWithLoop(name:String, startTime:Number, shouldLoop:Boolean) : void
+      {
          if(name == this.currentBackgroundName && startTime == 0)
          {
             return;
@@ -121,14 +146,15 @@ package com.brockw.stickwar.engine
             return;
          }
          var s:Sound = new this.sounds[name]();
-         this.backgroundLoop = s.play(startTime,int.MAX_VALUE);
+         var loopCount:int = shouldLoop ? int.MAX_VALUE : 0;
+         this.backgroundLoop = s.play(startTime,loopCount);
          var transform:SoundTransform = new SoundTransform();
          transform.volume = this.backgroundVolume;
          this.backgroundLoop.soundTransform = transform;
          this.currentBackgroundName = name;
          this.targetBackgroundVolume = 0.2 * this.volumeMap[name];
       }
-
+      
       public function restartBackgroundAtIfPast(name:String, startTime:Number) : void
       {
          if(this.currentBackgroundName == name && this.backgroundLoop != null && this.backgroundLoop.position < startTime)
@@ -137,7 +163,7 @@ package com.brockw.stickwar.engine
          }
          this.playSoundInBackground(name,startTime);
       }
-
+      
       public function restartBackgroundAtIfBefore(name:String, startTime:Number) : void
       {
          if(this.currentBackgroundName == name && this.backgroundLoop != null && this.backgroundLoop.position >= startTime)
@@ -146,12 +172,12 @@ package com.brockw.stickwar.engine
          }
          this.playSoundInBackground(name,startTime);
       }
-
+      
       public function isBackgroundAtOrPast(name:String, startTime:Number) : Boolean
       {
          return this.currentBackgroundName == name && this.backgroundLoop != null && this.backgroundLoop.position >= startTime;
       }
-
+      
       public function playCurrentBackgroundOnceFromCurrentPosition(name:String) : void
       {
          var startTime:Number = 0;
@@ -177,6 +203,52 @@ package com.brockw.stickwar.engine
       {
          var name:String = baseName + (1 + Math.floor(Math.random() * range));
          return this.playSoundFullVolume(name);
+      }
+      
+      public function playAmbientLoop(name:String) : void
+      {
+         this.stopAmbientLoop();
+         if(!(name in this.sounds))
+         {
+            return;
+         }
+         this.ambientLoopName = name;
+         this.ambientLoopRestartCount = 0;
+         this.playAmbientOnce();
+      }
+      
+      private function playAmbientOnce() : void
+      {
+         var s:Sound = new this.sounds[this.ambientLoopName]();
+         this.ambientLoopChannel = s.play(0,0);
+         if(this.ambientLoopChannel != null)
+         {
+            this.ambientLoopChannel.addEventListener(Event.SOUND_COMPLETE,this.onAmbientComplete);
+            var t:SoundTransform = new SoundTransform();
+            t.volume = this.isSound ? this.volumeMap[this.ambientLoopName] : 0;
+            this.ambientLoopChannel.soundTransform = t;
+         }
+      }
+      
+      private function onAmbientComplete(e:Event) : void
+      {
+         if(this.ambientLoopChannel != null)
+         {
+            this.ambientLoopChannel.removeEventListener(Event.SOUND_COMPLETE,this.onAmbientComplete);
+         }
+         ++this.ambientLoopRestartCount;
+         this.playAmbientOnce();
+      }
+      
+      public function stopAmbientLoop() : void
+      {
+         if(this.ambientLoopChannel != null)
+         {
+            this.ambientLoopChannel.removeEventListener(Event.SOUND_COMPLETE,this.onAmbientComplete);
+            this.ambientLoopChannel.stop();
+            this.ambientLoopChannel = null;
+         }
+         this.ambientLoopName = "";
       }
       
       public function playSoundFullVolume(name:String) : Number
@@ -222,7 +294,7 @@ package com.brockw.stickwar.engine
       public function setSoundTransformation(s:SoundChannel, x:Number, y:Number, px:Number, py:Number, soundModifier:Number = 1) : void
       {
          var transform:SoundTransform = null;
-         var pan:Number = NaN;
+         var pan:Number = Number(NaN);
          if(s != null && this.main.stickWar != null)
          {
             transform = new SoundTransform();

@@ -43,7 +43,7 @@ package com.brockw.stickwar.engine.Ai
       private var cachedTarget:Unit;
       
       private var lastCacheFrame:int;
-
+      
       private var reaperControlLastDirectHitFrame:int;
       
       public function UnitAi()
@@ -87,6 +87,19 @@ package com.brockw.stickwar.engine.Ai
          this.lastCommand = null;
          this.goalX = 0;
          this.goalY = 0;
+      }
+      
+      public function isNightfallCheckActive() : Boolean
+      {
+         if(this.unit.team.currentAttackState == Team.G_DEFEND || this.unit.team.currentAttackState == Team.G_GARRISON)
+         {
+            return false;
+         }
+         if(this.currentCommand != null && this.currentCommand.type == UnitCommand.MOVE)
+         {
+            return false;
+         }
+         return true;
       }
       
       public function update(game:StickWar) : void
@@ -155,15 +168,15 @@ package com.brockw.stickwar.engine.Ai
          }
          else
          {
-            this.currentCommand = UnitCommand(this.commandQueue.pop());
+            this.currentCommand = this.commandQueue.pop();
             this.setParamatersFromCommand(game);
          }
       }
       
       public function baseUpdate(game:StickWar) : void
       {
-         var yMovement:Number = NaN;
-         var offset:Number = NaN;
+         var yMovement:Number = Number(NaN);
+         var offset:Number = Number(NaN);
          this.checkNextMove(game);
          if(this.unit.isConfused())
          {
@@ -346,8 +359,8 @@ package com.brockw.stickwar.engine.Ai
          var y:int = 0;
          if(this.currentCommand is MoveCommand)
          {
-            x = MoveCommand(this.currentCommand).realX;
-            y = MoveCommand(this.currentCommand).realY;
+            x = this.currentCommand.realX;
+            y = this.currentCommand.realY;
             if(x * this.unit.team.direction < this.unit.team.direction * this.unit.team.homeX)
             {
                return null;
@@ -415,9 +428,9 @@ package com.brockw.stickwar.engine.Ai
             this.mayAttack = false;
             this.mayMoveToAttack = false;
             this.mayMove = true;
-            this.goalX = MoveCommand(this.currentCommand).goalX;
+            this.goalX = this.currentCommand.goalX;
             this.intendedX = Util.sgn(this.goalX - this.unit.px);
-            this.goalY = MoveCommand(this.currentCommand).goalY;
+            this.goalY = this.currentCommand.goalY;
             if(this.goalX * this.unit.team.direction > this.unit.team.homeX * this.unit.team.direction)
             {
                this.unit.ungarrison();
@@ -433,14 +446,14 @@ package com.brockw.stickwar.engine.Ai
             {
                if(!this.unit.isGarrisoned)
                {
-                  MinerAi(this).targetOre = this.checkForMines(game);
-                  if(MinerAi(this).targetOre is Statue)
+                  this.targetOre = this.checkForMines(game);
+                  if(this.targetOre is Statue)
                   {
-                     MinerAi(this).isGoingForOre = false;
+                     this.isGoingForOre = false;
                   }
                   else
                   {
-                     MinerAi(this).isGoingForOre = true;
+                     this.isGoingForOre = true;
                   }
                }
             }
@@ -453,23 +466,23 @@ package com.brockw.stickwar.engine.Ai
                this.mayAttack = true;
                this.mayMoveToAttack = true;
                this.mayMove = true;
-               this.goalX = AttackMoveCommand(this.currentCommand).goalX;
+               this.goalX = this.currentCommand.goalX;
                this.intendedX = Util.sgn(this.goalX - this.unit.px);
-               this.goalY = AttackMoveCommand(this.currentCommand).goalY;
+               this.goalY = this.currentCommand.goalY;
                this.unit.mayWalkThrough = true;
             }
             else
             {
-               if(this.unit.team.isAi == false && MinerAi(this).targetOre != null)
+               if(this.unit.team.isAi == false && this.targetOre != null)
                {
-                  MinerAi(this).targetOre = null;
+                  this.targetOre = null;
                }
                this.mayAttack = true;
                this.mayMoveToAttack = true;
                this.mayMove = true;
-               this.goalX = AttackMoveCommand(this.currentCommand).goalX;
+               this.goalX = this.currentCommand.goalX;
                this.intendedX = Util.sgn(this.goalX - this.unit.px);
-               this.goalY = AttackMoveCommand(this.currentCommand).goalY;
+               this.goalY = this.currentCommand.goalY;
             }
          }
       }
@@ -478,7 +491,7 @@ package com.brockw.stickwar.engine.Ai
       {
          var rIndex:* = undefined;
          var u:Unit = null;
-         var d:Number = NaN;
+         var d:Number = Number(NaN);
          var confusedTarget:Unit = null;
          if(this.unit.isConfused())
          {
@@ -495,7 +508,7 @@ package com.brockw.stickwar.engine.Ai
             return this.unit.team.enemyTeam.statue;
          }
          var minDistance:Number = Number.POSITIVE_INFINITY;
-         if(this.currentTarget != null && (!this.currentTarget.isAlive() || !Unit(this.currentTarget).isTargetable() || this.currentTarget.isConfused()))
+         if(this.currentTarget != null && (!this.currentTarget.isAlive() || !this.currentTarget.isTargetable() || this.currentTarget.isConfused()))
          {
             minDistance = Number.POSITIVE_INFINITY;
             this.currentTarget = null;
@@ -504,24 +517,36 @@ package com.brockw.stickwar.engine.Ai
          {
             minDistance = this.unit.sqrDistanceToTarget(this.currentTarget);
          }
+         if(this.currentTarget != null && this.isNightfallCheckActive() && this.unit.team.game.fogOfWar.isUnitHiddenByNightfall(this.currentTarget) && this.unit.sqrDistanceToTarget(this.currentTarget) >= 2500)
+         {
+            minDistance = Number.POSITIVE_INFINITY;
+            this.currentTarget = null;
+         }
          if(this.currentTarget != null && this.isTargeted)
          {
             return this.currentTarget;
          }
          this.isTargeted = false;
-         for(var i:int = 0; i < 3; i++)
+         var i:int = 0;
+         while(i < 3)
          {
             rIndex = this.unit.team.game.random.nextInt() % this.unit.team.enemyTeam.units.length;
             u = this.unit.team.enemyTeam.units[rIndex];
             if(!(u.pz != 0 && !this.unit.canAttackAir()) && !u.isConfused())
             {
                d = this.unit.sqrDistanceToTarget(u);
-               if(d * 1.3 < minDistance && Unit(this.unit.team.enemyTeam.units[rIndex]).isTargetable())
+               if(this.isNightfallCheckActive() && this.unit.team.game.fogOfWar.isUnitHiddenByNightfall(u) && (this.unit is RangedUnit || d >= 2500))
+               {
+                  i++;
+                  continue;
+               }
+               if(d * 1.3 < minDistance && this.unit.team.enemyTeam.units[rIndex].isTargetable())
                {
                   minDistance = d;
                   this.currentTarget = this.unit.team.enemyTeam.units[rIndex];
                }
             }
+            i++;
          }
          if(this.currentTarget == null)
          {
@@ -529,7 +554,7 @@ package com.brockw.stickwar.engine.Ai
          }
          return this.currentTarget;
       }
-
+      
       private function updateReaperControl(game:StickWar) : void
       {
          var target:Unit = null;
@@ -593,7 +618,7 @@ package com.brockw.stickwar.engine.Ai
          }
          this.unit.walk((target.px - this.unit.px) / 80,yMovement / 120,this.intendedX);
       }
-
+      
       private function tryReaperControlDirectHit(game:StickWar, target:Unit) : void
       {
          if(!(this.unit is RangedUnit))
@@ -615,12 +640,12 @@ package com.brockw.stickwar.engine.Ai
          this.reaperControlLastDirectHitFrame = game.frame;
          target.damage(0,this.unit.getDamageToUnit(target),this.unit);
       }
-
+      
       protected function getClosestConfusedAllyTarget() : Unit
       {
          var ally:Unit = null;
          var best:Unit = null;
-         var d:Number = NaN;
+         var d:Number = Number(NaN);
          var minDistance:Number = 250000;
          if(this.unit.team == null || this.unit.team.units == null)
          {
@@ -632,15 +657,14 @@ package com.brockw.stickwar.engine.Ai
          }
          for each(ally in this.unit.team.units)
          {
-            if(ally == null || ally == this.unit || !ally.isAlive() || !ally.isTargetable() || ally.isGarrisoned || ally.isBossUnit || ally.type == Unit.U_STATUE || (ally.isFlying() && !this.unit.canAttackAir()))
+            if(!(ally == null || ally == this.unit || !ally.isAlive() || !ally.isTargetable() || ally.isGarrisoned || ally.isBossUnit || ally.type == Unit.U_STATUE || ally.isFlying() && !this.unit.canAttackAir()))
             {
-               continue;
-            }
-            d = this.unit.sqrDistanceToTarget(ally);
-            if(d < minDistance)
-            {
-               minDistance = d;
-               best = ally;
+               d = this.unit.sqrDistanceToTarget(ally);
+               if(d < minDistance)
+               {
+                  minDistance = d;
+                  best = ally;
+               }
             }
          }
          return best;
@@ -691,7 +715,7 @@ package com.brockw.stickwar.engine.Ai
          this.currentCommand = null;
          this.currentTarget = null;
       }
-
+      
       public function clearReaperControlTarget() : void
       {
          this.currentTarget = null;

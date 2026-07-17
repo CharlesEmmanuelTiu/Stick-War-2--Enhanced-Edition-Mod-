@@ -37,9 +37,11 @@ package com.brockw.stickwar.engine.units
          ai = null;
          initSync();
          this.miners = new Vector.<Miner>(game.xml.xml.maxWorshipers);
-         for(var i:int = 0; i < this.miners.length; i++)
+         var i:int = 0;
+         while(i < this.miners.length)
          {
             this.miners[i] = null;
+            i++;
          }
          this.lights = new Sprite();
          this.addChild(this.lights);
@@ -74,12 +76,14 @@ package com.brockw.stickwar.engine.units
          healthBar.health = health;
          healthBar.update();
          this.lights.graphics.clear();
-         for(var i:int = 0; i < this.beamMiners.length; i++)
+         var i:int = 0;
+         while(i < this.beamMiners.length)
          {
             if(this.beamMiners[i] != null)
             {
                this.drawHolyLight(game,this.beamMiners[i]);
             }
+            i++;
          }
       }
       
@@ -90,11 +94,11 @@ package com.brockw.stickwar.engine.units
       
       override public function damage(type:int, amount:int, inflictor:Entity, modifier:Number = 1) : void
       {
-         var dmg:Number = NaN;
+         var dmg:Number = Number(NaN);
          var campaignScreen:CampaignGameScreen = null;
          if(team != null && team.game != null && team.game.gameScreen is CampaignGameScreen && team == team.game.teamB)
          {
-            campaignScreen = CampaignGameScreen(team.game.gameScreen);
+            campaignScreen = team.game.gameScreen;
             if(campaignScreen.isEnemyReinforcementShieldActive())
             {
                return;
@@ -138,15 +142,15 @@ package com.brockw.stickwar.engine.units
          var y:Number = canvas.height * py / game.map.height;
          if(selected)
          {
-            MovieClip(canvas).graphics.lineStyle(2,65280,1);
+            canvas.graphics.lineStyle(2,65280,1);
          }
          else
          {
-            MovieClip(canvas).graphics.lineStyle(2,6710886,1);
+            canvas.graphics.lineStyle(2,6710886,1);
          }
-         MovieClip(canvas).graphics.beginFill(6710886,1);
-         MovieClip(canvas).graphics.drawRect(x - 2,y - 2,4,4);
-         MovieClip(canvas).graphics.endFill();
+         canvas.graphics.beginFill(6710886,1);
+         canvas.graphics.drawRect(x - 2,y - 2,4,4);
+         canvas.graphics.endFill();
       }
       
       public function mine(lvl:int, unit:Miner) : Number
@@ -192,19 +196,22 @@ package com.brockw.stickwar.engine.units
       
       public function getMiningSpot(unit:Miner) : Number
       {
-         for(var i:int = 0; i < this.miners.length; i++)
+         var i:int = 0;
+         while(i < this.miners.length)
          {
             if(this.miners[i] == unit)
             {
                return (this.MAX_WORSHIP - i) * 20 - 50;
             }
+            i++;
          }
          return 0;
       }
       
       public function reserveMiningSpot(unit:Miner) : Boolean
       {
-         for(var i:int = 0; i < this.miners.length; i++)
+         var i:int = 0;
+         while(i < this.miners.length)
          {
             if(this.miners[i] == null)
             {
@@ -212,25 +219,29 @@ package com.brockw.stickwar.engine.units
                ++this.numMiners;
                return true;
             }
+            i++;
          }
          return false;
       }
       
       public function hasMiningSpot(unit:Miner) : Boolean
       {
-         for(var i:int = 0; i < this.miners.length; i++)
+         var i:int = 0;
+         while(i < this.miners.length)
          {
             if(this.miners[i] == unit)
             {
                return true;
             }
+            i++;
          }
          return false;
       }
       
       public function releaseMiningSpot(unit:Miner) : void
       {
-         for(var i:int = 0; i < this.miners.length; i++)
+         var i:int = 0;
+         while(i < this.miners.length)
          {
             if(this.miners[i] == unit)
             {
@@ -239,6 +250,7 @@ package com.brockw.stickwar.engine.units
                this.stopMining(unit);
                return;
             }
+            i++;
          }
       }
       

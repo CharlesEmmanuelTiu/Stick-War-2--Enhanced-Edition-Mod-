@@ -22,20 +22,39 @@ package com.brockw.stickwar.engine
       public function init(game:StickWar) : void
       {
          var r:RainDrop = null;
-         for(var i:* = 0; i < this.numParticles; i++)
+         var i:* = 0;
+         while(i < this.numParticles)
          {
             r = new RainDrop(game);
             addChild(r);
             this.rain.push(r);
+            i++;
          }
+      }
+      
+      public function setParticleCount(n:int) : void
+      {
+         var r:RainDrop = null;
+         for each(r in this.rain)
+         {
+            if(r.parent != null)
+            {
+               r.parent.removeChild(r);
+            }
+         }
+         this.rain = [];
+         this.numParticles = n;
+         this.init(this.game);
       }
       
       public function update(game:StickWar) : void
       {
          x = game.battlefield.x;
-         for(var i:* = 0; i < this.numParticles; i++)
+         var i:* = 0;
+         while(i < this.numParticles)
          {
             this.rain[i].update(game);
+            i++;
          }
       }
    }

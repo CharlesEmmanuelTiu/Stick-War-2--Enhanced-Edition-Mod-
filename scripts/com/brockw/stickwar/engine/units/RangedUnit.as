@@ -59,6 +59,10 @@ package com.brockw.stickwar.engine.units
                _mc.mc.body.arms.rotation = this.bowAngle;
             }
          }
+         if(this.ai != null && this.ai.isNightfallCheckActive() && this.ai.currentTarget != null && game.fogOfWar.isUnitHiddenByNightfall(this.ai.currentTarget))
+         {
+            this.ai.currentTarget = null;
+         }
       }
       
       protected function angleToBowSpace(angle:Number) : Number
@@ -143,6 +147,10 @@ package com.brockw.stickwar.engine.units
             return false;
          }
          if(this.isDualing == true)
+         {
+            return false;
+         }
+         if(this.ai != null && this.ai.isNightfallCheckActive() && team.game.fogOfWar.isUnitHiddenByNightfall(target))
          {
             return false;
          }

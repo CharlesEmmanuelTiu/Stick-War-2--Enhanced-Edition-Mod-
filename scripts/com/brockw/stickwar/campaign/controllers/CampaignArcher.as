@@ -1,15 +1,38 @@
 package com.brockw.stickwar.campaign.controllers
 {
    import com.brockw.stickwar.GameScreen;
+   import com.brockw.stickwar.campaign.Campaign;
+   import com.brockw.stickwar.campaign.CampaignBossMessages;
    import com.brockw.stickwar.campaign.InGameMessage;
+   import com.brockw.stickwar.engine.Ai.command.AttackMoveCommand;
+   import com.brockw.stickwar.engine.Ai.command.UnitCommand;
+   import com.brockw.stickwar.engine.units.Archer;
    import com.brockw.stickwar.engine.units.Unit;
    
    public class CampaignArcher extends CampaignController
    {
       
+      private static const CAPTAIN_STATUE_HEALTH_TRIGGER:Number = 0.5;
+      
+      private static const CAPTAIN_SUPPORT_ARCHERS:int = 2;
+      
+      private static const CAPTAIN_ATTACK_REFRESH_DELAY_FRAMES:int = 30 * 2;
+      
+      private static const CAPTAIN_SPAWN_OFFSET:Number = 220;
+      
+      private static const CAPTAIN_COLUMN_SPACING:Number = 55;
+      
+      private static const CAPTAIN_ROW_SPACING:Number = 55;
+      
       private var message:InGameMessage;
       
+      private var bossMessages:CampaignBossMessages;
+      
       private var frames:int;
+      
+      private var hasSpawnedCaptain:Boolean;
+      
+      private var pendingCaptainAttackRefresh:Array;
       
       private var arrow:tutorialArrow;
       
@@ -28,6 +51,22 @@ package com.brockw.stickwar.campaign.controllers
          super(gameScreen);
          this.frames = 0;
          this.state = this.S_BEFORE;
+         this.bossMessages = null;
+         this.hasSpawnedCaptain = false;
+         this.pendingCaptainAttackRefresh = null;
+      }
+      
+      private function getCaptainSpawnFrame(gameScreen:GameScreen) : int
+      {
+         if(gameScreen.game.main.campaign.difficultyLevel == Campaign.D_INSANE)
+         {
+            return 30 * 180;
+         }
+         if(gameScreen.game.main.campaign.difficultyLevel == Campaign.D_HARD)
+         {
+            return 30 * 240;
+         }
+         return 30 * 300;
       }
       
       override public function update(gameScreen:GameScreen) : void
@@ -47,9 +86,19 @@ package com.brockw.stickwar.campaign.controllers
          {
             this.message.update();
          }
+         if(this.bossMessages == null && gameScreen.game != null)
+         {
+            this.bossMessages = new CampaignBossMessages(gameScreen,gameScreen.game);
+         }
+         this.updateCaptainSpawn(gameScreen);
+         if(this.bossMessages != null)
+         {
+            this.bossMessages.update();
+         }
+         this.updateCaptainAttackRefresh(gameScreen);
          if(this.state == this.S_BEFORE)
          {
-            if(Boolean(gameScreen.game.frame > 30) && Boolean(gameScreen.userInterface.selectedUnits.interactsWith & Unit.I_ENEMY) && !(gameScreen.userInterface.selectedUnits.interactsWith & Unit.I_MINE))
+            if(gameScreen.game.frame > 30 && Boolean(gameScreen.userInterface.selectedUnits.interactsWith & Unit.I_ENEMY) && !(gameScreen.userInterface.selectedUnits.interactsWith & Unit.I_MINE))
             {
                this.state = this.S_SELECT;
                this.message = new InGameMessage("",gameScreen.game);
@@ -116,6 +165,100 @@ package com.brockw.stickwar.campaign.controllers
          }
          else if(this.state == this.S_DONE)
          {
+         }
+      }
+      
+      private function updateCaptainSpawn(gameScreen:GameScreen) : void
+      {
+         if(this.hasSpawnedCaptain || !this.shouldSpawnCaptain(gameScreen))
+         {
+            return;
+         }
+         this.hasSpawnedCaptain = true;
+         this.spawnArchidonCaptain(gameScreen);
+         this.showCaptainMessage(gameScreen);
+      }
+      
+      private function shouldSpawnCaptain(gameScreen:GameScreen) : Boolean
+      {
+         if(gameScreen.game.frame >= this.getCaptainSpawnFrame(gameScreen))
+         {
+            return true;
+         }
+         if(gameScreen.team == null || gameScreen.team.enemyTeam == null || gameScreen.team.enemyTeam.statue == null)
+         {
+            return false;
+         }
+         return gameScreen.team.enemyTeam.statue.health <= gameScreen.team.enemyTeam.statue.maxHealth * CAPTAIN_STATUE_HEALTH_TRIGGER;
+      }
+      
+      private function spawnArchidonCaptain(gameScreen:GameScreen) : void
+      {
+         var i:int = 0;
+         var archer:Archer = null;
+         var spawnedArchers:Array = [];
+         var total:int = CAPTAIN_SUPPORT_ARCHERS + 1;
+         var xPos:Number = 0;
+         var yPos:Number = 0;
+         i = 0;
+         while(i < total)
+         {
+            archer = gameScreen.game.unitFactory.getUnit(Unit.U_ARCHER);
+            gameScreen.team.enemyTeam.spawn(archer,gameScreen.game);
+            if(i == 0)
+            {
+               archer.makeBoss();
+            }
+            xPos = gameScreen.team.enemyTeam.homeX + gameScreen.team.enemyTeam.direction * (CAPTAIN_SPAWN_OFFSET + int(i / 3) * CAPTAIN_COLUMN_SPACING);
+            yPos = Math.max(80,Math.min(gameScreen.game.map.height - 80,gameScreen.game.map.height / 2 + (i % 3 - 1) * CAPTAIN_ROW_SPACING));
+            archer.x = archer.px = xPos;
+            archer.y = archer.py = yPos;
+            gameScreen.team.enemyTeam.population += archer.population;
+            this.issueCaptainAttackCommand(gameScreen,archer);
+            spawnedArchers.push(archer);
+            i++;
+         }
+         this.pendingCaptainAttackRefresh = [gameScreen.game.frame + CAPTAIN_ATTACK_REFRESH_DELAY_FRAMES,spawnedArchers];
+      }
+      
+      private function issueCaptainAttackCommand(gameScreen:GameScreen, unit:Unit) : void
+      {
+         var attackMoveCommand:AttackMoveCommand = null;
+         if(unit == null || unit.ai == null)
+         {
+            return;
+         }
+         attackMoveCommand = new AttackMoveCommand(gameScreen.game);
+         attackMoveCommand.type = UnitCommand.ATTACK_MOVE;
+         attackMoveCommand.goalX = gameScreen.team.statue.px;
+         attackMoveCommand.goalY = gameScreen.game.map.height / 2;
+         attackMoveCommand.realX = attackMoveCommand.goalX;
+         attackMoveCommand.realY = attackMoveCommand.goalY;
+         unit.ai.setCommand(gameScreen.game,attackMoveCommand);
+      }
+      
+      private function updateCaptainAttackRefresh(gameScreen:GameScreen) : void
+      {
+         var unit:Unit = null;
+         if(this.pendingCaptainAttackRefresh == null || gameScreen.game.frame < int(this.pendingCaptainAttackRefresh[0]))
+         {
+            return;
+         }
+         for each(unit in this.pendingCaptainAttackRefresh[1])
+         {
+            if(unit != null && unit.isAlive())
+            {
+               this.issueCaptainAttackCommand(gameScreen,unit);
+            }
+         }
+         this.pendingCaptainAttackRefresh = null;
+      }
+      
+      private function showCaptainMessage(gameScreen:GameScreen) : void
+      {
+         if(this.bossMessages != null)
+         {
+            this.bossMessages.showArchidonCaptain();
          }
       }
    }

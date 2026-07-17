@@ -42,10 +42,7 @@ package com.brockw.stickwar
          var url:String = stage.loaderInfo.url;
          var goodPattern:RegExp = /^(http:\/\/)(www\.)?farm.stickpage\.com/;
          this.isLocked = false;
-         if(goodPattern.test(url) == true)
-         {
-         }
-         else
+         if(goodPattern.test(url) != true)
          {
             this.isLocked = true;
          }
@@ -79,7 +76,7 @@ package com.brockw.stickwar
       
       private function onEnterFrame(event:Event) : void
       {
-         var percent:Number = NaN;
+         var percent:Number = Number(NaN);
          if(this._firstEnterFrame)
          {
             this._firstEnterFrame = false;

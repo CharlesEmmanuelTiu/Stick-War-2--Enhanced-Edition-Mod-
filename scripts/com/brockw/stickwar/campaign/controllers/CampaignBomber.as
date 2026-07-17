@@ -16,14 +16,14 @@ package com.brockw.stickwar.campaign.controllers
       private static const FREQUENCY_SPAWN:int = 45;
       
       private static const FREQUENCY_INCREASE:int = 60;
-
+      
       private var numToSpawn:int = 0;
       
       private var hasAppliedGiantGrowth:Boolean;
       
       private var lastConvertedEnemyArmyVersion:int;
       
-      private var pendingAttackRefreshes:Array;
+      private var pendingAttackRefreshes:Array = [];
       
       public function CampaignBomber(gameScreen:GameScreen)
       {
@@ -31,7 +31,6 @@ package com.brockw.stickwar.campaign.controllers
          this.numToSpawn = MIN_NUM_BOMBERS;
          this.hasAppliedGiantGrowth = false;
          this.lastConvertedEnemyArmyVersion = -1;
-         this.pendingAttackRefreshes = [];
       }
       
       override public function update(gameScreen:GameScreen) : void
@@ -48,21 +47,23 @@ package com.brockw.stickwar.campaign.controllers
          this.updatePendingAttackRefreshes(gameScreen);
          if(this.lastConvertedEnemyArmyVersion != gameScreen.team.enemyTeam.armyChangeVersion)
          {
-            this.convertSpecialAttackersToIndependentAttackers(gameScreen);
+            this.convertNewAttackers(gameScreen);
             this.lastConvertedEnemyArmyVersion = gameScreen.team.enemyTeam.armyChangeVersion;
          }
          if(gameScreen.game.frame % (30 * FREQUENCY_SPAWN) == 0)
          {
             waveUnits = [];
-            for(i = 0; i < this.numToSpawn; i++)
+            i = 0;
+            while(i < this.numToSpawn)
             {
-               u1 = Bomber(gameScreen.game.unitFactory.getUnit(Unit.U_BOMBER));
+               u1 = gameScreen.game.unitFactory.getUnit(Unit.U_BOMBER);
                gameScreen.team.enemyTeam.spawn(u1,gameScreen.game);
                u1.px = gameScreen.team.enemyTeam.statue.x;
                u1.py = gameScreen.game.map.height / 2;
                this.makeIndependentAttacker(gameScreen,u1);
                waveUnits.push(u1);
                gameScreen.team.enemyTeam.population += 1;
+               i++;
             }
             this.scheduleAttackRefresh(gameScreen,waveUnits);
          }
@@ -75,8 +76,8 @@ package com.brockw.stickwar.campaign.controllers
             }
          }
       }
-
-      private function convertSpecialAttackersToIndependentAttackers(gameScreen:GameScreen) : void
+      
+      private function convertNewAttackers(gameScreen:GameScreen) : void
       {
          var unit:Unit = null;
          var convertedUnits:Array = [];
@@ -96,9 +97,12 @@ package com.brockw.stickwar.campaign.controllers
                convertedUnits.push(unit);
             }
          }
-         this.scheduleAttackRefresh(gameScreen,convertedUnits);
+         if(convertedUnits.length > 0)
+         {
+            this.scheduleAttackRefresh(gameScreen,convertedUnits);
+         }
       }
-
+      
       private function makeIndependentAttacker(gameScreen:GameScreen, unit:Unit) : void
       {
          if(unit == null || unit.ai == null)
@@ -110,7 +114,7 @@ package com.brockw.stickwar.campaign.controllers
          unit.ai.mayMoveToAttack = true;
          this.issueForwardAttackCommand(gameScreen,unit);
       }
-
+      
       private function scheduleAttackRefresh(gameScreen:GameScreen, units:Array) : void
       {
          if(units == null || units.length == 0)
@@ -119,7 +123,7 @@ package com.brockw.stickwar.campaign.controllers
          }
          this.pendingAttackRefreshes.push([gameScreen.game.frame + 60,units]);
       }
-
+      
       private function updatePendingAttackRefreshes(gameScreen:GameScreen) : void
       {
          var i:int = 0;
@@ -131,21 +135,25 @@ package com.brockw.stickwar.campaign.controllers
             refresh = this.pendingAttackRefreshes[i];
             if(gameScreen.game.frame < int(refresh[0]))
             {
-               ++i;
-               continue;
+               i++;
             }
-            units = refresh[1];
-            for(j = 0; j < units.length; j++)
+            else
             {
-               if(units[j] != null && Unit(units[j]).isAlive())
+               units = refresh[1];
+               j = 0;
+               while(j < units.length)
                {
-                  this.issueForwardAttackCommand(gameScreen,Unit(units[j]),j,units.length);
+                  if(units[j] != null && units[j].isAlive())
+                  {
+                     this.issueForwardAttackCommand(gameScreen,units[j],j,units.length);
+                  }
+                  j++;
                }
+               this.pendingAttackRefreshes.splice(i,1);
             }
-            this.pendingAttackRefreshes.splice(i,1);
          }
       }
-
+      
       private function issueForwardAttackCommand(gameScreen:GameScreen, unit:Unit, laneIndex:int = 0, laneCount:int = 1) : void
       {
          var attackMoveCommand:AttackMoveCommand = new AttackMoveCommand(gameScreen.game);

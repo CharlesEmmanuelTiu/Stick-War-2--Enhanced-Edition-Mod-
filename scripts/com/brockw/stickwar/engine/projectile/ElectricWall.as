@@ -1,26 +1,24 @@
 package com.brockw.stickwar.engine.projectile
 {
    import com.brockw.stickwar.engine.*;
-   import com.brockw.stickwar.engine.units.Unit;
    import flash.display.*;
-   import flash.utils.Dictionary;
    
    public class ElectricWall extends Projectile
    {
       
       internal var spellMc:MovieClip;
-
+      
       public var controlledFriendlyFire:Boolean;
       
-      private var wallArea:Number;
+      public var wallArea:Number;
       
-      private var frequency:Number;
+      public var damageToDeal:int;
       
-      public var applyBossStun:Boolean;
+      public var isStunZone:Boolean;
       
-      public var bossStunFrames:int;
-
-      private var bossStunnedUnits:Dictionary;
+      public var frequency:int;
+      
+      private var childClips:Array;
       
       public function ElectricWall(game:StickWar)
       {
@@ -30,19 +28,21 @@ package com.brockw.stickwar.engine.projectile
          this.spellMc = new electricWallMc();
          this.addChild(this.spellMc);
          this.controlledFriendlyFire = false;
-         for(var i:* = 0; i < this.spellMc.numChildren; i++)
+         this.isStunZone = false;
+         this.childClips = [];
+         var i:* = 0;
+         while(i < this.spellMc.numChildren)
          {
             mc = this.spellMc.getChildAt(i);
             if(mc is MovieClip)
             {
-               MovieClip(mc).gotoAndStop(Math.floor(game.random.nextNumber() * MovieClip(mc).totalFrames));
+               mc.gotoAndStop(Math.floor(game.random.nextNumber() * mc.totalFrames));
+               this.childClips.push(mc);
             }
+            i++;
          }
          this.wallArea = game.xml.xml.Order.Units.magikill.electricWall.area;
-         this.frequency = game.xml.xml.Order.Units.magikill.electricWall.frequency;
-         this.applyBossStun = false;
-         this.bossStunFrames = int(this.frequency) + 1;
-         this.bossStunnedUnits = new Dictionary();
+         this.frequency = int(game.xml.xml.Order.Units.magikill.electricWall.frequency);
       }
       
       override public function cleanUp() : void
@@ -50,48 +50,35 @@ package com.brockw.stickwar.engine.projectile
          super.cleanUp();
          removeChild(this.spellMc);
          this.spellMc = null;
+         this.childClips = null;
+      }
+      
+      public function resetForUse() : void
+      {
+         this.visible = true;
+         this.controlledFriendlyFire = false;
+         this.isStunZone = false;
       }
       
       override public function update(game:StickWar) : void
       {
-         var mc:DisplayObject = null;
+         var mc:MovieClip = null;
          this.visible = true;
          this.spellMc.nextFrame();
-         for(var i:* = 0; i < this.spellMc.numChildren; i++)
+         var i:* = 0;
+         while(i < this.childClips.length)
          {
-            mc = this.spellMc.getChildAt(i);
-            if(mc is MovieClip)
+            mc = this.childClips[i];
+            mc.nextFrame();
+            if(mc.currentFrame == mc.totalFrames)
             {
-               MovieClip(mc).nextFrame();
-               if(MovieClip(mc).currentFrame == MovieClip(mc).totalFrames)
-               {
-                  MovieClip(mc).gotoAndStop(1);
-               }
+               mc.gotoAndStop(1);
             }
-         }
-         if(game.frame % this.frequency == 0)
-         {
-            game.spatialHash.mapInArea(this.px - this.wallArea,0,this.px + this.wallArea,game.map.height,this.hitElectricWall);
+            i++;
          }
          if(this.isReadyForCleanup())
          {
             this.visible = false;
-         }
-      }
-      
-      private function hitElectricWall(unit:Unit) : void
-      {
-         if(!this.controlledFriendlyFire && unit.team != this.team || this.controlledFriendlyFire && unit.team == this.team && unit != this.inflictor && !unit.isBossUnit && unit.type != Unit.U_STATUE)
-         {
-            if(Math.abs(unit.px - this.px) < this.wallArea)
-            {
-               unit.damage(Unit.D_NO_SOUND | Unit.D_NO_BLOOD,damageToDeal,null);
-               if(this.applyBossStun && this.bossStunnedUnits[unit.id] !== true)
-               {
-                  this.bossStunnedUnits[unit.id] = true;
-                  unit.stun(this.bossStunFrames);
-               }
-            }
          }
       }
       

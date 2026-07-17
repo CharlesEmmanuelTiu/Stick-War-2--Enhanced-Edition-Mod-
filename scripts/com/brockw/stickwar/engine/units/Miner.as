@@ -48,9 +48,9 @@ package com.brockw.stickwar.engine.units
       private var upgradedMaxVelocity:Number;
       
       protected var upgradedMaxHealth:int;
-
+      
       private var _isShadowrathDisguise:Boolean;
-
+      
       private var _isShadowrathBossDisguise:Boolean;
       
       public function Miner(game:StickWar)
@@ -74,7 +74,7 @@ package com.brockw.stickwar.engine.units
       
       public static function setItem(mc:MovieClip, weapon:String, armor:String, misc:String) : void
       {
-         var m:_miner = _miner(mc);
+         var m:_miner = mc;
          if(Boolean(m.mc.minerbag))
          {
             if(misc != "")
@@ -120,12 +120,12 @@ package com.brockw.stickwar.engine.units
          this.bagSize = game.xml.xml.Order.Units.miner.bagSize;
          this.normalBagSize = game.xml.xml.Order.Units.miner.bagSize;
          this.oreInBag = 0;
-         MovieClip(_mc.mc.gotoAndPlay(1));
-         MovieClip(_mc.gotoAndStop(1));
+         _mc.mc.gotoAndPlay(1); //unpopped
+         _mc.gotoAndStop(1); //unpopped
          drawShadow();
          this.valueOfOre = 0;
-         MinerAi(ai).isGoingForOre = true;
-         MinerAi(ai).isUnassigned = true;
+         ai.isGoingForOre = true;
+         ai.isUnassigned = true;
          this.wallGoldCost = game.xml.xml.Order.Units.miner.wall.gold;
          this.wallSpell = new SpellCooldown(game.xml.xml.Order.Units.miner.wall.effect,game.xml.xml.Order.Units.miner.wall.cooldown,game.xml.xml.Order.Units.miner.wall.mana);
       }
@@ -169,7 +169,7 @@ package com.brockw.stickwar.engine.units
       {
          var id:int = 0;
          var oreMined:* = undefined;
-         var distance:Number = NaN;
+         var distance:Number = Number(NaN);
          var t:String = null;
          if(team.tech.isResearched(Tech.MINER_SPEED))
          {
@@ -203,7 +203,7 @@ package com.brockw.stickwar.engine.units
             {
                _mc.gotoAndStop(_currentDual.attackLabel);
                moveDualPartner(_dualPartner,_currentDual.xDiff);
-               if(MovieClip(_mc.mc).currentFrame == MovieClip(_mc.mc).totalFrames)
+               if(_mc.mc.currentFrame == _mc.mc.totalFrames)
                {
                   _isDualing = false;
                   _state = S_RUN;
@@ -216,7 +216,7 @@ package com.brockw.stickwar.engine.units
             {
                if(this.attackState == 0)
                {
-                  if(MovieClip(_mc.mc).totalFrames == MovieClip(_mc.mc).currentFrame)
+                  if(_mc.mc.totalFrames == _mc.mc.currentFrame)
                   {
                      this.attackState = 1;
                      _mc.gotoAndStop("building");
@@ -225,7 +225,7 @@ package com.brockw.stickwar.engine.units
                }
                else if(this.attackState != 1)
                {
-                  if(MovieClip(_mc.mc).totalFrames == MovieClip(_mc.mc).currentFrame)
+                  if(_mc.mc.totalFrames == _mc.mc.currentFrame)
                   {
                      _state = S_RUN;
                      this.attackState = 0;
@@ -268,7 +268,7 @@ package com.brockw.stickwar.engine.units
             {
                if(this.attackState == 0)
                {
-                  if(MovieClip(_mc.mc).totalFrames == MovieClip(_mc.mc).currentFrame)
+                  if(_mc.mc.totalFrames == _mc.mc.currentFrame)
                   {
                      this.attackState = 1;
                      id = team.game.random.nextInt() % this._attackLabels.length;
@@ -277,7 +277,7 @@ package com.brockw.stickwar.engine.units
                }
                else if(this.attackState == 1)
                {
-                  if(MovieClip(mc.mc).currentFrameLabel == "swing")
+                  if(mc.mc.currentFrameLabel == "swing")
                   {
                      team.game.soundManager.playSound("swordwrathSwing1",px,py);
                   }
@@ -285,13 +285,13 @@ package com.brockw.stickwar.engine.units
                   {
                      hasHit = this.checkForHit();
                   }
-                  if(MovieClip(_mc.mc).totalFrames == MovieClip(_mc.mc).currentFrame)
+                  if(_mc.mc.totalFrames == _mc.mc.currentFrame)
                   {
                      this.attackState = 2;
                      _mc.gotoAndStop("endAttack");
                   }
                }
-               else if(MovieClip(_mc.mc).totalFrames == MovieClip(_mc.mc).currentFrame)
+               else if(_mc.mc.totalFrames == _mc.mc.currentFrame)
                {
                   _state = S_RUN;
                   this.attackState = 0;
@@ -299,17 +299,17 @@ package com.brockw.stickwar.engine.units
             }
             else if(_state == S_MINE)
             {
-               if(MinerAi(ai).targetOre != null && MinerAi(ai).targetOre is Gold)
+               if(ai.targetOre != null && ai.targetOre is Gold)
                {
-                  if(MovieClip(_mc.mc).currentFrame == MovieClip(_mc.mc).totalFrames && !this.isBagFull())
+                  if(_mc.mc.currentFrame == _mc.mc.totalFrames && !this.isBagFull())
                   {
-                     if(MinerAi(ai).targetOre != null)
+                     if(ai.targetOre != null)
                      {
                         if(!this.isShadowrathDisguise)
                         {
-                           oreMined = MinerAi(ai).targetOre.mine(game.xml.xml.Order.Units.miner.miningRate,this);
+                           oreMined = ai.targetOre.mine(game.xml.xml.Order.Units.miner.miningRate,this);
                            this.oreInBag += oreMined;
-                           distance = Math.abs(MinerAi(ai).targetOre.x - px);
+                           distance = Math.abs(ai.targetOre.x - px);
                            this.valueOfOre += oreMined;
                            if(this.oreInBag > this.bagSize)
                            {
@@ -320,23 +320,23 @@ package com.brockw.stickwar.engine.units
                         hasHit = true;
                      }
                   }
-                  if(MovieClip(_mc.mc).totalFrames == MovieClip(_mc.mc).currentFrame)
+                  if(_mc.mc.totalFrames == _mc.mc.currentFrame)
                   {
                      _state = S_RUN;
                   }
                }
                else
                {
-                  t = MovieClip(_mc).currentFrameLabel;
+                  t = _mc.currentFrameLabel;
                   if(t != "bendDownToPray" && t != "pray")
                   {
-                     MovieClip(_mc).gotoAndStop("bendDownToPray");
+                     _mc.gotoAndStop("bendDownToPray");
                   }
                   else if(t == "bendDownToPray")
                   {
-                     if(MovieClip(_mc.mc).currentFrame == MovieClip(_mc.mc).totalFrames)
+                     if(_mc.mc.currentFrame == _mc.mc.totalFrames)
                      {
-                        MovieClip(_mc).gotoAndStop("pray");
+                        _mc.gotoAndStop("pray");
                      }
                   }
                   else
@@ -345,12 +345,12 @@ package com.brockw.stickwar.engine.units
                      {
                         Util.animateMovieClip(mc.mc);
                      }
-                     if(MovieClip(_mc.mc).currentFrame == MovieClip(_mc.mc).totalFrames)
+                     if(_mc.mc.currentFrame == _mc.mc.totalFrames)
                      {
-                        MovieClip(_mc.mc).gotoAndStop(1);
+                        _mc.mc.gotoAndStop(1);
                         if(!this.isShadowrathDisguise)
                         {
-                           this.oreInBag += MinerAi(ai).targetOre.mine(game.xml.xml.Order.Units.miner.miningRate,this);
+                           this.oreInBag += ai.targetOre.mine(game.xml.xml.Order.Units.miner.miningRate,this);
                         }
                      }
                   }
@@ -360,7 +360,7 @@ package com.brockw.stickwar.engine.units
          else if(isDead == false)
          {
             isDead = true;
-            MinerAi(ai).targetOre = null;
+            ai.targetOre = null;
             if(_isDualing)
             {
                _mc.gotoAndStop(_currentDual.defendLabel);
@@ -377,11 +377,11 @@ package com.brockw.stickwar.engine.units
          }
          else
          {
-            if(!isDead && MovieClip(_mc.mc).currentFrame == MovieClip(_mc.mc).totalFrames)
+            if(!isDead && _mc.mc.currentFrame == _mc.mc.totalFrames)
             {
-               MovieClip(_mc.mc).gotoAndStop(1);
+               _mc.mc.gotoAndStop(1);
             }
-            MovieClip(_mc.mc).nextFrame();
+            _mc.mc.nextFrame();
          }
          if(!hasDefaultLoadout)
          {
@@ -401,7 +401,7 @@ package com.brockw.stickwar.engine.units
          {
             id = team.game.random.nextInt() % this._attackLabels.length;
             _mc.gotoAndStop("mine");
-            MovieClip(_mc.mc).gotoAndStop(1);
+            _mc.mc.gotoAndStop(1);
             _state = S_MINE;
             hasHit = false;
          }
@@ -422,7 +422,7 @@ package com.brockw.stickwar.engine.units
                _mc.gotoAndStop("attack_" + this._attackLabels[id]);
                this.attackState = 1;
             }
-            MovieClip(_mc.mc).gotoAndStop(1);
+            _mc.mc.gotoAndStop(1);
             _state = S_ATTACK;
             hasHit = false;
          }
@@ -469,12 +469,12 @@ package com.brockw.stickwar.engine.units
       {
          return !this.isConstructing && _state != S_ATTACK;
       }
-
+      
       public function get isShadowrathDisguise() : Boolean
       {
          return this._isShadowrathDisguise;
       }
-
+      
       public function set isShadowrathDisguise(value:Boolean) : void
       {
          this._isShadowrathDisguise = value;
@@ -484,12 +484,12 @@ package com.brockw.stickwar.engine.units
             this.oreInBag = 0;
          }
       }
-
+      
       public function get isShadowrathBossDisguise() : Boolean
       {
          return this._isShadowrathBossDisguise;
       }
-
+      
       public function set isShadowrathBossDisguise(value:Boolean) : void
       {
          this._isShadowrathBossDisguise = value;

@@ -11,17 +11,22 @@ package com.brockw.stickwar.singleplayer
    
    public class EnemyTeamAi
    {
+      
       private static const STATS_REFRESH_INTERVAL_FRAMES:int = 6;
-
+      
       private static const NO_ARMY_PRESSURE_MIN_POP:int = 3;
-
+      
       private static const CLEAR_ADVANTAGE_POP:int = 4;
-
+      
       private static const HUGE_ADVANTAGE_POP:int = 8;
-
+      
       private static const DEEP_PRESSURE_OFFSET:Number = 700;
       
+      private static const FORWARD_POSITION_OFFSET:Number = 200;
+      
       protected var isAttacking:Boolean;
+      
+      protected var _lastStrategyOrder:String = "";
       
       protected var team:Team;
       
@@ -30,17 +35,17 @@ package com.brockw.stickwar.singleplayer
       private var mines:Array;
       
       private var isCreatingUnits:Boolean;
-
+      
       private var strategyDirty:Boolean;
-
+      
       private var lastOwnAliveCount:int;
-
+      
       private var lastEnemyAliveCount:int;
-
+      
       private var lastEnemyAggressionBand:int;
-
+      
       private var lastOwnArmyChangeVersion:int;
-
+      
       private var lastEnemyArmyChangeVersion:int;
       
       public function EnemyTeamAi(team:Team, main:BaseMain, game:StickWar, isCreatingUnits:* = true)
@@ -94,11 +99,11 @@ package com.brockw.stickwar.singleplayer
          var i:int = 0;
          for each(miner in this.team.unitGroups[this.team.getMinerType()])
          {
-            if(MinerAi(miner.ai).targetOre is Statue)
+            if(miner.ai.targetOre is Statue)
             {
                minersOnStatue.push(miner);
             }
-            else if(MinerAi(miner.ai).targetOre != null)
+            else if(miner.ai.targetOre != null)
             {
                minersOnGold.push(miner);
             }
@@ -109,14 +114,14 @@ package com.brockw.stickwar.singleplayer
             if(minersOnStatue.length < theoreticalMinersOnStatue)
             {
                miner = minersOnGold[0];
-               MinerAi(miner.ai).targetOre.releaseMiningSpot(miner);
+               miner.ai.targetOre.releaseMiningSpot(miner);
                miner.team.statue.getMiningSpot(miner);
-               MinerAi(miner.ai).targetOre = miner.team.statue;
+               miner.ai.targetOre = miner.team.statue;
             }
             else if(minersOnStatue.length > theoreticalMinersOnStatue)
             {
                miner = minersOnStatue[0];
-               MinerAi(miner.ai).targetOre.releaseMiningSpot(miner);
+               miner.ai.targetOre.releaseMiningSpot(miner);
                this.iterateOverFreeMines(miner,game);
             }
          }
@@ -126,9 +131,9 @@ package com.brockw.stickwar.singleplayer
       {
          var target:Unit = null;
          var m:UnitMove = null;
-         if(MinerAi(miner.ai).targetOre == null || Boolean(MinerAi(miner.ai).targetOre) && Boolean(!MinerAi(miner.ai).targetOre.hasMiningSpot(miner)))
+         if(miner.ai.targetOre == null || Boolean(miner.ai.targetOre) && !miner.ai.targetOre.hasMiningSpot(miner))
          {
-            target = MinerAi(miner.ai).getClosestTarget();
+            target = miner.ai.getClosestTarget();
             if(target != null && miner.team.direction * target.px < miner.team.direction * (miner.px - miner.team.direction * 100))
             {
                m = new UnitMove();
@@ -153,7 +158,8 @@ package com.brockw.stickwar.singleplayer
          var found:Boolean = false;
          if(this.team.direction == 1)
          {
-            for(i = 0; i < game.map.gold.length; i++)
+            i = 0;
+            while(i < game.map.gold.length)
             {
                gold = game.map.gold[i];
                if(this.getFreeMine(miner,game,gold))
@@ -161,11 +167,13 @@ package com.brockw.stickwar.singleplayer
                   found = true;
                   break;
                }
+               i++;
             }
          }
          else
          {
-            for(i = game.map.gold.length - 1; i >= 0; i--)
+            i = game.map.gold.length - 1;
+            while(i >= 0)
             {
                gold = game.map.gold[i];
                if(this.getFreeMine(miner,game,gold))
@@ -173,11 +181,12 @@ package com.brockw.stickwar.singleplayer
                   found = true;
                   break;
                }
+               i--;
             }
          }
          if(!found)
          {
-            MinerAi(miner.ai).targetOre = null;
+            miner.ai.targetOre = null;
          }
       }
       
@@ -186,7 +195,7 @@ package com.brockw.stickwar.singleplayer
          if(!gold.isMineFull())
          {
             gold.getMiningSpot(miner);
-            MinerAi(miner.ai).targetOre = gold;
+            miner.ai.targetOre = gold;
             return true;
          }
          return false;
@@ -206,15 +215,15 @@ package com.brockw.stickwar.singleplayer
          for(unit in this.team.units)
          {
             u = this.team.units[unit];
-            if((u.type == Unit.U_MINER || u.type == Unit.U_CHAOS_MINER) && MinerAi(u.ai).targetOre != null)
+            if((u.type == Unit.U_MINER || u.type == Unit.U_CHAOS_MINER) && u.ai.targetOre != null)
             {
                m = new UnitMove();
                m.moveType = UnitCommand.MOVE;
                m.units.push(u.id);
                m.owner = this.team.id;
-               m.arg4 = MinerAi(u.ai).targetOre.id;
-               m.arg0 = MinerAi(u.ai).targetOre.x;
-               m.arg1 = MinerAi(u.ai).targetOre.y;
+               m.arg4 = u.ai.targetOre.id;
+               m.arg0 = u.ai.targetOre.x;
+               m.arg1 = u.ai.targetOre.y;
                m.execute(this.team.game);
             }
             else if(u.isRejoiningFormation && this.team.direction * x <= this.team.direction * u.px)
@@ -260,6 +269,11 @@ package com.brockw.stickwar.singleplayer
          u.execute(this.team.game);
       }
       
+      protected function getDefendPosition() : Number
+      {
+         return this.team.homeX + this.team.direction * 600;
+      }
+      
       protected function defendGroup() : void
       {
          var unit:String = null;
@@ -267,6 +281,7 @@ package com.brockw.stickwar.singleplayer
          var m:UnitMove = null;
          this.isAttacking = false;
          this.team.currentAttackState = Team.G_DEFEND;
+         var defendPos:Number = this.getDefendPosition();
          var attackMoveUnits:* = new UnitMove();
          attackMoveUnits.moveType = UnitCommand.ATTACK_MOVE;
          var moveUnits:* = new UnitMove();
@@ -274,15 +289,15 @@ package com.brockw.stickwar.singleplayer
          for(unit in this.team.units)
          {
             u = this.team.units[unit];
-            if((u.type == Unit.U_MINER || u.type == Unit.U_CHAOS_MINER) && MinerAi(u.ai).targetOre != null)
+            if((u.type == Unit.U_MINER || u.type == Unit.U_CHAOS_MINER) && u.ai.targetOre != null)
             {
                m = new UnitMove();
                m.moveType = UnitCommand.MOVE;
                m.units.push(u.id);
                m.owner = this.team.id;
-               m.arg0 = MinerAi(u.ai).targetOre.x;
-               m.arg1 = MinerAi(u.ai).targetOre.y;
-               m.arg4 = MinerAi(u.ai).targetOre.id;
+               m.arg0 = u.ai.targetOre.x;
+               m.arg1 = u.ai.targetOre.y;
+               m.arg4 = u.ai.targetOre.id;
                m.execute(this.team.game);
             }
             else if(!u.isHome)
@@ -295,10 +310,10 @@ package com.brockw.stickwar.singleplayer
             }
          }
          moveUnits.owner = this.team.id;
-         moveUnits.arg0 = this.team.homeX + this.team.direction * 600;
+         moveUnits.arg0 = defendPos;
          moveUnits.arg1 = this.team.game.gameScreen.game.map.height / 2;
          attackMoveUnits.owner = this.team.id;
-         attackMoveUnits.arg0 = this.team.homeX + this.team.direction * 600;
+         attackMoveUnits.arg0 = defendPos;
          attackMoveUnits.arg1 = this.team.game.gameScreen.game.map.height / 2;
          attackMoveUnits.execute(this.team.game);
          moveUnits.execute(this.team.game);
@@ -306,18 +321,26 @@ package com.brockw.stickwar.singleplayer
       
       protected function updateGlobalStrategy(game:StickWar) : void
       {
-         var movePos:Number = NaN;
+         var movePos:Number = Number(NaN);
          if(this.isArmyHealers())
          {
+            _lastStrategyOrder = "Defend (Healers)";
             this.defendGroup();
          }
          else if(this.enemyIsWeak())
          {
+            _lastStrategyOrder = "Full Attack";
             this.attackMoveGroupTo(this.getPressureAttackTarget(this.team.medianPosition + this.team.direction * 250));
          }
-         else if(this.enemyIsEvenStrength() || Unit.U_GIANT in this.team.unitGroups)
+         else if(this.enemyIsEvenStrength())
          {
-            movePos = this.team.medianPosition + this.team.direction * 250;
+            _lastStrategyOrder = "Attack Cautiously";
+            movePos = this.team.medianPosition + this.team.direction * 600;
+            var aggroLimit:Number = this.team.enemyTeam.forwardMilitaryPosition - this.team.direction * 300;
+            if(this.team.direction * movePos > this.team.direction * aggroLimit)
+            {
+               movePos = aggroLimit;
+            }
             if(this.team.direction * movePos > this.team.direction * this.team.game.map.width / 2)
             {
                movePos = this.team.game.map.width / 2;
@@ -326,14 +349,17 @@ package com.brockw.stickwar.singleplayer
          }
          else if(this.enemyIsAttacking())
          {
+            _lastStrategyOrder = "Home Defend";
             this.defendGroup();
          }
          else if(this.enemyAtMiddle())
          {
+            _lastStrategyOrder = "Defend Mid";
             this.defendGroup();
          }
          else
          {
+            _lastStrategyOrder = "Push Center";
             this.attackMoveGroupTo(this.team.game.map.width / 2);
          }
       }
@@ -356,12 +382,12 @@ package com.brockw.stickwar.singleplayer
          var addOnTheArchers:int = this.team.enemyTeam.castleDefence.units.length * 4 + this.team.enemyTeam.attackingForcePopulation;
          return addOnTheArchers < this.team.attackingForcePopulation;
       }
-
+      
       public function setUnitCreationEnabled(value:Boolean) : void
       {
          this.isCreatingUnits = value;
       }
-
+      
       protected function getPressureAttackTarget(defaultTarget:Number) : Number
       {
          var playerArmy:int = this.team.enemyTeam.attackingForcePopulation;
@@ -398,12 +424,40 @@ package com.brockw.stickwar.singleplayer
       
       protected function agressionMetric() : Number
       {
-         var m:Number = this.team.enemyTeam.medianPosition / this.team.game.map.width;
+         var median:Number = this.team.enemyTeam.medianPosition;
+         var fwd:Number = this.team.enemyTeam.forwardMilitaryPosition;
+         if(!isNaN(fwd) && !isNaN(median))
+         {
+            if(this.team.direction == 1 && fwd < median - FORWARD_POSITION_OFFSET)
+            {
+               median = fwd + FORWARD_POSITION_OFFSET;
+            }
+            else if(this.team.direction == -1 && fwd > median + FORWARD_POSITION_OFFSET)
+            {
+               median = fwd - FORWARD_POSITION_OFFSET;
+            }
+         }
+         var m:Number = median / this.team.game.map.width;
          if(this.team.direction == 1)
          {
-            m = (this.team.game.map.width - this.team.enemyTeam.medianPosition) / this.team.game.map.width;
+            m = (this.team.game.map.width - median) / this.team.game.map.width;
          }
          return m;
+      }
+      
+      public function getAggressionMetric() : Number
+      {
+         return this.agressionMetric();
+      }
+      
+      public function getLastStrategyOrder() : String
+      {
+         return this._lastStrategyOrder;
+      }
+      
+      public function getTeam() : Team
+      {
+         return this.team;
       }
       
       protected function enemyAtHome() : Boolean
@@ -420,22 +474,22 @@ package com.brockw.stickwar.singleplayer
       {
          return this.agressionMetric() >= 0.6;
       }
-
+      
       protected function requiresPerFrameGlobalStrategy(game:StickWar) : Boolean
       {
          return false;
       }
-
+      
       protected function markStrategyDirty() : void
       {
          this.strategyDirty = true;
       }
-
+      
       private function shouldUpdateGlobalStrategy(game:StickWar) : Boolean
       {
          return this.requiresPerFrameGlobalStrategy(game) || this.strategyDirty;
       }
-
+      
       private function updateStrategyDirtyState(game:StickWar) : void
       {
          var enemyAggressionBand:int = this.getEnemyAggressionBand();
@@ -449,7 +503,7 @@ package com.brockw.stickwar.singleplayer
          this.lastEnemyArmyChangeVersion = enemyArmyChangeVersion;
          this.lastEnemyAggressionBand = enemyAggressionBand;
       }
-
+      
       private function getEnemyAggressionBand() : int
       {
          if(this.enemyAtHome())
@@ -462,7 +516,7 @@ package com.brockw.stickwar.singleplayer
          }
          return 2;
       }
-
+      
       private function updateTeamStatistics(game:StickWar) : void
       {
          var ownArmyChangeVersion:int = this.team.armyChangeVersion;

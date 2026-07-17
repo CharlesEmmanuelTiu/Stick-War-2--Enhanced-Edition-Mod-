@@ -30,8 +30,12 @@ package com.brockw.stickwar.engine
       public function HealthBar()
       {
          super();
+         this.mouseEnabled = false;
+         this.mouseChildren = false;
          this.blackBars = new Sprite();
          this.redBar = new Sprite();
+         this.blackBars.mouseEnabled = false;
+         this.redBar.mouseEnabled = false;
          addChild(this.redBar);
          addChild(this.blackBars);
          this.isFirst = true;
@@ -90,10 +94,12 @@ package com.brockw.stickwar.engine
          {
             numBoxes = Math.ceil(this._totalHealth / BOX_SIZE);
             this.blackBars.graphics.lineStyle(0.75,0,1);
-            for(i = 0; i < numBoxes; i++)
+            i = 0;
+            while(i < numBoxes)
             {
                this.blackBars.graphics.moveTo(i * BAR_WIDTH / numBoxes - BAR_WIDTH / 2,-BAR_HEIGHT / 2);
                this.blackBars.graphics.lineTo(i * BAR_WIDTH / numBoxes - BAR_WIDTH / 2,BAR_HEIGHT / 2);
+               i++;
             }
          }
       }

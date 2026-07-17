@@ -2,6 +2,7 @@ package com.brockw.stickwar.engine.Ai
 {
    import com.brockw.stickwar.engine.Ai.command.UnitCommand;
    import com.brockw.stickwar.engine.StickWar;
+   import com.brockw.stickwar.engine.Team.Tech;
    import com.brockw.stickwar.engine.units.Spearton;
    
    public class SpeartonAi extends UnitAi
@@ -15,7 +16,7 @@ package com.brockw.stickwar.engine.Ai
       
       override public function update(game:StickWar) : void
       {
-         var spearton:Spearton = Spearton(unit);
+         var spearton:Spearton = unit;
          if(unit.shouldStartCampaignBossEscape())
          {
             unit.startCampaignBossEscape();
@@ -24,13 +25,24 @@ package com.brockw.stickwar.engine.Ai
          {
             return;
          }
-         if(this.tryBossBraceShieldSlam(game))
+         if(currentCommand.type == UnitCommand.SPEARTON_BOSS_BRACE)
          {
-            if(!spearton.inBlock)
-            {
-               baseUpdate(game);
-            }
+            spearton.isAutoBraceToggled = !spearton.isAutoBraceToggled;
+            restoreMove(game);
+            super.update(game);
             return;
+         }
+         if(spearton.isAutoBraceToggled && unit.team.tech.isResearched(Tech.SHIELD_BASH) && spearton.bossNormalAttackJustFinished)
+         {
+            spearton.bossNormalAttackJustFinished = false;
+            if(this.tryBossBraceShieldSlam(game))
+            {
+               if(!spearton.inBlock)
+               {
+                  baseUpdate(game);
+               }
+               return;
+            }
          }
          if(spearton.isInBossBraceSequence)
          {
@@ -62,16 +74,12 @@ package com.brockw.stickwar.engine.Ai
             baseUpdate(game);
          }
       }
-
+      
       private function tryBossBraceShieldSlam(game:StickWar) : Boolean
       {
-         var spearton:Spearton = Spearton(unit);
+         var spearton:Spearton = unit;
          var target:* = null;
          if(!spearton.isBoss)
-         {
-            return false;
-         }
-         if(!spearton.hasRecentBossNormalAttack())
          {
             return false;
          }

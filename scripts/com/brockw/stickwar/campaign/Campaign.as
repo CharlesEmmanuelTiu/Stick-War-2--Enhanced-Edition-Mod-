@@ -33,10 +33,14 @@ package com.brockw.stickwar.campaign
       public var difficultyLevel:int;
       
       public var isAutoSaveEnabled:Boolean;
-
+      
       public var isReplay:Boolean;
-
+      
       public var replayLevel:int;
+      
+      public var bossToggleTipSeen:Boolean;
+      
+      public var bossGameTipSeen:Boolean;
       
       public function Campaign(skipToLevel:int, difficulty:int)
       {
@@ -52,6 +56,27 @@ package com.brockw.stickwar.campaign
          {
             this.levels.push(new Level(x));
          }
+         var deadHordeXml:XML = <level title="Ambush: Undead Horde" map="0" story="" controller="CampaignAmbush" points="2">
+              <player race="Order">
+                  <Castle>3</Castle>
+                  <unit>Swordwrath</unit>
+                  <unit>Archidon</unit>
+                  <unit>Spearton</unit>
+                  <unit>Ninja</unit>
+                  <unit>Monk</unit>
+                  <unit>Magikill</unit>
+              </player>
+              <oponent race="Chaos">
+                  <Castle>1</Castle>
+              </oponent>
+              <normal>0.4</normal>
+              <hard>0.6</hard>
+              <insane>0.8</insane>
+              <normalHealthScale>0.6</normalHealthScale>
+              <normalDamageScale>0.6</normalDamageScale>
+              <tip>The undead rise again! Defend against the shambling horde of corpses.</tip>
+          </level>;
+         this.levels.push(new Level(deadHordeXml));
          this.currentLevel = skipToLevel;
          this.campaignPoints = skipToLevel;
          this.initUpgradeTree();
@@ -88,7 +113,7 @@ package com.brockw.stickwar.campaign
       {
          return this.currentLevel >= this.levels.length;
       }
-
+      
       public function hasLockedUpgrades() : Boolean
       {
          var u:CampaignUpgrade = null;
@@ -151,6 +176,44 @@ package com.brockw.stickwar.campaign
          this.upgradeMap[u.name] = u;
          u = new CampaignUpgrade("Poison Spray",["Electric Wall"],[],Tech.MAGIKILL_POISON);
          this.upgradeMap[u.name] = u;
+         u = new CampaignUpgrade("Triple Shot",[],["Archis"],Tech.ARCHER_BOSS_TRIPLE_SHOT);
+         this.upgradeMap[u.name] = u;
+         u.upgraded = true;
+         this.techAllowed[u.tech] = 1;
+         u = new CampaignUpgrade("Poison Execute",[],[],Tech.ARCHER_BOSS_POISON_EXECUTE);
+         this.upgradeMap[u.name] = u;
+         u.upgraded = true;
+         this.techAllowed[u.tech] = 1;
+         u = new CampaignUpgrade("Shadow Clone",[],[],Tech.NINJA_SHADOW_CLONE);
+         this.upgradeMap[u.name] = u;
+         u.upgraded = true;
+         this.techAllowed[u.tech] = 1;
+         u = new CampaignUpgrade("Monk Revive",[],[],Tech.MONK_BOSS_REVIVE);
+         this.upgradeMap[u.name] = u;
+         u.upgraded = true;
+         this.techAllowed[u.tech] = 1;
+         u = new CampaignUpgrade("Spearos",[],["Archis"],Tech.BOSS_SPEARTON_UNLOCK);
+         this.upgradeMap[u.name] = u;
+         u = new CampaignUpgrade("Archis",["Spearos","Triple Shot"],["Shade","Arrow Storm"],Tech.BOSS_ARCHER_UNLOCK);
+         this.upgradeMap[u.name] = u;
+         u = new CampaignUpgrade("Arrow Storm",["Archis"],["Vitalis","Explosive Arrow"],Tech.ARCHER_BOSS_ARROW_STORM);
+         this.upgradeMap[u.name] = u;
+         u = new CampaignUpgrade("Shade",["Archis"],["Shinobi III"],Tech.BOSS_NINJA_UNLOCK);
+         this.upgradeMap[u.name] = u;
+         u = new CampaignUpgrade("Vitalis",["Arrow Storm"],["Lightning Stun","Magis"],Tech.BOSS_MONK_UNLOCK);
+         this.upgradeMap[u.name] = u;
+         u = new CampaignUpgrade("Explosive Arrow",["Arrow Storm"],[],Tech.ARCHER_BOSS_EXPLOSION_ARROW);
+         this.upgradeMap[u.name] = u;
+         u = new CampaignUpgrade("Shinobi III",["Shade"],[],Tech.NINJA_CLOAK3);
+         this.upgradeMap[u.name] = u;
+         u = new CampaignUpgrade("Magis",["Vitalis"],["Meteor II"],Tech.BOSS_MAGIKILL_UNLOCK);
+         this.upgradeMap[u.name] = u;
+         u = new CampaignUpgrade("Lightning Stun",["Vitalis"],[],Tech.MAGIKILL_LIGHTNING_STUN);
+         this.upgradeMap[u.name] = u;
+         u = new CampaignUpgrade("Meteor II",["Magis"],["Summon II"],Tech.MAGIKILL_NUKE_2);
+         this.upgradeMap[u.name] = u;
+         u = new CampaignUpgrade("Summon II",["Meteor II"],[],Tech.MAGIKILL_SUMMON_UPGRADE);
+         this.upgradeMap[u.name] = u;
       }
       
       public function toString() : String
@@ -166,7 +229,7 @@ package com.brockw.stickwar.campaign
       {
          return this.levels[this.getCurrentLevelIndex()];
       }
-
+      
       public function getCurrentLevelIndex() : int
       {
          if(this.isReplay && this.replayLevel >= 0 && this.replayLevel < this.levels.length)
@@ -224,6 +287,8 @@ package com.brockw.stickwar.campaign
          }
          cookie.data.levels = levels;
          cookie.data.techAllowed = tech;
+         cookie.data.bossToggleTipSeen = this.bossToggleTipSeen;
+         cookie.data.bossGameTipSeen = this.bossGameTipSeen;
          cookie.flush();
       }
       
@@ -258,13 +323,15 @@ package com.brockw.stickwar.campaign
          i = 0;
          for each(level in cookie.data.levels)
          {
-            l = Level(this.levels[i]);
+            l = this.levels[i];
             l.retries = level["retries"];
             l.totalTime = level["totalTime"];
             l.bestTime = level["bestTime"];
             i++;
          }
          cookie.data.levels = this.levels;
+         this.bossToggleTipSeen = cookie.data.bossToggleTipSeen;
+         this.bossGameTipSeen = cookie.data.bossGameTipSeen;
       }
       
       public function get justTutorial() : Boolean

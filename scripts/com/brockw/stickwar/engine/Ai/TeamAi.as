@@ -20,9 +20,9 @@ package com.brockw.stickwar.engine.Ai
          var unit:String = null;
          for(unit in this.team.units)
          {
-            if(Unit(this.team.units[unit]).isAlive())
+            if(this.team.units[unit].isAlive())
             {
-               if(Unit(this.team.units[unit]).reaperCurseFrames == 0 || Unit(this.team.units[unit]).isConfused())
+               if(this.team.units[unit].reaperCurseFrames == 0 || this.team.units[unit].isConfused())
                {
                   this.team.units[unit].ai.update(game);
                }

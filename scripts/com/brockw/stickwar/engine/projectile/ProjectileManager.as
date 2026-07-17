@@ -6,14 +6,20 @@ package com.brockw.stickwar.engine.projectile
    import com.brockw.stickwar.engine.Team.*;
    import com.brockw.stickwar.engine.units.*;
    import flash.display.MovieClip;
+   import flash.geom.ColorTransform;
    import flash.geom.Point;
    import flash.utils.Dictionary;
    
    public class ProjectileManager
    {
+      
+      private static const CLEANUP_PER_FRAME:int = 15;
+      
       private static const NUKE_VISUAL_CLUSTER_RADIUS:Number = 40;
       
       private static const NUKE_VISUAL_CLUSTER_WINDOW_FRAMES:int = 3;
+      
+      private static const MAX_DEFLECTED_ARROWS:int = 15;
       
       private static const BOMBER_NUKE_VISUAL_CLUSTER_MAX:int = 2;
       
@@ -48,8 +54,10 @@ package com.brockw.stickwar.engine.projectile
       private var _game:StickWar;
       
       private var recentNukeVisualSpawns:Array;
-
+      
       private var poisonFistEffects:Array;
+      
+      private var deflectedArrows:Array;
       
       public function ProjectileManager(game:StickWar)
       {
@@ -81,6 +89,7 @@ package com.brockw.stickwar.engine.projectile
          this.medusaPoisonAmount = game.xml.xml.Chaos.Units.medusa.poison.poison;
          this.recentNukeVisualSpawns = [];
          this.poisonFistEffects = [];
+         this.deflectedArrows = [];
       }
       
       public function cleanUp() : void
@@ -107,7 +116,7 @@ package com.brockw.stickwar.engine.projectile
          this.recentNukeVisualSpawns = [];
          this.poisonFistEffects = [];
       }
-
+      
       public function initPoisonFistEffect(x:Number, y:Number, unit:Unit, radius:Number, damageTargets:Boolean = false) : void
       {
          var effect:MovieClip = null;
@@ -143,7 +152,7 @@ package com.brockw.stickwar.engine.projectile
       
       public function initReaper(unit:Unit, target:Unit) : void
       {
-         var n:Reaper = Reaper(this._projectileMap[Projectile.REAPER].getItem());
+         var n:Reaper = this._projectileMap[Projectile.REAPER].getItem();
          if(n == null)
          {
             return;
@@ -161,15 +170,15 @@ package com.brockw.stickwar.engine.projectile
       public function initFistAttack(x:Number, y:Number, unit:Unit, num:int) : void
       {
          var n:FistAttack = null;
-         var dy:Number = NaN;
-         var numFloat:Number = NaN;
-         n = FistAttack(this._projectileMap[Projectile.FIST_ATTACK].getItem());
+         var dy:Number = Number(NaN);
+         var numFloat:Number = Number(NaN);
+         n = this._projectileMap[Projectile.FIST_ATTACK].getItem();
          if(n == null)
          {
             return;
          }
          n.visible = false;
-         var p:Point = MovieClip(unit.mc).localToGlobal(new Point(0,0));
+         var p:Point = unit.mc.localToGlobal(new Point(0,0));
          var r:Point = unit.team.game.battlefield.globalToLocal(p);
          n.team = unit.team;
          n.x = r.x;
@@ -185,7 +194,7 @@ package com.brockw.stickwar.engine.projectile
          n.x = n.px = n.startX + dx * numFloat * 400 / 6;
          n.y = n.py = n.startY + dy * numFloat * 400 / 6;
          n.inflictor = unit;
-         n.damageToDeal = Skelator(unit).fistDamage;
+         n.damageToDeal = unit.fistDamage;
          n.spellMc.gotoAndStop(1);
          n.stunTime = 0;
          unit.team.game.battlefield.addChild(n);
@@ -200,7 +209,7 @@ package com.brockw.stickwar.engine.projectile
       public function initPoisonSpray(x:Number, y:Number, unit:Unit) : void
       {
          var n:PoisonSpray = null;
-         n = PoisonSpray(this._projectileMap[Projectile.POISON_SPRAY].getItem());
+         n = this._projectileMap[Projectile.POISON_SPRAY].getItem();
          if(n == null)
          {
             return;
@@ -210,7 +219,8 @@ package com.brockw.stickwar.engine.projectile
          n.py = unit.py;
          n.inflictor = unit;
          n.controlledFriendlyFire = unit.isConfused();
-         var p:Point = MovieClip(unit.mc.mc.wizstaff).localToGlobal(new Point(0,0));
+         n.isInfectionSpray = false;
+         var p:Point = unit.mc.mc.wizstaff.localToGlobal(new Point(0,0));
          var r:Point = unit.team.game.battlefield.globalToLocal(p);
          n.team = unit.team;
          n.x = r.x;
@@ -223,13 +233,47 @@ package com.brockw.stickwar.engine.projectile
          n.poisonDamage = unit.team.game.xml.xml.Order.Units.magikill.poisonSpray.damage;
          n.spellMc.gotoAndStop(1);
          n.stunTime = 0;
+         n.spellMc.scaleX = 1;
+         n.spellMc.transform.colorTransform = new ColorTransform();
+         unit.team.game.battlefield.addChild(n);
+         this.projectiles.push(n);
+      }
+      
+      public function initInfectionSpray(x:Number, y:Number, unit:Unit) : void
+      {
+         var n:PoisonSpray = this._projectileMap[Projectile.POISON_SPRAY].getItem();
+         if(n == null)
+         {
+            return;
+         }
+         n.visible = false;
+         n.px = unit.px;
+         n.py = unit.py;
+         n.inflictor = unit;
+         n.controlledFriendlyFire = unit.isConfused();
+         n.isInfectionSpray = true;
+         n.team = unit.team;
+         n.x = unit.px;
+         n.y = unit.py + unit.pz;
+         n.startX = unit.px;
+         n.startY = unit.py + unit.pz;
+         n.endX = x;
+         n.endY = y;
+         n.rotation = 0;
+         n.poisonDamage = 0;
+         n.spellMc.gotoAndStop(1);
+         n.stunTime = 0;
+         n.spellMc.scaleX = unit.team.direction;
+         var ct:ColorTransform = new ColorTransform(1,0.3,0.3,1,50,0,0,0);
+         n.spellMc.transform.colorTransform = ct;
+         unit.team.game.soundManager.playSound("AcidSpraySound",unit.px,unit.py + unit.pz);
          unit.team.game.battlefield.addChild(n);
          this.projectiles.push(n);
       }
       
       public function initSlowDart(x:Number, y:Number, z:Number, unit:Unit, target:Unit) : void
       {
-         var n:SlowDart = SlowDart(this._projectileMap[Projectile.SLOW_DART].getItem());
+         var n:SlowDart = this._projectileMap[Projectile.SLOW_DART].getItem();
          if(n == null)
          {
             return;
@@ -244,7 +288,7 @@ package com.brockw.stickwar.engine.projectile
       
       public function initTowerDart(x:Number, y:Number, z:Number, unit:Unit, target:Unit) : void
       {
-         var n:ChaosTowerDart = ChaosTowerDart(this._projectileMap[Projectile.TOWER_DART].getItem());
+         var n:ChaosTowerDart = this._projectileMap[Projectile.TOWER_DART].getItem();
          if(n == null)
          {
             return;
@@ -258,7 +302,7 @@ package com.brockw.stickwar.engine.projectile
       
       public function initArrow(x:Number, y:Number, rotation:Number, velocity:Number, targetY:Number, dy:Number, unit:Unit, damage:Number, poison:Number, isFire:Boolean, area:Number = 0, areaDamage:Number = 0, arrowStyle:int = 0, explosionDamage:Number = 0) : void
       {
-         var n:Arrow = Arrow(this._projectileMap[Projectile.ARROW].getItem());
+         var n:Arrow = this._projectileMap[Projectile.ARROW].getItem();
          if(n == null)
          {
             return;
@@ -294,7 +338,7 @@ package com.brockw.stickwar.engine.projectile
       
       public function initBoulder(x:Number, y:Number, rotation:Number, velocity:Number, targetY:Number, dy:Number, unit:Unit, damage:Number, isDebris:Boolean) : void
       {
-         var n:Boulder = Boulder(this._projectileMap[Projectile.BOULDER].getItem());
+         var n:Boulder = this._projectileMap[Projectile.BOULDER].getItem();
          if(n == null)
          {
             return;
@@ -323,7 +367,7 @@ package com.brockw.stickwar.engine.projectile
       
       public function initBoulderDebris(x:Number, y:Number, z:Number, dx:Number, dy:Number, dz:Number, scale:Number, game:StickWar, inflictor:Unit, fromUnit:Unit) : void
       {
-         var n:Boulder = Boulder(this._projectileMap[Projectile.BOULDER].getItem());
+         var n:Boulder = this._projectileMap[Projectile.BOULDER].getItem();
          if(n == null)
          {
             return;
@@ -352,7 +396,7 @@ package com.brockw.stickwar.engine.projectile
       
       public function initBolt(x:Number, y:Number, rotation:Number, velocity:Number, targetY:Number, dy:Number, unit:Unit, damage:Number, slowFrames:int, isFire:Boolean, boltStyle:int = 0) : void
       {
-         var n:Bolt = Bolt(this._projectileMap[Projectile.BOLT].getItem());
+         var n:Bolt = this._projectileMap[Projectile.BOLT].getItem();
          if(n == null)
          {
             return;
@@ -381,7 +425,7 @@ package com.brockw.stickwar.engine.projectile
       
       public function initGuts(x:Number, y:Number, rotation:Number, velocity:Number, targetY:Number, dy:Number, poisonDamage:Number, unit:Unit) : void
       {
-         var n:Guts = Guts(this._projectileMap[Projectile.GUTS].getItem());
+         var n:Guts = this._projectileMap[Projectile.GUTS].getItem();
          if(n == null)
          {
             return;
@@ -408,29 +452,28 @@ package com.brockw.stickwar.engine.projectile
       
       public function initStun(x:Number, y:Number, damage:int, unit:Unit) : void
       {
-         var n:ElectricWall = ElectricWall(this._projectileMap[Projectile.ELECTRIC_WALL].getItem());
+         var n:ElectricWall = this._projectileMap[Projectile.ELECTRIC_WALL].getItem();
          var stunDamage:int = 0;
          if(n == null)
          {
             return;
          }
-         n.visible = true;
+         n.resetForUse();
          if(Math.abs(x - unit.x) > unit.team.game.xml.xml.Order.Units.magikill.electricWall.range)
          {
             x = -unit.team.game.xml.xml.Order.Units.magikill.electricWall.area / 2 + unit.x + Util.sgn(x - unit.x) * unit.team.game.xml.xml.Order.Units.magikill.electricWall.range;
          }
          n.inflictor = unit;
          n.controlledFriendlyFire = unit.isConfused();
-         stunDamage = unit.team.game.xml.xml.Order.Units.magikill.electricWall.damage;
-         if(unit is Magikill && Magikill(unit).isBoss)
+         stunDamage = int(unit.team.game.xml.xml.Order.Units.magikill.electricWall.damage);
+         if(unit is Magikill && unit.isBoss)
          {
-            stunDamage = Math.max(1,int(stunDamage * 0.15));
-            n.applyBossStun = true;
-            n.bossStunFrames = 30 * 2;
-         }
-         else
-         {
-            n.applyBossStun = false;
+            var magikill:Magikill = unit;
+            if(!magikill.isPlayerBoss || unit.team.tech.isResearched(Tech.MAGIKILL_LIGHTNING_STUN))
+            {
+               stunDamage = Math.max(1,int(stunDamage * 0.3));
+               n.isStunZone = true;
+            }
          }
          n.damageToDeal = stunDamage;
          n.px = x;
@@ -439,22 +482,39 @@ package com.brockw.stickwar.engine.projectile
          n.team = unit.team;
          n.x = n.px;
          n.y = n.py;
-         n.spellMc.gotoAndStop(1);
-         this.projectiles.push(n);
-         unit.team.game.battlefield.addChild(n);
+         ElectricWallManager.addWall(n,unit.team.game);
          unit.team.game.soundManager.playSound("ElectricWallSoundEffect",x,y);
       }
       
-      public function initNuke(x:Number, y:Number, unit:Unit, damage:Number) : void
+      public function initDeflectedArrow(px:Number, py:Number, pz:Number, game:StickWar, vx:Number = -4, vy:Number = -10) : void
       {
-         var n:Nuke = Nuke(this._projectileMap[Projectile.NUKE].getItem());
+         if(this.deflectedArrows.length >= MAX_DEFLECTED_ARROWS)
+         {
+            return;
+         }
+         var arrow:DeflectedArrow = new DeflectedArrow();
+         arrow.px = px;
+         arrow.py = py;
+         arrow.pz = pz;
+         arrow.vx = vx;
+         arrow.vy = vy;
+         arrow.x = px;
+         arrow.y = pz + py;
+         arrow.groundFrames = 0;
+         game.battlefield.addChild(arrow);
+         this.deflectedArrows.push(arrow);
+      }
+      
+      public function initNuke(x:Number, y:Number, unit:Unit, damage:Number, clampToRange:Boolean = true) : void
+      {
+         var n:Nuke = this._projectileMap[Projectile.NUKE].getItem();
          var showVisual:Boolean = false;
          var visualLimit:int = 0;
          if(n == null)
          {
             return;
          }
-         if(Math.abs(x - unit.px) > unit.team.game.xml.xml.Order.Units.magikill.nuke.range)
+         if(clampToRange && Math.abs(x - unit.px) > unit.team.game.xml.xml.Order.Units.magikill.nuke.range)
          {
             x = unit.px + Util.sgn(x - unit.px) * unit.team.game.xml.xml.Order.Units.magikill.nuke.range;
          }
@@ -480,7 +540,7 @@ package com.brockw.stickwar.engine.projectile
             unit.team.game.bloodManager.addAsh(x,y,unit.team.direction,unit.team.game);
          }
       }
-
+      
       private function getNukeVisualClusterLimit(unit:Unit) : int
       {
          if(unit.type == Unit.U_BOMBER)
@@ -493,7 +553,7 @@ package com.brockw.stickwar.engine.projectile
          }
          return 0;
       }
-
+      
       private function shouldShowNukeVisualAt(x:Number, y:Number, visualLimit:int) : Boolean
       {
          var currentFrame:int = this._game.frame;
@@ -501,33 +561,35 @@ package com.brockw.stickwar.engine.projectile
          var entry:Object = null;
          var visibleCount:int = 0;
          var writeIndex:int = 0;
-         var dx:Number = NaN;
-         var dy:Number = NaN;
+         var dx:Number = Number(NaN);
+         var dy:Number = Number(NaN);
          if(visualLimit <= 0)
          {
             return true;
          }
-         for(i = 0; i < this.recentNukeVisualSpawns.length; i++)
+         i = 0;
+         while(i < this.recentNukeVisualSpawns.length)
          {
             entry = this.recentNukeVisualSpawns[i];
             if(currentFrame - int(entry.frame) <= NUKE_VISUAL_CLUSTER_WINDOW_FRAMES)
             {
                this.recentNukeVisualSpawns[writeIndex] = entry;
-               ++writeIndex;
+               writeIndex++;
                dx = Number(entry.x) - x;
                dy = Number(entry.y) - y;
                if(entry.visible && dx * dx + dy * dy <= NUKE_VISUAL_CLUSTER_RADIUS * NUKE_VISUAL_CLUSTER_RADIUS)
                {
-                  ++visibleCount;
+                  visibleCount++;
                }
             }
+            i++;
          }
          this.recentNukeVisualSpawns.length = writeIndex;
          entry = {
-            frame: currentFrame,
-            x: x,
-            y: y,
-            visible: visibleCount < visualLimit
+            "frame":currentFrame,
+            "x":x,
+            "y":y,
+            "visible":visibleCount < visualLimit
          };
          this.recentNukeVisualSpawns.push(entry);
          return entry.visible;
@@ -535,7 +597,7 @@ package com.brockw.stickwar.engine.projectile
       
       public function initWallExplosion(x:Number, y:Number, team:Team) : void
       {
-         var n:WallExplosion = WallExplosion(this._projectileMap[Projectile.WALL_EXPLOSION].getItem());
+         var n:WallExplosion = this._projectileMap[Projectile.WALL_EXPLOSION].getItem();
          if(n == null)
          {
             return;
@@ -552,10 +614,10 @@ package com.brockw.stickwar.engine.projectile
          team.game.battlefield.addChild(n);
          team.game.bloodManager.addAsh(x,y,team.direction,team.game);
       }
-
+      
       public function initStealthWallExplosion(x:Number, y:Number, team:Team) : void
       {
-         var n:WallExplosion = WallExplosion(this._projectileMap[Projectile.WALL_EXPLOSION].getItem());
+         var n:WallExplosion = this._projectileMap[Projectile.WALL_EXPLOSION].getItem();
          if(n == null)
          {
             return;
@@ -572,9 +634,10 @@ package com.brockw.stickwar.engine.projectile
          team.game.battlefield.addChild(n);
       }
       
-      public function initTowerSpawn(x:Number, y:Number, team:Team, scale:Number = 1) : void
+      public function initTowerSpawn(x:Number, y:Number, team:Team, scale:Number = 1, tintColor:uint = 4294967295) : void
       {
-         var n:TowerSpawn = TowerSpawn(this._projectileMap[Projectile.TOWER_SPAWN].getItem());
+         var ct:ColorTransform = null;
+         var n:TowerSpawn = this._projectileMap[Projectile.TOWER_SPAWN].getItem();
          if(n == null)
          {
             return;
@@ -591,11 +654,18 @@ package com.brockw.stickwar.engine.projectile
          this.projectiles.push(n);
          team.game.battlefield.addChild(n);
          n.team = team;
+         if(tintColor != 4294967295)
+         {
+            ct = new ColorTransform();
+            ct.color = tintColor;
+            n.spellMc.transform.colorTransform = ct;
+         }
       }
       
-      public function initSpawnDrip(x:Number, y:Number, team:Team) : void
+      public function initSpawnDrip(x:Number, y:Number, team:Team, tintColor:uint = 4294967295) : void
       {
-         var n:SpawnDrip = SpawnDrip(this._projectileMap[Projectile.SPAWN_DRIP].getItem());
+         var ct:ColorTransform = null;
+         var n:SpawnDrip = this._projectileMap[Projectile.SPAWN_DRIP].getItem();
          if(n == null)
          {
             return;
@@ -611,11 +681,17 @@ package com.brockw.stickwar.engine.projectile
          this.projectiles.push(n);
          team.game.battlefield.addChild(n);
          n.team = team;
+         if(tintColor != 4294967295)
+         {
+            ct = new ColorTransform();
+            ct.color = tintColor;
+            n.spellMc.transform.colorTransform = ct;
+         }
       }
       
       public function initHealEffect(x:Number, y:Number, py:Number, team:Team, unit:Unit, isCure:Boolean = false) : void
       {
-         var n:HealEffect = HealEffect(this._projectileMap[Projectile.HEAL_EFFECT].getItem());
+         var n:HealEffect = this._projectileMap[Projectile.HEAL_EFFECT].getItem();
          if(n == null)
          {
             return;
@@ -637,7 +713,7 @@ package com.brockw.stickwar.engine.projectile
       
       public function initPoisonPool(x:Number, y:Number, unit:Unit, damage:Number) : void
       {
-         var n:PoisonPool = PoisonPool(this._projectileMap[Projectile.POISON_POOL].getItem());
+         var n:PoisonPool = this._projectileMap[Projectile.POISON_POOL].getItem();
          if(n == null)
          {
             return;
@@ -666,7 +742,7 @@ package com.brockw.stickwar.engine.projectile
       
       public function initCure(x:Number, y:Number, nukeDamage:Number, unit:Unit) : void
       {
-         var n:Cure = Cure(this._projectileMap[Projectile.CURE].getItem());
+         var n:Cure = this._projectileMap[Projectile.CURE].getItem();
          if(n == null)
          {
             return;
@@ -686,7 +762,7 @@ package com.brockw.stickwar.engine.projectile
       
       public function initHeal(x:Number, y:Number, nukeDamage:Number, unit:Unit) : void
       {
-         var n:Heal = Heal(this._projectileMap[Projectile.HEAL].getItem());
+         var n:Heal = this._projectileMap[Projectile.HEAL].getItem();
          if(n == null)
          {
             return;
@@ -709,12 +785,13 @@ package com.brockw.stickwar.engine.projectile
          var readIndex:int = 0;
          var writeIndex:int = 0;
          var waitingLength:int = 0;
-         var readyForCleanupCount:int = 0;
+         var cleanedCount:int = 0;
          var p:Projectile = null;
          var effect:MovieClip = null;
-         for(readIndex = 0; readIndex < this.projectiles.length; readIndex++)
+         readIndex = 0;
+         while(readIndex < this.projectiles.length)
          {
-            p = Projectile(this.projectiles[readIndex]);
+            p = this.projectiles[readIndex];
             if(!p.isInFlight())
             {
                p.framesDead = 0;
@@ -724,53 +801,90 @@ package com.brockw.stickwar.engine.projectile
             {
                p.update(game);
                this.projectiles[writeIndex] = p;
-               ++writeIndex;
+               writeIndex++;
             }
+            readIndex++;
          }
          this.projectiles.length = writeIndex;
-         waitingLength = this._waitingToBeCleaned.length;
-         for(readIndex = 0; readIndex < waitingLength; readIndex++)
+         waitingLength = int(this._waitingToBeCleaned.length);
+         writeIndex = 0;
+         readIndex = 0;
+         while(readIndex < waitingLength)
          {
             p = this._waitingToBeCleaned[readIndex];
             ++p.framesDead;
-            if(readyForCleanupCount == readIndex && Boolean(p.isReadyForCleanup()))
+            if(cleanedCount < CLEANUP_PER_FRAME && p.isReadyForCleanup())
             {
                if(game.battlefield.contains(p))
                {
                   game.battlefield.removeChild(p);
                }
                this._projectileMap[p.type].returnItem(p);
-               ++readyForCleanupCount;
-            }
-         }
-         for(readIndex = readyForCleanupCount; readIndex < waitingLength; readIndex++)
-         {
-            this._waitingToBeCleaned[readIndex - readyForCleanupCount] = this._waitingToBeCleaned[readIndex];
-         }
-         this._waitingToBeCleaned.length = waitingLength - readyForCleanupCount;
-         writeIndex = 0;
-         for(readIndex = 0; readIndex < this.poisonFistEffects.length; readIndex++)
-         {
-            effect = MovieClip(this.poisonFistEffects[readIndex]);
-            if(effect == null)
-            {
-               continue;
-            }
-            effect.nextFrame();
-            if(effect.currentFrame >= effect.totalFrames)
-            {
-               if(game.battlefield.contains(effect))
-               {
-                  game.battlefield.removeChild(effect);
-               }
+               cleanedCount++;
             }
             else
             {
-               this.poisonFistEffects[writeIndex] = effect;
-               ++writeIndex;
+               this._waitingToBeCleaned[writeIndex] = p;
+               writeIndex++;
             }
+            readIndex++;
+         }
+         this._waitingToBeCleaned.length = writeIndex;
+         writeIndex = 0;
+         readIndex = 0;
+         while(readIndex < this.poisonFistEffects.length)
+         {
+            effect = this.poisonFistEffects[readIndex];
+            if(effect != null)
+            {
+               effect.nextFrame();
+               if(effect.currentFrame >= effect.totalFrames)
+               {
+                  if(game.battlefield.contains(effect))
+                  {
+                     game.battlefield.removeChild(effect);
+                  }
+               }
+               else
+               {
+                  this.poisonFistEffects[writeIndex] = effect;
+                  writeIndex++;
+               }
+            }
+            readIndex++;
          }
          this.poisonFistEffects.length = writeIndex;
+         writeIndex = 0;
+         readIndex = 0;
+         var arrow:DeflectedArrow = null;
+         while(readIndex < this.deflectedArrows.length)
+         {
+            arrow = this.deflectedArrows[readIndex];
+            if(arrow != null)
+            {
+               arrow.update(game);
+               if(arrow.groundFrames > 5)
+               {
+                  if(game.battlefield.contains(arrow))
+                  {
+                     game.battlefield.removeChild(arrow);
+                  }
+               }
+               else
+               {
+                  this.deflectedArrows[writeIndex] = arrow;
+                  writeIndex++;
+               }
+            }
+            readIndex++;
+         }
+         this.deflectedArrows.length = writeIndex;
+         ElectricWallManager.update(game,game.frame);
+      }
+      
+      public function returnElectricWall(wall:ElectricWall) : void
+      {
+         this._projectileMap[Projectile.ELECTRIC_WALL].returnItem(wall);
       }
       
       public function get projectiles() : Array

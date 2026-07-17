@@ -44,7 +44,7 @@ package com.brockw.stickwar.engine.Ai
                }
                if(u != null)
                {
-                  Medusa(unit).stone(u);
+                  unit.stone(u);
                   nextMove(game);
                }
                else
@@ -56,15 +56,15 @@ package com.brockw.stickwar.engine.Ai
          else if(currentCommand.type == UnitCommand.POISON_POOL)
          {
             unit.forceFaceDirection(currentCommand.realX - unit.px);
-            Medusa(unit).poisonSpray();
+            unit.poisonSpray();
             nextMove(game);
-         }
-         else if(Medusa(unit).updateBossDistantRetreat(game))
-         {
-            return;
          }
          else
          {
+            if(unit.updateBossDistantRetreat(game))
+            {
+               return;
+            }
             baseUpdate(game);
          }
       }

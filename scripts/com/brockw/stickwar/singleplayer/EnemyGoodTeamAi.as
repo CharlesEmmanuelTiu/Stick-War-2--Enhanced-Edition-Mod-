@@ -12,6 +12,7 @@ package com.brockw.stickwar.singleplayer
    
    public class EnemyGoodTeamAi extends EnemyTeamAi
    {
+      
       private static const DEFENCE_BUILD_COOLDOWN_FRAMES:int = 30 * 30;
       
       private static const DEFENCE_BUILD_X_OFFSET:int = 900;
@@ -21,37 +22,37 @@ package com.brockw.stickwar.singleplayer
       private static const DEFENCE_BUILD_RESERVE_FRAMES:int = 30 * 8;
       
       private static const MIN_FIRST_DEFENCE_FORCE:int = 20;
-
+      
       private static const INSANE_RESEARCH_MULTIPLIER:Number = 0.75;
-
+      
       private static const SHADOWRATH_LEVEL_TITLE:String = "Silent Assassins: Ninjas Declare War";
-
+      
       private static const SHADOWRATH_LURE_TIMEOUT_FRAMES:int = 30 * 10;
-
+      
       private static const SHADOWRATH_PARTIAL_REVEAL_TIMEOUT_FRAMES:int = 30 * 10;
-
+      
       private static const SHADOWRATH_STRATEGY_NONE:int = 0;
-
+      
       private static const SHADOWRATH_STRATEGY_MID_PRESSURE:int = 1;
-
+      
       private static const SHADOWRATH_STRATEGY_TRAP:int = 2;
-
+      
       private static const SHADOWRATH_STRATEGY_FULL_PUSH:int = 3;
-
+      
       private static const SHADOWRATH_MID_PRESSURE_LOCK_FRAMES:int = 30 * 8;
-
+      
       private static const SHADOWRATH_TRAP_LOCK_FRAMES:int = 30 * 12;
-
+      
       private static const SHADOWRATH_FULL_PUSH_LOCK_FRAMES:int = 30 * 12;
-
+      
       private static const SHADOWRATH_MID_PRESSURE_REVEAL_COUNT:int = 2;
-
+      
       private static const SHADOWRATH_PARTIAL_REVEAL_COUNT:int = 2;
-
+      
       private static const SHADOWRATH_FULL_PUSH_ADVANTAGE_MARGIN:int = 8;
-
+      
       private static const SHADOWRATH_MID_PRESSURE_ADVANTAGE_MARGIN:int = 2;
-
+      
       private static const SHADOWRATH_PLAYER_INTERRUPT_MARGIN:int = 4;
       
       private var buildOrder:Array;
@@ -65,80 +66,80 @@ package com.brockw.stickwar.singleplayer
       private var nextWallBuildFrame:int;
       
       private var pendingWallBuildUntil:int;
-
+      
       private var shadowrathTrapEnabled:Boolean;
-
+      
       private var shadowrathLureCycles:int;
-
+      
       private var shadowrathPartialRevealUsed:Boolean;
-
+      
       private var shadowrathFullRevealUsed:Boolean;
-
+      
       private var shadowrathTrapPhaseStartFrame:int;
-
+      
       private var shadowrathStrategy:int;
-
+      
       private var shadowrathStrategyLockUntil:int;
-
+      
       private var shadowrathStrategyRevealDone:Boolean;
-
+      
       private var shadowrathStrategyDirty:Boolean;
-
+      
       private var shadowrathLastOwnAliveCount:int;
-
+      
       private var shadowrathLastEnemyAliveCount:int;
-
+      
       private var shadowrathLastHiddenCount:int;
       
       public function EnemyGoodTeamAi(team:Team, main:BaseMain, game:StickWar, isCreatingUnits:* = true)
       {
          var key:int = 0;
-         var levelTitle:String = String(main.campaign.getCurrentLevel().title);
+         var levelTitle:String = main.campaign.getCurrentLevel().title;
          unitComposition = new Dictionary();
          unitComposition[Unit.U_MINER] = main.campaign.xml.Order.UnitComposition.Miner;
-         if(String(main.campaign.getCurrentLevel().levelXml.oponent.UnitComposition.Miner) != "")
+         if(main.campaign.getCurrentLevel().levelXml.oponent.UnitComposition.Miner != "")
          {
-            unitComposition[Unit.U_MINER] = String(main.campaign.getCurrentLevel().levelXml.oponent.UnitComposition.Miner);
+            unitComposition[Unit.U_MINER] = main.campaign.getCurrentLevel().levelXml.oponent.UnitComposition.Miner;
          }
          unitComposition[Unit.U_SWORDWRATH] = main.campaign.xml.Order.UnitComposition.Swordwrath;
-         if(String(main.campaign.getCurrentLevel().levelXml.oponent.UnitComposition.Swordwrath) != "")
+         if(main.campaign.getCurrentLevel().levelXml.oponent.UnitComposition.Swordwrath != "")
          {
-            unitComposition[Unit.U_SWORDWRATH] = String(main.campaign.getCurrentLevel().levelXml.oponent.UnitComposition.Swordwrath);
+            unitComposition[Unit.U_SWORDWRATH] = main.campaign.getCurrentLevel().levelXml.oponent.UnitComposition.Swordwrath;
          }
          unitComposition[Unit.U_ARCHER] = main.campaign.xml.Order.UnitComposition.Archidon;
-         if(String(main.campaign.getCurrentLevel().levelXml.oponent.UnitComposition.Archidon) != "")
+         if(main.campaign.getCurrentLevel().levelXml.oponent.UnitComposition.Archidon != "")
          {
-            unitComposition[Unit.U_ARCHER] = String(main.campaign.getCurrentLevel().levelXml.oponent.UnitComposition.Archidon);
+            unitComposition[Unit.U_ARCHER] = main.campaign.getCurrentLevel().levelXml.oponent.UnitComposition.Archidon;
          }
          unitComposition[Unit.U_SPEARTON] = main.campaign.xml.Order.UnitComposition.Spearton;
-         if(String(main.campaign.getCurrentLevel().levelXml.oponent.UnitComposition.Spearton) != "")
+         if(main.campaign.getCurrentLevel().levelXml.oponent.UnitComposition.Spearton != "")
          {
-            unitComposition[Unit.U_SPEARTON] = String(main.campaign.getCurrentLevel().levelXml.oponent.UnitComposition.Spearton);
+            unitComposition[Unit.U_SPEARTON] = main.campaign.getCurrentLevel().levelXml.oponent.UnitComposition.Spearton;
          }
          unitComposition[Unit.U_NINJA] = main.campaign.xml.Order.UnitComposition.Ninja;
-         if(String(main.campaign.getCurrentLevel().levelXml.oponent.UnitComposition.Ninja) != "")
+         if(main.campaign.getCurrentLevel().levelXml.oponent.UnitComposition.Ninja != "")
          {
-            unitComposition[Unit.U_NINJA] = String(main.campaign.getCurrentLevel().levelXml.oponent.UnitComposition.Ninja);
+            unitComposition[Unit.U_NINJA] = main.campaign.getCurrentLevel().levelXml.oponent.UnitComposition.Ninja;
          }
          unitComposition[Unit.U_FLYING_CROSSBOWMAN] = main.campaign.xml.Order.UnitComposition.FlyingCrossbowman;
-         if(String(main.campaign.getCurrentLevel().levelXml.oponent.UnitComposition.FlyingCrossbowman) != "")
+         if(main.campaign.getCurrentLevel().levelXml.oponent.UnitComposition.FlyingCrossbowman != "")
          {
-            unitComposition[Unit.U_FLYING_CROSSBOWMAN] = String(main.campaign.getCurrentLevel().levelXml.oponent.UnitComposition.FlyingCrossbowman);
+            unitComposition[Unit.U_FLYING_CROSSBOWMAN] = main.campaign.getCurrentLevel().levelXml.oponent.UnitComposition.FlyingCrossbowman;
          }
          unitComposition[Unit.U_MONK] = main.campaign.xml.Order.UnitComposition.Monk;
-         if(String(main.campaign.getCurrentLevel().levelXml.oponent.UnitComposition.Monk) != "")
+         if(main.campaign.getCurrentLevel().levelXml.oponent.UnitComposition.Monk != "")
          {
-            unitComposition[Unit.U_MONK] = String(main.campaign.getCurrentLevel().levelXml.oponent.UnitComposition.Monk);
+            unitComposition[Unit.U_MONK] = main.campaign.getCurrentLevel().levelXml.oponent.UnitComposition.Monk;
          }
          unitComposition[Unit.U_MAGIKILL] = main.campaign.xml.Order.UnitComposition.Magikill;
-         if(String(main.campaign.getCurrentLevel().levelXml.oponent.UnitComposition.Magikill) != "")
+         if(main.campaign.getCurrentLevel().levelXml.oponent.UnitComposition.Magikill != "")
          {
-            unitComposition[Unit.U_MAGIKILL] = String(main.campaign.getCurrentLevel().levelXml.oponent.UnitComposition.Magikill);
+            unitComposition[Unit.U_MAGIKILL] = main.campaign.getCurrentLevel().levelXml.oponent.UnitComposition.Magikill;
          }
          unitComposition[Unit.U_ENSLAVED_GIANT] = main.campaign.xml.Order.UnitComposition.EnslavedGiant;
-         if(String(main.campaign.getCurrentLevel().levelXml.oponent.UnitComposition.EnslavedGiant) != "")
+         if(main.campaign.getCurrentLevel().levelXml.oponent.UnitComposition.EnslavedGiant != "")
          {
-            unitComposition[Unit.U_ENSLAVED_GIANT] = String(main.campaign.getCurrentLevel().levelXml.oponent.UnitComposition.EnslavedGiant);
+            unitComposition[Unit.U_ENSLAVED_GIANT] = main.campaign.getCurrentLevel().levelXml.oponent.UnitComposition.EnslavedGiant;
          }
          if(main.campaign.difficultyLevel == Campaign.D_INSANE)
          {
@@ -204,7 +205,7 @@ package com.brockw.stickwar.singleplayer
       {
          super.update(game);
       }
-
+      
       override protected function requiresPerFrameGlobalStrategy(game:StickWar) : Boolean
       {
          return this.shadowrathTrapEnabled;
@@ -256,7 +257,8 @@ package com.brockw.stickwar.singleplayer
             }
          }
          var overCompCount:int = 0;
-         for(i = 0; i < this.buildOrder.length; i++)
+         i = 0;
+         while(i < this.buildOrder.length)
          {
             numOfUnit = int(team.unitGroups[this.buildOrder[i]].length);
             if(numOfUnit >= unitComposition[this.buildOrder[i]])
@@ -267,16 +269,19 @@ package com.brockw.stickwar.singleplayer
             {
                game.requestToSpawn(team.id,this.buildOrder[i]);
             }
+            i++;
          }
          if(overCompCount >= this.buildOrder.length)
          {
-            for(i = 0; i < this.buildOrder.length; i++)
+            i = 0;
+            while(i < this.buildOrder.length)
             {
                numOfUnit = int(team.unitGroups[this.buildOrder[i]].length);
                if(team.unitProductionQueue[team.unitInfo[this.buildOrder[i]][2]].length == 0)
                {
                   game.requestToSpawn(team.id,this.buildOrder[i]);
                }
+               i++;
             }
          }
          if(int(team.unitGroups[Unit.U_MINER].length) > 0)
@@ -351,14 +356,13 @@ package com.brockw.stickwar.singleplayer
       
       override protected function updateSpellCasters(game:StickWar) : void
       {
-         var manaBefore:Number = team.mana;
-         team.mana = 1000;
+         team.bypassMana = true;
          this.updateMagikill(game);
-         team.mana = manaBefore;
+         team.bypassMana = false;
          this.updateArchers(game);
          this.updateNinjas(game);
       }
-
+      
       override protected function updateGlobalStrategy(game:StickWar) : void
       {
          var screen:CampaignGameScreen = null;
@@ -368,7 +372,7 @@ package com.brockw.stickwar.singleplayer
             super.updateGlobalStrategy(game);
             return;
          }
-         screen = CampaignGameScreen(game.gameScreen);
+         screen = game.gameScreen;
          hiddenCount = screen.getDisguisedShadowrathCount();
          this.updateShadowrathStrategyDirtyState(hiddenCount);
          if(hiddenCount <= 0)
@@ -414,7 +418,7 @@ package com.brockw.stickwar.singleplayer
          {
             if(archer.ai.currentTarget != null)
             {
-               RangedAi(archer.ai).mayKite = true;
+               archer.ai.mayKite = true;
             }
          }
       }
@@ -475,7 +479,7 @@ package com.brockw.stickwar.singleplayer
             }
          }
       }
-
+      
       private function tryResearchTech(type:int) : Boolean
       {
          var t:TechItem = team.tech.upgrades[type];
@@ -490,7 +494,7 @@ package com.brockw.stickwar.singleplayer
          }
          return false;
       }
-
+      
       private function startEnemyResearch(type:int) : void
       {
          team.tech.startResearching(type);
@@ -505,9 +509,9 @@ package com.brockw.stickwar.singleplayer
          var miner:Miner = null;
          var bestMiner:Miner = null;
          var move:UnitMove = null;
-         var buildX:Number = NaN;
-         var bestDistance:Number = NaN;
-         var distance:Number = NaN;
+         var buildX:Number = Number(NaN);
+         var bestDistance:Number = Number(NaN);
+         var distance:Number = Number(NaN);
          if(game.frame < this.nextWallBuildFrame)
          {
             return false;
@@ -516,7 +520,7 @@ package com.brockw.stickwar.singleplayer
          {
             return false;
          }
-         if((!enemyAtHome() && !enemyAtMiddle() && !this.shouldBuildFinalDefence()) || team.attackingForcePopulation < MIN_DEFENCE_FORCE)
+         if(!enemyAtHome() && !enemyAtMiddle() && !this.shouldBuildFinalDefence() || team.attackingForcePopulation < MIN_DEFENCE_FORCE)
          {
             return false;
          }
@@ -578,7 +582,7 @@ package com.brockw.stickwar.singleplayer
       {
          return int(team.unitGroups[Unit.U_MINER].length) > 0 && team.walls.length == 0 && team.attackingForcePopulation >= MIN_FIRST_DEFENCE_FORCE && (enemyAtHome() || enemyAtMiddle() || this.shouldBuildFinalDefence());
       }
-
+      
       private function shadowrathBaitSwordwraths(game:StickWar) : void
       {
          var sword:Unit = null;
@@ -608,17 +612,17 @@ package com.brockw.stickwar.singleplayer
          move.arg1 = this.team.game.gameScreen.game.map.height / 2;
          move.execute(this.team.game);
       }
-
+      
       private function shadowrathShouldRetreatLure(game:StickWar) : Boolean
       {
          return this.enemyAtMiddle() || this.enemyIsAttacking() || this.shadowrathTrapPhaseStartFrame != 0 && game.frame - this.shadowrathTrapPhaseStartFrame >= SHADOWRATH_LURE_TIMEOUT_FRAMES;
       }
-
+      
       private function playerHasShadowrathStrategyInterrupt() : Boolean
       {
          return this.team.enemyTeam.attackingForcePopulation > this.team.attackingForcePopulation + SHADOWRATH_PLAYER_INTERRUPT_MARGIN;
       }
-
+      
       private function chooseShadowrathStrategy(game:StickWar, screen:CampaignGameScreen, hiddenCount:int) : void
       {
          if(this.shouldShadowrathFullPush(hiddenCount))
@@ -634,7 +638,7 @@ package com.brockw.stickwar.singleplayer
             this.startShadowrathStrategy(SHADOWRATH_STRATEGY_TRAP,game);
          }
       }
-
+      
       private function startShadowrathStrategy(strategy:int, game:StickWar) : void
       {
          this.shadowrathStrategy = strategy;
@@ -658,7 +662,7 @@ package com.brockw.stickwar.singleplayer
          }
          this.shadowrathStrategyDirty = false;
       }
-
+      
       private function executeShadowrathMidPressure(game:StickWar, screen:CampaignGameScreen) : void
       {
          if(!this.shadowrathStrategyRevealDone)
@@ -668,10 +672,10 @@ package com.brockw.stickwar.singleplayer
          }
          this.attackMoveGroupTo(this.team.game.map.width / 2);
       }
-
+      
       private function executeShadowrathTrapStrategy(game:StickWar, screen:CampaignGameScreen, hiddenCount:int) : void
       {
-         var movePos:Number = NaN;
+         var movePos:Number = Number(NaN);
          if(this.shadowrathFullRevealUsed)
          {
             this.shadowrathStrategyDirty = true;
@@ -722,7 +726,7 @@ package com.brockw.stickwar.singleplayer
          }
          this.attackMoveGroupTo(this.team.game.map.width / 2);
       }
-
+      
       private function executeShadowrathFullPush(game:StickWar, screen:CampaignGameScreen) : void
       {
          if(!this.shadowrathStrategyRevealDone)
@@ -732,17 +736,17 @@ package com.brockw.stickwar.singleplayer
          }
          this.attackMoveGroupTo(this.team.game.map.width / 2);
       }
-
+      
       private function shouldShadowrathFullPush(hiddenCount:int) : Boolean
       {
          return this.team.attackingForcePopulation >= this.team.enemyTeam.attackingForcePopulation + SHADOWRATH_FULL_PUSH_ADVANTAGE_MARGIN || this.shadowrathPartialRevealUsed && hiddenCount <= 2;
       }
-
+      
       private function shouldShadowrathMidPressure(hiddenCount:int) : Boolean
       {
          return !this.enemyAtMiddle() && !this.enemyIsAttacking() && this.team.attackingForcePopulation >= this.team.enemyTeam.attackingForcePopulation + SHADOWRATH_MID_PRESSURE_ADVANTAGE_MARGIN && hiddenCount >= SHADOWRATH_MID_PRESSURE_REVEAL_COUNT;
       }
-
+      
       private function updateShadowrathStrategyDirtyState(hiddenCount:int) : void
       {
          if(this.shadowrathLastHiddenCount != hiddenCount)

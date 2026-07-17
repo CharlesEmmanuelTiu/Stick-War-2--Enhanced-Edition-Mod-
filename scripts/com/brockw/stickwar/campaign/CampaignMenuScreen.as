@@ -9,14 +9,13 @@ package com.brockw.stickwar.campaign
    import flash.events.Event;
    import flash.events.IOErrorEvent;
    import flash.events.MouseEvent;
-   import flash.net.URLLoader;
-   import flash.net.URLLoaderDataFormat;
-   import flash.net.URLRequest;
-   import flash.net.navigateToURL;
    import flash.events.SecurityErrorEvent;
    import flash.media.Sound;
    import flash.media.SoundChannel;
    import flash.media.SoundTransform;
+   import flash.net.URLLoader;
+   import flash.net.URLRequest;
+   import flash.net.navigateToURL;
    import flash.system.Security;
    import flash.utils.Dictionary;
    import flash.utils.getDefinitionByName;
@@ -40,15 +39,15 @@ package com.brockw.stickwar.campaign
       private static const SCREEN_HEIGHT:int = 700;
       
       private static const SCREEN_WIDTH:int = 850;
-
+      
       private static const INTRO_VIDEO_LINKAGE:String = "IntroVideoMc";
-
+      
       private static const INTRO_AUDIO_LINKAGE:String = "StickWar_2_Intro_Audio";
-
+      
       private static const INTRO_VIDEO_WIDTH:int = 640;
-
+      
       private static const INTRO_VIDEO_HEIGHT:int = 360;
-
+      
       private var isFirst:Boolean;
       
       private var mc:campaignMenuMc;
@@ -76,11 +75,11 @@ package com.brockw.stickwar.campaign
       private var timeSinceTriedToStartYoutube:Number;
       
       private var hasInitStickpageLink:Boolean;
-
+      
       private var introVideo:MovieClip;
-
+      
       private var introVideoFailed:Boolean;
-
+      
       private var introAudioChannel:SoundChannel;
       
       public function CampaignMenuScreen(main:BaseMain)
@@ -123,11 +122,11 @@ package com.brockw.stickwar.campaign
             addChild(this.youtubeLoader);
          }
       }
-
+      
       private function handleIntroLinkLoadFailure(e:IOErrorEvent) : void
       {
       }
-
+      
       private function handleIntroLinkSecurityFailure(e:SecurityErrorEvent) : void
       {
       }
@@ -169,7 +168,7 @@ package com.brockw.stickwar.campaign
          this.timeSinceTriedToStartYoutube = getTimer();
          this.startIntroVideo();
       }
-
+      
       private function startIntroVideo() : void
       {
          var introClass:Class = null;
@@ -179,10 +178,10 @@ package com.brockw.stickwar.campaign
          this.introVideoFailed = false;
          try
          {
-            introClass = Class(getDefinitionByName(INTRO_VIDEO_LINKAGE));
-            introAudioClass = Class(getDefinitionByName(INTRO_AUDIO_LINKAGE));
-            introAudio = Sound(new introAudioClass());
-            this.introVideo = MovieClip(new introClass());
+            introClass = getDefinitionByName(INTRO_VIDEO_LINKAGE);
+            introAudioClass = getDefinitionByName(INTRO_AUDIO_LINKAGE);
+            introAudio = new introAudioClass();
+            this.introVideo = new introClass();
             this.positionIntroVideo();
             this.introVideo.gotoAndPlay(1);
             addChild(this.introVideo);
@@ -197,7 +196,7 @@ package com.brockw.stickwar.campaign
             this.introVideoFailed = true;
          }
       }
-
+      
       private function stopIntroVideo() : void
       {
          if(this.introVideo != null)
@@ -215,7 +214,7 @@ package com.brockw.stickwar.campaign
             this.introAudioChannel = null;
          }
       }
-
+      
       private function positionIntroVideo() : void
       {
          if(this.introVideo == null)
@@ -225,7 +224,7 @@ package com.brockw.stickwar.campaign
          this.introVideo.x = SCREEN_WIDTH / 2 - INTRO_VIDEO_WIDTH / 2;
          this.introVideo.y = SCREEN_HEIGHT / 2 - INTRO_VIDEO_HEIGHT / 2;
       }
-
+      
       private function stickpageLink(e:Event) : void
       {
          var url:URLRequest = new URLRequest("https://github.com/ChorlsChu/Stick-War-2--Enhanced-Edition-Mod-");
@@ -241,7 +240,7 @@ package com.brockw.stickwar.campaign
          var panel:MovieClip = null;
          var buttonArray:Array = null;
          var mc:MovieClip = null;
-         var delay:Number = NaN;
+         var delay:Number = Number(NaN);
          var func:Function = null;
          if(stage == null)
          {
@@ -250,9 +249,9 @@ package com.brockw.stickwar.campaign
          this.mc.introBrokenMc.visible = false;
          if(Boolean(this.mc.stickpageLink))
          {
-            MovieClip(this.mc.stickpageLink).buttonMode = true;
+            this.mc.stickpageLink.buttonMode = true;
             this.hasInitStickpageLink = true;
-            MovieClip(this.mc.stickpageLink).addEventListener(MouseEvent.CLICK,this.stickpageLink,false,0,true);
+            this.mc.stickpageLink.addEventListener(MouseEvent.CLICK,this.stickpageLink,false,0,true);
          }
          if(this.main.soundManager.isMusic)
          {
@@ -324,7 +323,7 @@ package com.brockw.stickwar.campaign
             this.mc.creditsButton.visible = false;
             if(this.mc.fade != null)
             {
-               if(this.mc.fade.currentFrame == MovieClip(this.mc.fade).totalFrames)
+               if(this.mc.fade.currentFrame == this.mc.fade.totalFrames)
                {
                   this.switchToMainMenu();
                }
@@ -491,7 +490,8 @@ package com.brockw.stickwar.campaign
          {
             return;
          }
-         for(var i:int = 48; i <= 57; i++)
+         var i:int = 48;
+         while(i <= 57)
          {
             if(this.keyboard.isDown(i))
             {
@@ -506,6 +506,7 @@ package com.brockw.stickwar.campaign
                   this.main.campaign.campaignPoints = i - 48;
                }
             }
+            i++;
          }
       }
       
@@ -590,7 +591,7 @@ package com.brockw.stickwar.campaign
          this.mc.introBrokenMc.removeEventListener(MouseEvent.CLICK,this.openIntroLink);
          if(this.hasInitStickpageLink)
          {
-            MovieClip(this.mc.stickpageLink).addEventListener(MouseEvent.CLICK,this.stickpageLink,false,0,true);
+            this.mc.stickpageLink.addEventListener(MouseEvent.CLICK,this.stickpageLink,false,0,true);
          }
       }
       
