@@ -911,7 +911,7 @@
 <mana>200</mana>
 <effect>1</effect>
 <time>900</time>
-<tip>Shade activates a powerful mana-fueled cloak that chains into another cloak on successful hit.</tip>
+<tip>Noctis activates a powerful mana-fueled cloak that chains into another cloak on successful hit.</tip>
 </cloak3>
 
 <ninjaCriticalStrike>
@@ -1110,7 +1110,7 @@
 <mana>100</mana>
 <effect>1</effect>
 <time>600</time>
-<tip>Shade creates 2 shadow clones that attack and surround enemy targets.</tip>
+<tip>Noctis creates 2 shadow clones that attack and surround enemy targets.</tip>
 </shadowClone>
 
 <monkRevive>
@@ -1127,7 +1127,7 @@
 <mana>100</mana>
 <effect>1</effect>
 <time>400</time>
-<tip>Magis' Meteor spell now creates a chain of 3 meteors.</tip>
+<tip>Arkanos' Meteor spell now creates a chain of 3 meteors.</tip>
 </magikillNuke2>
 
 <magikillLightningStun>
@@ -1136,7 +1136,7 @@
 <mana>100</mana>
 <effect>1</effect>
 <time>800</time>
-<tip>Magis' Electric Wall now stuns enemies when hit.</tip>
+<tip>Arkanos' Electric Wall now stuns enemies when hit.</tip>
 </magikillLightningStun>
 
 <magikillSummonUpgrade>
@@ -1145,7 +1145,7 @@
 <mana>150</mana>
 <effect>1</effect>
 <time>1500</time>
-<tip>Upgrades Magis' summoning: Shadowrath replaces Swordwrath minions, spawn 2 archers in one cast.</tip>
+<tip>Upgrades Arkanos' summoning: Shadowrath replaces Swordwrath minions, spawn 2 archers in one cast.</tip>
 </magikillSummonUpgrade>
 
 </Tech>
@@ -1359,7 +1359,7 @@
 </ninja>
 
 <shade>
-<name>Shade</name>
+<name>Noctis</name>
 <info>Strikes unseen with chaining cloak attacks while commanding clones to overwhelm her prey.</info>
 <gold>750</gold>
 <mana>300</mana>
@@ -1438,7 +1438,7 @@
 
 <summon>
 <name>Summon</name>
-<info>Magis summons allied units to fight alongside with no population cost.</info>
+<info>Arkanos summons allied units to fight alongside with no population cost.</info>
 <hotkey>81</hotkey>
 <gold>0</gold>
 <mana>0</mana>
@@ -1450,7 +1450,7 @@
 </magikill>
 
 <magis>
-<name>Magis</name>
+<name>Arkanos</name>
 <info>Summons loyal minions, calls down meteor barrages, and cripples enemies with powerful lightning magic.</info>
 <gold>800</gold>
 <mana>800</mana>
