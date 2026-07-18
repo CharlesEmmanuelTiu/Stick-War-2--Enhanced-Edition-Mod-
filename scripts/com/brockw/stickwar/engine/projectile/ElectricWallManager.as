@@ -199,22 +199,25 @@ package com.brockw.stickwar.engine.projectile
             var j:int = 0;
             while(j < gridBucket.length)
             {
-               var unit:Unit = gridBucket[j];
-               if(unit.team != bucket.team || bucket.controlledFriendlyFire)
-               {
-                  if(!bucket.controlledFriendlyFire || !isInflictor(unit,bucket.inflictors) && !unit.isBossUnit && unit.type != Unit.U_STATUE)
-                  {
-                     if(Math.abs(unit.px - bucket.px) < bucket.wallArea)
-                     {
-                        if(unit.stunTimeLeft < remainingFrames)
-                        {
-                           unit.damage(Unit.D_NO_SOUND | Unit.D_NO_BLOOD,bucket.totalDamage,null);
-                           unit.stun(remainingFrames);
-                        }
-                     }
-                  }
-               }
-               j++;
+                var unit:Unit = gridBucket[j];
+                if(unit.type != Unit.U_WALL && unit.type != Unit.U_CHAOS_TOWER && unit.type != Unit.U_STATUE)
+                {
+                   if(unit.team != bucket.team || bucket.controlledFriendlyFire)
+                   {
+                      if(!bucket.controlledFriendlyFire || !isInflictor(unit,bucket.inflictors) && !unit.isBossUnit)
+                      {
+                         if(Math.abs(unit.px - bucket.px) < bucket.wallArea)
+                         {
+                            if(unit.stunTimeLeft < remainingFrames)
+                            {
+                               unit.damage(Unit.D_NO_SOUND | Unit.D_NO_BLOOD,bucket.totalDamage,null);
+                               unit.stun(remainingFrames);
+                            }
+                         }
+                      }
+                   }
+                }
+                j++;
             }
             b++;
          }
@@ -249,11 +252,27 @@ package com.brockw.stickwar.engine.projectile
          {
             addToGrid(unit);
          }
-         for each(unit in game.teamB.units)
-         {
-            addToGrid(unit);
-         }
-      }
+          for each(unit in game.teamB.units)
+          {
+             addToGrid(unit);
+          }
+          if(game.teamA.statue != null)
+          {
+             addToGrid(game.teamA.statue);
+          }
+          if(game.teamB.statue != null)
+          {
+             addToGrid(game.teamB.statue);
+          }
+          for each(var w in game.teamA.walls)
+          {
+             addToGrid(w);
+          }
+          for each(w in game.teamB.walls)
+          {
+             addToGrid(w);
+          }
+       }
       
       private static function addToGrid(unit:Unit) : void
       {
