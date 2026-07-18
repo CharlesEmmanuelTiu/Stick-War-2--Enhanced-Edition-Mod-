@@ -8,6 +8,7 @@ package com.brockw.stickwar.campaign
    import com.brockw.stickwar.BaseMain;
    import com.brockw.stickwar.GameScreen;
    import com.brockw.stickwar.campaign.controllers.CampaignController;
+   import com.brockw.stickwar.campaign.controllers.CampaignCutScene2;
    import com.brockw.stickwar.engine.Ai.command.*;
    import com.brockw.stickwar.engine.Gold;
    import com.brockw.stickwar.engine.Ore;
@@ -512,7 +513,7 @@ package com.brockw.stickwar.campaign
          if(e.winner == team.id && !wasReplay)
          {
             main.campaign.campaignPoints += this.getCampaignPointReward(playedLevel);
-            if(main.campaign.currentLevel >= main.campaign.levels.length - 1)
+            if(playedLevel.controller == CampaignCutScene2 || main.campaign.currentLevel >= main.campaign.levels.length - 1)
             {
                main.campaign.currentLevel = main.campaign.levels.length;
             }

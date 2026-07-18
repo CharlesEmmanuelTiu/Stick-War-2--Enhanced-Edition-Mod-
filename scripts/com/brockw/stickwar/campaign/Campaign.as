@@ -56,27 +56,6 @@ package com.brockw.stickwar.campaign
          {
             this.levels.push(new Level(x));
          }
-         var deadHordeXml:XML = <level title="Ambush: Undead Horde" map="0" story="" controller="CampaignAmbush" points="2">
-              <player race="Order">
-                  <Castle>3</Castle>
-                  <unit>Swordwrath</unit>
-                  <unit>Archidon</unit>
-                  <unit>Spearton</unit>
-                  <unit>Ninja</unit>
-                  <unit>Monk</unit>
-                  <unit>Magikill</unit>
-              </player>
-              <oponent race="Chaos">
-                  <Castle>1</Castle>
-              </oponent>
-              <normal>0.4</normal>
-              <hard>0.6</hard>
-              <insane>0.8</insane>
-              <normalHealthScale>0.6</normalHealthScale>
-              <normalDamageScale>0.6</normalDamageScale>
-              <tip>The undead rise again! Defend against the shambling horde of corpses.</tip>
-          </level>;
-         this.levels.push(new Level(deadHordeXml));
          this.currentLevel = skipToLevel;
          this.campaignPoints = skipToLevel;
          this.initUpgradeTree();
@@ -323,10 +302,13 @@ package com.brockw.stickwar.campaign
          i = 0;
          for each(level in cookie.data.levels)
          {
-            l = this.levels[i];
-            l.retries = level["retries"];
-            l.totalTime = level["totalTime"];
-            l.bestTime = level["bestTime"];
+            if(i < this.levels.length)
+            {
+               l = this.levels[i];
+               l.retries = level["retries"];
+               l.totalTime = level["totalTime"];
+               l.bestTime = level["bestTime"];
+            }
             i++;
          }
          cookie.data.levels = this.levels;

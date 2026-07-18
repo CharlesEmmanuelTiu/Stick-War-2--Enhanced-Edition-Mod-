@@ -359,8 +359,7 @@ package com.brockw.stickwar.campaign
          var local:Point = this.mc.map.globalToLocal(new Point(stageX,stageY));
          var zone:Sprite = null;
          var levelNumber:int = -1;
-         var radius:Number = 14;
-         var radiusSq:Number = radius * radius;
+         var radiusSq:Number = 196;
          if(this.replayClickZones == null)
          {
             return -1;
@@ -382,8 +381,7 @@ package com.brockw.stickwar.campaign
       {
          var spot:Array = null;
          var zone:Sprite = null;
-         var radius:Number = 10;
-         var spots:Array = [[563,523,0],[538,358,1],[511,430,2],[283,470,3],[-231,416,4],[250,295,5],[123,190,6],[177,11,7],[267,-245,8],[-152,-421,9],[-322,-207,10],[-149,-53,11],[-36,38,12],[-13,114,13]];
+         var spots:Array = [[563,523,0],[587,443,1],[538,358,2],[511,430,3],[463,428,4],[283,470,5],[-231,416,6],[85,271,7],[250,295,8],[123,190,9],[177,11,10],[267,-245,11],[190,-350,12],[-152,-421,13],[-322,-207,14],[-149,-53,15],[-80,0,16],[-36,38,17],[-13,114,18]];
          this.clearReplayClickZones();
          this.replayClickZones = [];
          for each(spot in spots)
@@ -391,7 +389,7 @@ package com.brockw.stickwar.campaign
             zone = new Sprite();
             zone.name = "replayLevel" + (int(spot[2]) + 1);
             zone.graphics.beginFill(7798784,0.85);
-            zone.graphics.drawCircle(0,0,radius);
+            zone.graphics.drawCircle(0,0,10);
             zone.graphics.endFill();
             zone.x = Number(spot[0]);
             zone.y = Number(spot[1]);
@@ -801,8 +799,23 @@ package com.brockw.stickwar.campaign
       
       private function updateLevelDisplayText() : void
       {
-         var level:Level = this.main.campaign.isGameFinished() && this.selectedReplayLevel != -1 ? this.main.campaign.levels[this.selectedReplayLevel] : this.main.campaign.getCurrentLevel();
+         var level:Level = null;
          var levelText:String = null;
+         if(this.main.campaign.isGameFinished())
+         {
+            if(this.selectedReplayLevel == -1)
+            {
+               this.currentDisplayedLevelText = "Campaign Complete";
+               this.mc.text.text = "Click on Red circles to select and replay previous levels";
+               this.mc.title.text = "Campaign Complete";
+               return;
+            }
+            level = this.main.campaign.levels[this.selectedReplayLevel];
+         }
+         else
+         {
+            level = this.main.campaign.getCurrentLevel();
+         }
          if(level == null)
          {
             return;
