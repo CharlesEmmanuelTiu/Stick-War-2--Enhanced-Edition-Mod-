@@ -1812,10 +1812,10 @@ package com.brockw.stickwar.engine.Team
       
       private function isMilitaryFilter(unit:Unit, i:int, a:Array) : Boolean
       {
-         return (unit.type != Unit.U_MINER && unit.type != Unit.U_CHAOS_MINER || this.countsAsHiddenMilitary(unit)) && unit.isAlive();
-      }
-      
-      public function calculateStatistics() : void
+          return (unit.type != Unit.U_MINER && unit.type != Unit.U_CHAOS_MINER || this.countsAsHiddenMilitary(unit)) && unit.isAlive() && !unit.isGarrisoned;
+       }
+       
+       public function calculateStatistics() : void
       {
          var unit:Unit = null;
          var copyOfUnits:Array = null;
@@ -1824,9 +1824,9 @@ package com.brockw.stickwar.engine.Team
          var n:int = 0;
          for each(unit in this.units)
          {
-            if((unit.type != Unit.U_MINER && unit.type != Unit.U_CHAOS_MINER || this.countsAsHiddenMilitary(unit)) && unit.isAlive())
-            {
-               if(this.countsAsHiddenMilitary(unit))
+             if((unit.type != Unit.U_MINER && unit.type != Unit.U_CHAOS_MINER || this.countsAsHiddenMilitary(unit)) && unit.isAlive() && !unit.isGarrisoned)
+             {
+                if(this.countsAsHiddenMilitary(unit))
                {
                   n += 4;
                   this.averagePosition += unit.px * 4;
