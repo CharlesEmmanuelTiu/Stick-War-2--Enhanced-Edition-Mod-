@@ -2,6 +2,7 @@ package com.brockw.stickwar.engine.units
 {
    import com.brockw.game.Util;
    import com.brockw.stickwar.campaign.CampaignGameScreen;
+import com.brockw.stickwar.engine.multiplayer.CoopGameScreen;
    import com.brockw.stickwar.campaign.controllers.CampaignCutScene2;
    import com.brockw.stickwar.engine.ActionInterface;
    import com.brockw.stickwar.engine.Ai.UnitAi;
@@ -181,6 +182,8 @@ package com.brockw.stickwar.engine.units
       protected var _isDieing:Boolean;
       
       protected var _isDead:Boolean;
+      
+      public var teammateSelected:Boolean;
       
       private var _timeOfDeath:Number;
       
@@ -577,15 +580,19 @@ package com.brockw.stickwar.engine.units
          return this.stunTimeLeft > 0;
       }
       
-      override public function drawOnHud(canvas:MovieClip, game:StickWar) : void
-      {
-         var x:Number = canvas.width * px / game.map.width;
-         var y:Number = canvas.height * py / game.map.height;
-         if(this.isDead)
-         {
-            return;
-         }
-         if(this.team.isEnemy)
+       override public function drawOnHud(canvas:MovieClip, game:StickWar) : void
+       {
+          var x:Number = canvas.width * px / game.map.width;
+          var y:Number = canvas.height * py / game.map.height;
+          if(this.isDead)
+          {
+             return;
+          }
+          if(this.team.isEnemy && game.gameScreen is CoopGameScreen)
+          {
+             return;
+          }
+          if(this.team.isEnemy)
          {
             canvas.graphics.lineStyle(2,16711680,1);
          }
@@ -1103,9 +1110,10 @@ package com.brockw.stickwar.engine.units
          ++this._timeOfDeath;
          this.healthBar.health = this.health;
          this.healthBar.update();
-         if((this.isDead || this.isDieing) && !this.isDualing)
-         {
-            selected = false;
+          if((this.isDead || this.isDieing) && !this.isDualing)
+          {
+             selected = false;
+             teammateSelected = false;
             if(Boolean(this.mc.mc))
             {
                this.mc.mc.filters = [];
@@ -1126,14 +1134,19 @@ package com.brockw.stickwar.engine.units
             {
                this.drawSelected(65280,1);
             }
-            else if(selected && !this.isTowerSpawned && this.isAlive())
-            {
-               this.drawSelected(16777215,1);
-            }
-            else
-            {
-               this.removedSelected();
-            }
+             else if(selected && !this.isTowerSpawned && this.isAlive())
+             {
+                this.drawSelected(16777215,1);
+             }
+             else if(teammateSelected && this.isAlive())
+             {
+                this.drawSelected(255,1);
+             }
+             else
+             {
+                teammateSelected = false;
+                this.removedSelected();
+             }
             if(this.shadowSprite != null)
             {
                this.shadowSprite.scaleX = this._mc.scaleX;

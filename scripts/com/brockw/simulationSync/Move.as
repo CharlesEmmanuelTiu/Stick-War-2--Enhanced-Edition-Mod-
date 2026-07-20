@@ -30,14 +30,18 @@ package com.brockw.simulationSync
          this._turn = turn;
       }
       
-      public function compare(other:Object) : int
-      {
-         if(this.frame == other.frame)
-         {
-            return this.owner - other.owner;
-         }
-         return this.frame - other.frame;
-      }
+       public function compare(other:Object) : int
+       {
+          if(this.frame == other.frame)
+          {
+             if(this.owner == other.owner)
+             {
+                return this.position - other.position;
+             }
+             return this.owner - other.owner;
+          }
+          return this.frame - other.frame;
+       }
       
       public function readFromSFSObject(o:SFSObject) : void
       {

@@ -13,6 +13,7 @@ package com.brockw.stickwar.campaign
    import flash.media.Sound;
    import flash.media.SoundChannel;
    import flash.media.SoundTransform;
+   import flash.text.TextField;
    import flash.net.URLLoader;
    import flash.net.URLRequest;
    import flash.net.navigateToURL;
@@ -20,6 +21,11 @@ package com.brockw.stickwar.campaign
    import flash.utils.Dictionary;
    import flash.utils.getDefinitionByName;
    import flash.utils.getTimer;
+   import flash.utils.setInterval;
+   import flash.utils.clearInterval;
+   import com.brockw.stickwar.engine.multiplayer.CoopGameScreen;
+import com.brockw.stickwar.engine.multiplayer.HostSessionScreen;
+import com.brockw.stickwar.engine.multiplayer.LanSocket;
    
    public class CampaignMenuScreen extends Screen
    {
@@ -47,6 +53,19 @@ package com.brockw.stickwar.campaign
       private static const INTRO_VIDEO_WIDTH:int = 640;
       
       private static const INTRO_VIDEO_HEIGHT:int = 360;
+      
+      public static var coopMode:Boolean = false;
+      public static var coopLanSocket:LanSocket = null;
+      public static var coopDifficulty:int = 0;
+      public static var coopGameSeed:int = 0;
+      
+      private var coopMyIntroDone:Boolean;
+      private var coopPeerIntroDone:Boolean;
+      private var coopSavedOnMessage:Function;
+      private var coopSavedOnClose:Function;
+      private var coopPingInterval:int;
+      private var coopDebugText:TextField;
+      private var coopLastMsg:String;
       
       private var isFirst:Boolean;
       
@@ -246,6 +265,37 @@ package com.brockw.stickwar.campaign
          {
             return;
          }
+             if(coopMode && coopMyIntroDone && coopPeerIntroDone)
+             {
+                if(this.mc.playerPending != null) this.mc.playerPending.visible = false;
+                clearInterval(coopPingInterval);
+             if(coopDebugText != null && contains(coopDebugText))
+             {
+                removeChild(coopDebugText);
+                coopDebugText = null;
+             }
+             coopMode = false;
+             CoopGameScreen.lanSocket = coopLanSocket;
+             CoopGameScreen.gameSeed = coopGameSeed;
+             CoopGameScreen.isHost = HostSessionScreen.role == "host";
+             this.main.showScreen("coopGameScreen", false, true);
+             return;
+          }
+            if(coopMode && coopDebugText != null)
+            {
+               if(coopLanSocket != null)
+               {
+                  coopDebugText.text = "COOP myDone=" + coopMyIntroDone + " peerDone=" + coopPeerIntroDone + " conn=" + coopLanSocket.connected + " last=" + coopLastMsg;
+               }
+               else
+               {
+                  coopDebugText.text = "COOP myDone=" + coopMyIntroDone + " peerDone=" + coopPeerIntroDone + " conn=null last=" + coopLastMsg;
+               }
+               if(contains(coopDebugText))
+               {
+                  setChildIndex(coopDebugText, numChildren - 1);
+               }
+            }
          this.mc.introBrokenMc.visible = false;
          if(Boolean(this.mc.stickpageLink))
          {
@@ -476,12 +526,53 @@ package com.brockw.stickwar.campaign
          this.mc.mainPanel.stickWarButton.addEventListener(MouseEvent.CLICK,this.stickWarButton);
          this.mc.introBrokenMc.addEventListener(MouseEvent.CLICK,this.openIntroLink);
          this.mc.creditsScreen.visible = false;
+          if(this.mc.playerPending != null) this.mc.playerPending.visible = false;
+          if(coopMode)
+         {
+             coopMyIntroDone = false;
+             coopPeerIntroDone = false;
+             coopLastMsg = "";
+            if(coopLanSocket != null)
+            {
+               coopSavedOnMessage = coopLanSocket.onMessage;
+               coopSavedOnClose = coopLanSocket.onClose;
+               coopLanSocket.onMessage = coopOnMessage;
+               coopLanSocket.onClose = coopOnClose;
+               coopLanSocket.onError = coopOnError;
+               coopPingInterval = setInterval(function():void
+               {
+                  if(coopLanSocket != null) coopLanSocket.send("PING");
+               }, 10000);
+                coopLanSocket.send("PING");
+                coopDebugText = new TextField();
+                 coopDebugText.textColor = 0x00FF00;
+                 coopDebugText.background = true;
+                 coopDebugText.backgroundColor = 0xCC000000;
+                 coopDebugText.width = 600;
+               coopDebugText.height = 80;
+               coopDebugText.x = 20;
+                coopDebugText.y = 570;
+               coopDebugText.mouseEnabled = false;
+               coopDebugText.text = "COOP: myDone=" + coopMyIntroDone + " peerDone=" + coopPeerIntroDone + " connected=" + coopLanSocket.connected;
+               addChild(coopDebugText);
+            }
+            this.main.campaign.setDifficulty(coopDifficulty);
+            this.switchToIntro();
+            return;
+         }
       }
       
       private function skipButton() : void
       {
-         this.stopIntroVideo();
-         this.main.showScreen("campaignMap",false,true);
+          this.stopIntroVideo();
+          if(coopMode && coopLanSocket != null)
+          {
+             if(this.mc.playerPending != null) this.mc.playerPending.visible = true;
+             coopMyIntroDone = true;
+             coopLanSocket.send("DATA|COOP_INTRO_DONE");
+             return;
+          }
+          this.main.showScreen("campaignMap",false,true);
       }
       
       private function checkCheatMode() : *
@@ -508,6 +599,43 @@ package com.brockw.stickwar.campaign
             }
             i++;
          }
+      }
+      
+       private function coopOnMessage(line:String):void
+       {
+          coopLastMsg = line;
+          if(line == "COOP_INTRO_DONE")
+          {
+             coopPeerIntroDone = true;
+             return;
+          }
+          if(line == "CLIENT_DISCONNECTED" || line == "HOST_DISCONNECTED")
+         {
+            if(coopLanSocket != null)
+            {
+               coopLanSocket.send("DISCONNECT");
+               coopLanSocket.close();
+               coopLanSocket = null;
+            }
+            coopMode = false;
+            this.main.showScreen("coopScreen", false, true);
+            return;
+         }
+      }
+      
+      private function coopOnClose():void
+      {
+         if(coopLanSocket != null)
+         {
+            coopLanSocket.onMessage = coopSavedOnMessage;
+            coopLanSocket.onClose = coopSavedOnClose;
+         }
+         coopMode = false;
+         this.main.showScreen("coopScreen", false, true);
+      }
+      
+      private function coopOnError(msg:String):void
+      {
       }
       
       private function normalButton() : void
@@ -554,12 +682,7 @@ package com.brockw.stickwar.campaign
       
       private function stickWarButton(e:Event) : void
       {
-         var url:URLRequest = new URLRequest("https://www.youtube.com/watch?v=04q4UsWZWG8");
-         navigateToURL(url,"_blank");
-         if(this.main.tracker != null)
-         {
-            this.main.tracker.trackEvent("link","https://www.youtube.com/watch?v=04q4UsWZWG8");
-         }
+         this.main.showScreen("coopScreen",false,true);
       }
       
       private function openIntroLink(e:Event) : void
@@ -574,6 +697,18 @@ package com.brockw.stickwar.campaign
       
       override public function leave() : void
       {
+         clearInterval(coopPingInterval);
+         if(coopDebugText != null && contains(coopDebugText))
+         {
+            removeChild(coopDebugText);
+            coopDebugText = null;
+         }
+         if(coopMode && coopLanSocket != null)
+         {
+            coopLanSocket.onMessage = coopSavedOnMessage;
+            coopLanSocket.onClose = coopSavedOnClose;
+            coopLanSocket.onError = null;
+         }
          this.mc.musicToggle.removeEventListener(MouseEvent.CLICK,this.toggleMusic);
          removeEventListener(Event.ENTER_FRAME,this.update);
          this.mc.backButton.removeEventListener(MouseEvent.CLICK,this.backButton);

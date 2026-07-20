@@ -940,7 +940,7 @@ package com.brockw.stickwar.campaign
          game.teamA.unitsAvailable[Unit.U_ENSLAVED_GIANT] = 1;
       }
       
-      private function getCampaignPointReward(level:Level) : int
+      protected function getCampaignPointReward(level:Level) : int
       {
          if(level == null)
          {

@@ -32,8 +32,11 @@ package com.brockw.stickwar
          addScreen("postGame",postGameScreen);
          addScreen("campaignMap",new CampaignScreen(this));
          addScreen("campaignGameScreen",new CampaignGameScreen(this));
-         addScreen("campaignUpgradeScreen",new CampaignUpgradeScreen(this));
-         addScreen("summary",new EndOfGameSummary(this));
+          addScreen("campaignUpgradeScreen",new CampaignUpgradeScreen(this));
+           addScreen("coopScreen",new CoopScreen(this));
+            addScreen("hostSession",new HostSessionScreen(this));
+            addScreen("coopGameScreen",new CoopGameScreen(this));
+          addScreen("summary",new EndOfGameSummary(this));
          addScreen("mainMenu",this.campaignMenuScreen = new CampaignMenuScreen(this));
          this.campaign = new Campaign(0,0);
          this.addEventListener(Event.ADDED_TO_STAGE,this.addedToStage);
