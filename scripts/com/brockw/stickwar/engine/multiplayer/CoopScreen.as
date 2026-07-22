@@ -10,6 +10,7 @@ package com.brockw.stickwar.engine.multiplayer
     import flash.text.TextField;
     import flash.text.TextFieldType;
     import flash.text.TextFormat;
+    import flash.utils.getTimer;
     import flash.utils.setTimeout;
 
     public class CoopScreen extends Screen
@@ -29,6 +30,8 @@ package com.brockw.stickwar.engine.multiplayer
         private var inJoinPasswordMode: Boolean;
         private var debugText:TextField;
         private var debugBuffer:Array;
+        private var _lastSubnetScan:int;
+        private static const SUBNET_SCAN_INTERVAL:int = 30000;
 
         public function CoopScreen(main:BaseMain)
         {
@@ -204,6 +207,11 @@ package com.brockw.stickwar.engine.multiplayer
                 discovery.onSessionFound = onSessionFound;
                 discovery.onSessionLost = onSessionLost;
                 discovery.start("127.0.0.1", 9333);
+                _lastSubnetScan = getTimer();
+                setTimeout(function():void
+                {
+                    if (discovery != null) discovery.scanSubnets();
+                }, 1000);
             }
         }
 
@@ -229,7 +237,15 @@ package com.brockw.stickwar.engine.multiplayer
 
         private function update(evt:Event) : void
         {
-            if (discovery != null) discovery.tick();
+            if (discovery != null)
+            {
+                discovery.tick();
+                if (getTimer() - _lastSubnetScan >= SUBNET_SCAN_INTERVAL)
+                {
+                    _lastSubnetScan = getTimer();
+                    discovery.scanSubnets();
+                }
+            }
             this.updateLobbyCards();
             this.mc.scrollPane.update();
             this.isMouseDown = false;

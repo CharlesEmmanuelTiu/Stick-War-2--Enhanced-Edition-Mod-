@@ -24,6 +24,7 @@ package com.brockw.stickwar.engine.multiplayer
         private var lanSocket:LanSocket;
         private var debugText:TextField;
         private var debugIntervalId:int;
+        private var _pingIntervalId:int;
 
         public function HostSessionScreen(main:BaseMain)
         {
@@ -71,6 +72,13 @@ package com.brockw.stickwar.engine.multiplayer
             mc.addChild(debugText);
 
             debugIntervalId = setInterval(updateDebug, 1000);
+            _pingIntervalId = setInterval(function():void
+            {
+                if (lanSocket != null && lanSocket.connected)
+                {
+                    lanSocket.send("PING");
+                }
+            }, 10000);
 
             lanSocket = sourceSocket;
             lanSocket.onMessage = onMessage;
@@ -80,6 +88,11 @@ package com.brockw.stickwar.engine.multiplayer
 
         override public function leave():void
         {
+            if (_pingIntervalId != 0)
+            {
+                clearInterval(_pingIntervalId);
+                _pingIntervalId = 0;
+            }
             if (debugIntervalId != 0)
             {
                 clearInterval(debugIntervalId);

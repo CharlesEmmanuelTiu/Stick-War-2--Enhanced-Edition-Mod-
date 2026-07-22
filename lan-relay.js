@@ -4,7 +4,7 @@ const os = require("os");
 
 const TCP_PORT = 9333;
 const UDP_PORT = 9334;
-const REMOTE_TIMEOUT = 6000;
+const REMOTE_TIMEOUT = 30000;
 
 let nextSequential = 1;
 const lobbies = new Map();
@@ -283,12 +283,8 @@ const server = net.createServer((socket) => {
       const proxySocket = new net.Socket();
       let proxyBuffer = "";
       let proxyJoined = false;
-      function proxyCleanup() {
-        if (heartbeatTimer) clearTimeout(heartbeatTimer);
-        if (!socket.destroyed) socket.destroy();
-        if (!proxySocket.destroyed) proxySocket.destroy();
-      }
       function enterPipeMode() {
+        if (heartbeatTimer) clearTimeout(heartbeatTimer);
         socket.removeAllListeners("data");
         socket.on("data", (c) => {
           resetHeartbeat();
@@ -299,6 +295,12 @@ const server = net.createServer((socket) => {
         proxySocket.on("close", () => { if (!socket.destroyed) socket.destroy(); });
         socket.on("error", () => {});
         proxySocket.on("error", () => {});
+      }
+      function failProxy(msg) {
+        if (heartbeatTimer) clearTimeout(heartbeatTimer);
+        if (socket.writable) socket.end("JOIN_FAILED|" + msg + "\n");
+        else if (!socket.destroyed) socket.destroy();
+        if (!proxySocket.destroyed) proxySocket.destroy();
       }
       proxySocket.connect(TCP_PORT, targetIp, () => {
         proxySocket.write("JOIN|" + targetId + "|" + joinPw + "\n");
@@ -316,18 +318,16 @@ const server = net.createServer((socket) => {
             send(socket, "JOINED");
             enterPipeMode();
           } else if (line.indexOf("JOIN_FAILED") === 0) {
-            send(socket, line);
-            proxyCleanup();
+            proxyJoined = true;
+            failProxy(line.substring(11));
           }
         }
       });
       proxySocket.on("close", () => {
-        if (!proxyJoined && !socket.destroyed) send(socket, "JOIN_FAILED|Connection to host failed");
-        proxyCleanup();
+        if (!proxyJoined) failProxy("Connection to host failed");
       });
       proxySocket.on("error", (err) => {
-        if (!proxyJoined && !socket.destroyed) send(socket, "JOIN_FAILED|" + err.message);
-        proxyCleanup();
+        if (!proxyJoined) failProxy(err.message);
       });
       return;
     }
