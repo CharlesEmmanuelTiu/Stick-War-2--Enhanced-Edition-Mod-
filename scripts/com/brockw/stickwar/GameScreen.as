@@ -7,8 +7,11 @@ package com.brockw.stickwar
    import com.brockw.stickwar.engine.Team.Team;
    import com.brockw.stickwar.engine.UserInterface;
    import com.brockw.stickwar.engine.multiplayer.moves.ScreenPositionUpdateMove;
+   import flash.display.StageAlign;
+   import flash.display.StageScaleMode;
    import flash.events.Event;
    import flash.events.TimerEvent;
+   import flash.geom.Rectangle;
    import flash.ui.Mouse;
    import flash.utils.Timer;
    import flash.utils.getTimer;
@@ -148,8 +151,11 @@ package com.brockw.stickwar
          this._hasEffects = true;
          this._hasAlphaOnFogOfWar = true;
          this._hasScreenReduction = true;
-         this.isFastForward = false;
-      }
+          this.isFastForward = false;
+          this.stage.scaleMode = StageScaleMode.SHOW_ALL;
+          this.stage.align = StageAlign.TOP;
+          this.scrollRect = new Rectangle(0, 0, 850, 700);
+       }
       
       public function u(evt:Event) : void
       {
@@ -401,8 +407,9 @@ package com.brockw.stickwar
          {
             this.removeChildAt(0);
          }
-         this.gameTimer = null;
-         this.stage.quality = "HIGH";
+          this.scrollRect = null;
+          this.gameTimer = null;
+          this.stage.quality = "HIGH";
       }
       
       public function get game() : StickWar
