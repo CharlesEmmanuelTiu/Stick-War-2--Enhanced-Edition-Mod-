@@ -28,6 +28,7 @@ package com.brockw.stickwar.engine.multiplayer
         private var originalHostOverlayHeight: Number;
         private var inJoinPasswordMode: Boolean;
         private var debugText:TextField;
+        private var debugBuffer:Array;
 
         public function CoopScreen(main:BaseMain)
         {
@@ -156,16 +157,19 @@ package com.brockw.stickwar.engine.multiplayer
 
         private function setupDebugText() : void
         {
+            debugBuffer = [];
             debugText = new TextField();
             debugText.textColor = 0x00FF00;
             debugText.background = true;
             debugText.backgroundColor = 0xCC000000;
             debugText.width = 400;
-            debugText.height = 24;
+            debugText.height = 300;
+            debugText.multiline = true;
+            debugText.wordWrap = true;
             debugText.mouseEnabled = false;
             debugText.visible = false;
             debugText.x = 20;
-            debugText.y = 670;
+            debugText.y = 400;
             mc.addChild(debugText);
         }
 
@@ -174,7 +178,9 @@ package com.brockw.stickwar.engine.multiplayer
             if (debugText != null)
             {
                 debugText.visible = true;
-                debugText.text = "[DEBUG] " + msg;
+                debugBuffer.push("[DEBUG] " + msg);
+                if (debugBuffer.length > 20) debugBuffer.shift();
+                debugText.text = debugBuffer.join("\n");
             }
         }
 
@@ -340,7 +346,7 @@ package com.brockw.stickwar.engine.multiplayer
 
             lanSocket.onConnect = function():void
             {
-                lanSocket.send("JOIN|" + session.id + "|" + password);
+                lanSocket.send("PROXY_JOIN|" + session.id + "|" + password);
             };
 
             lanSocket.onMessage = function(line:String):void
@@ -374,9 +380,10 @@ package com.brockw.stickwar.engine.multiplayer
             {
                 mc.connecting.visible = false;
                 mc.connecting.stop();
+                setDebug("Connect error: " + msg);
             };
 
-            lanSocket.connect(session.hostIp, 9333);
+            lanSocket.connect("127.0.0.1", 9333);
         }
 
         private function onMouseDown(evt:Event) : void
@@ -392,6 +399,11 @@ package com.brockw.stickwar.engine.multiplayer
         private function onRefresh(evt:Event) : void
         {
             this.scanForLobbies();
+            if (discovery != null)
+            {
+                setDebug("Scanning subnets for remote sessions...");
+                discovery.scanSubnets();
+            }
         }
 
         private function onHost(evt:Event) : void

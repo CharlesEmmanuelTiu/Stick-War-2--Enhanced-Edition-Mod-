@@ -1,6 +1,7 @@
 package com.brockw.stickwar.engine.Team
 {
    import com.brockw.stickwar.engine.StickWar;
+   import com.brockw.stickwar.engine.multiplayer.CoopGameScreen;
    import flash.display.*;
    import flash.events.*;
    
@@ -35,13 +36,16 @@ package com.brockw.stickwar.engine.Team
          var sx:Number = Number(NaN);
          var width:Number = this.hud.map.width;
          var height:Number = this.hud.map.height;
-         for(u in game.units)
-         {
-            if(Boolean(game.units[u].onMap(game)))
-            {
-               game.units[u].drawOnHud(this.hud.map,game);
-            }
-         }
+          if(!(game.gameScreen is CoopGameScreen))
+          {
+             for(u in game.units)
+             {
+                if(Boolean(game.units[u].onMap(game)))
+                {
+                   game.units[u].drawOnHud(this.hud.map,game);
+                }
+             }
+          }
          this.hud.map.graphics.lineStyle(0.5,0,1);
          this.hud.map.graphics.drawRect(width * game.screenX / game.map.width,0,width * game.map.screenWidth / game.map.width,height);
          if(game.fogOfWar.isFogOn)

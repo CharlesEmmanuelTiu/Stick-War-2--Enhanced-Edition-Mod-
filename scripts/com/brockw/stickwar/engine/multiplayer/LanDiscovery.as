@@ -107,6 +107,21 @@ package com.brockw.stickwar.engine.multiplayer
             }
         }
 
+        public function scanSubnets():void
+        {
+            if (_connected && socket != null)
+            {
+                var bytes:ByteArray = new ByteArray();
+                bytes.writeUTFBytes("SCAN_SUBNET\n");
+                try
+                {
+                    socket.writeBytes(bytes, 0, bytes.length);
+                    socket.flush();
+                }
+                catch (e:Error) {}
+            }
+        }
+
         private function onConnected(event:Event):void
         {
             _connected = true;

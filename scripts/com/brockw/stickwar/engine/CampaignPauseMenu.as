@@ -1,6 +1,7 @@
 package com.brockw.stickwar.engine
 {
    import com.brockw.stickwar.GameScreen;
+   import com.brockw.stickwar.engine.multiplayer.CoopGameScreen;
    import com.brockw.stickwar.engine.multiplayer.moves.ForfeitMove;
    import com.brockw.stickwar.stickwar2;
    import flash.events.Event;
@@ -43,10 +44,21 @@ package com.brockw.stickwar.engine
             gameScreen.strictPause = false;
             return;
          }
-         if(gameScreen.main is stickwar2)
-         {
-            gameScreen.main.showScreen("mainMenu",true,true);
-         }
+          if(gameScreen is CoopGameScreen)
+          {
+             if(CoopGameScreen.lanSocket != null && CoopGameScreen.lanSocket.connected)
+             {
+                CoopGameScreen.lanSocket.send("DATA|COOP_QUIT");
+                CoopGameScreen.lanSocket.close();
+             }
+             CoopGameScreen.lanSocket = null;
+             gameScreen.cleanUp();
+             gameScreen.main.showScreen("campaignMap", true, true);
+          }
+          else if(gameScreen.main is stickwar2)
+          {
+             gameScreen.main.showScreen("mainMenu",true,true);
+          }
          else
          {
             f = new ForfeitMove();

@@ -2,7 +2,7 @@ package com.brockw.stickwar.engine.units
 {
    import com.brockw.game.Util;
    import com.brockw.stickwar.campaign.CampaignGameScreen;
-import com.brockw.stickwar.engine.multiplayer.CoopGameScreen;
+   import com.brockw.stickwar.engine.multiplayer.CoopGameScreen;
    import com.brockw.stickwar.campaign.controllers.CampaignCutScene2;
    import com.brockw.stickwar.engine.ActionInterface;
    import com.brockw.stickwar.engine.Ai.UnitAi;
@@ -588,10 +588,10 @@ import com.brockw.stickwar.engine.multiplayer.CoopGameScreen;
           {
              return;
           }
-          if(this.team.isEnemy && game.gameScreen is CoopGameScreen)
-          {
-             return;
-          }
+           if(this.team.isEnemy && game.gameScreen is CoopGameScreen)
+           {
+              return;
+           }
           if(this.team.isEnemy)
          {
             canvas.graphics.lineStyle(2,16711680,1);
@@ -1134,14 +1134,14 @@ import com.brockw.stickwar.engine.multiplayer.CoopGameScreen;
             {
                this.drawSelected(65280,1);
             }
-             else if(selected && !this.isTowerSpawned && this.isAlive())
-             {
-                this.drawSelected(16777215,1);
-             }
-             else if(teammateSelected && this.isAlive())
-             {
-                this.drawSelected(255,1);
-             }
+              else if(selected && !this.isTowerSpawned && this.isAlive())
+              {
+                 this.drawSelected(0xFFFFFF,1);
+              }
+              else if(teammateSelected && this.isAlive())
+              {
+                 this.drawSelected(0x0000FF,1);
+              }
              else
              {
                 teammateSelected = false;

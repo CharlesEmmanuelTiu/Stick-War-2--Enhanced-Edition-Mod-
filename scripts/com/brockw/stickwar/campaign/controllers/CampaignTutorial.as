@@ -989,13 +989,18 @@ package com.brockw.stickwar.campaign.controllers
          {
             if(!this.message.isMessageShowing() || Boolean(this.miniMessage) && !this.miniMessage.isMessageShowing())
             {
-               if(Boolean(this.arrow))
-               {
-                  this.arrow.visible = false;
-               }
-            }
-         }
+          if(Boolean(this.arrow))
+          {
+             this.arrow.visible = false;
+          }
+           }
+        }
+     }
+
+      public function isTutorialComplete():Boolean
+      {
+         return state == S_ALL_DONE || state == S_GOOD_LUCK_2 || (state >= S_PRESS_ATTACK_WAIT && state <= S_LAG);
       }
-   }
+  }
 }
 

@@ -699,25 +699,28 @@ package com.brockw.stickwar.engine
                {
                   if(magikillUnit is Magikill && magikillUnit.isBoss)
                   {
-                     var minions:Array = magikillUnit.getLivingBossSummonedUnits();
-                     for each(var minion in minions)
-                     {
-                        this.selectedUnits.add(minion);
-                        minion.selected = true;
-                     }
+                      var minions:Array = magikillUnit.getLivingBossSummonedUnits();
+                      for each(var minion in minions)
+                      {
+                         if(!minion.teammateSelected)
+                         {
+                            this.selectedUnits.add(minion);
+                            minion.selected = true;
+                         }
+                      }
                   }
                }
             }
             else
             {
-               for each(u in this.team.units)
-               {
-                  if(!u.isTowerSpawned && !u.isConfused() && u.type != Unit.U_MINER && u.type != Unit.U_CHAOS_MINER && !u.isDead && u.isGarrisoned == false && u.type != Unit.U_CHAOS_TOWER)
-                  {
-                     this.selectedUnits.add(u);
-                     u.selected = true;
-                  }
-               }
+                for each(u in this.team.units)
+                {
+                   if(!u.isTowerSpawned && !u.isConfused() && u.type != Unit.U_MINER && u.type != Unit.U_CHAOS_MINER && !u.isDead && u.isGarrisoned == false && u.type != Unit.U_CHAOS_TOWER && !u.teammateSelected)
+                   {
+                      this.selectedUnits.add(u);
+                      u.selected = true;
+                   }
+                }
             }
             if(getTimer() - this.spacePressTimer < 400 && this.team.forwardUnitNotSpawn != null)
             {
@@ -877,19 +880,19 @@ package com.brockw.stickwar.engine
                      wall.selected = false;
                   }
                }
-               candidate = this.gameScreen.game.mouseOverUnit;
-               if(candidate != null && candidate is Unit && candidate.team == this.team && !candidate.isConfused() && !(candidate is Statue) && !candidate.isBossSummoned)
-               {
-                  if(this.keyBoardState.isShift)
-                  {
-                     candidate.selected = true;
-                  }
-                  else
-                  {
-                     candidate.selected = true;
-                  }
-                  this.selectedUnits.add(candidate);
-               }
+                candidate = this.gameScreen.game.mouseOverUnit;
+                if(candidate != null && candidate is Unit && candidate.team == this.team && !candidate.isConfused() && !(candidate is Statue) && !candidate.isBossSummoned && !Unit(candidate).teammateSelected)
+                {
+                   if(this.keyBoardState.isShift)
+                   {
+                      candidate.selected = true;
+                   }
+                   else
+                   {
+                      candidate.selected = true;
+                   }
+                   this.selectedUnits.add(candidate);
+                }
             }
             if(this.mouseState.doubleClicked)
             {
@@ -909,14 +912,14 @@ package com.brockw.stickwar.engine
                      if(magikillUnit is Magikill && magikillUnit.isBoss)
                      {
                         minions = magikillUnit.getLivingBossSummonedUnits();
-                        for each(minion in minions)
-                        {
-                           if(minion.type == type || minion.selected && this.keyBoardState.isShift)
-                           {
-                              minion.selected = true;
-                              this.selectedUnits.add(minion);
-                           }
-                        }
+                         for each(minion in minions)
+                         {
+                            if((minion.type == type || minion.selected && this.keyBoardState.isShift) && !minion.teammateSelected)
+                            {
+                               minion.selected = true;
+                               this.selectedUnits.add(minion);
+                            }
+                         }
                      }
                   }
                }
@@ -926,18 +929,18 @@ package com.brockw.stickwar.engine
                   {
                      x = this.team.units[unit].x - this.gameScreen.game.screenX;
                      y = this.team.units[unit].y + this.gameScreen.game.battlefield.y;
-                     if(!this.team.units[unit].isConfused() && !this.team.units[unit].isBossSummoned && (this.team.units[unit].type == type || this.team.units[unit].selected && this.keyBoardState.isShift))
-                     {
-                        this.team.units[unit].selected = true;
-                     }
-                     else
-                     {
-                        this.team.units[unit].selected = false;
-                     }
-                     if(this.team.units[unit].selected)
-                     {
-                        this.selectedUnits.add(this.team.units[unit]);
-                     }
+                      if(!this.team.units[unit].isConfused() && !this.team.units[unit].isBossSummoned && (this.team.units[unit].type == type || this.team.units[unit].selected && this.keyBoardState.isShift) && !this.team.units[unit].teammateSelected)
+                      {
+                         this.team.units[unit].selected = true;
+                      }
+                      else
+                      {
+                         this.team.units[unit].selected = false;
+                      }
+                      if(this.team.units[unit].selected)
+                      {
+                         this.selectedUnits.add(this.team.units[unit]);
+                      }
                   }
                }
             }
@@ -953,14 +956,14 @@ package com.brockw.stickwar.engine
                   {
                      x = int(this.team.units[unit].x);
                      y = int(this.team.units[unit].y);
-                     if(this.keyBoardState.isShift)
-                     {
-                        this.team.units[unit].selected = !this.team.units[unit].isConfused() && !this.team.units[unit].isBossSummoned && (this.box.isInside(x,y,this.team.units[unit].mc.height / 2,20) || this.team.units[unit].selected || this.gameScreen.game.mouseOverUnit == this.team.units[unit]);
-                     }
-                     else
-                     {
-                        this.team.units[unit].selected = !this.team.units[unit].isConfused() && !this.team.units[unit].isBossSummoned && (this.box.isInside(x,y,this.team.units[unit].mc.height / 2,20) || this.gameScreen.game.mouseOverUnit == this.team.units[unit]);
-                     }
+                      if(this.keyBoardState.isShift)
+                      {
+                         this.team.units[unit].selected = !this.team.units[unit].isConfused() && !this.team.units[unit].isBossSummoned && !this.team.units[unit].teammateSelected && (this.box.isInside(x,y,this.team.units[unit].mc.height / 2,20) || this.team.units[unit].selected || this.gameScreen.game.mouseOverUnit == this.team.units[unit]);
+                      }
+                      else
+                      {
+                         this.team.units[unit].selected = !this.team.units[unit].isConfused() && !this.team.units[unit].isBossSummoned && !this.team.units[unit].teammateSelected && (this.box.isInside(x,y,this.team.units[unit].mc.height / 2,20) || this.gameScreen.game.mouseOverUnit == this.team.units[unit]);
+                      }
                      if(this.team.units[unit].selected)
                      {
                         this.selectedUnits.add(this.team.units[unit]);

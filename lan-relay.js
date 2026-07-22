@@ -1,5 +1,6 @@
 const net = require("net");
 const dgram = require("dgram");
+const os = require("os");
 
 const TCP_PORT = 9333;
 const UDP_PORT = 9334;
@@ -48,6 +49,21 @@ function getLobbyList() {
   }
   for (const key of expired) remoteSessions.delete(key);
   return "SESSIONS|" + entries.length + "|" + entries.join(";");
+}
+
+function getBroadcastAddresses() {
+  const broadcasts = [];
+  const interfaces = os.networkInterfaces();
+  for (const name in interfaces) {
+    for (const iface of interfaces[name]) {
+      if (iface.internal || iface.family !== "IPv4") continue;
+      const ipParts = iface.address.split(".").map(Number);
+      const maskParts = iface.netmask.split(".").map(Number);
+      const bc = ipParts.map((p, i) => p | (~maskParts[i] & 0xFF));
+      broadcasts.push(bc.join("."));
+    }
+  }
+  return broadcasts;
 }
 
 // --- UDP discovery ---
@@ -147,6 +163,8 @@ const server = net.createServer((socket) => {
     const parts = line.split("|");
     const cmd = parts[0];
 
+    if (socket._pipeMode) return;
+
     if (cmd === "PING") {
       send(socket, "PONG");
       return;
@@ -168,6 +186,11 @@ const server = net.createServer((socket) => {
       lobby.helloInterval = setInterval(() => {
         const msg = "HELLO|" + id + "|" + name + "|" + (password ? "1" : "0") + "|1";
         try { udp.send(msg, 0, msg.length, UDP_PORT, "255.255.255.255"); } catch (e) {}
+        const broadcasts = getBroadcastAddresses();
+        for (const addr of broadcasts) {
+          if (addr === "255.255.255.255") continue;
+          try { udp.send(msg, 0, msg.length, UDP_PORT, addr); } catch (e) {}
+        }
       }, 2000);
       lobbies.set(id, lobby);
       socket._state = "host";
@@ -180,6 +203,12 @@ const server = net.createServer((socket) => {
     if (cmd === "LIST") {
       log("CMD", "LIST");
       send(socket, getLobbyList());
+      return;
+    }
+
+    if (cmd === "SCAN_SUBNET") {
+      log("CMD", "SCAN_SUBNET");
+      scanSubnets(socket);
       return;
     }
 
@@ -229,6 +258,80 @@ const server = net.createServer((socket) => {
       return;
     }
 
+    if (cmd === "PROXY_JOIN") {
+      if (parts.length < 2) {
+        send(socket, "JOIN_FAILED|Missing lobby ID");
+        return;
+      }
+      const targetId = parts[1];
+      const joinPw = parts[2] || "";
+      let targetIp = null;
+      for (const [, rs] of remoteSessions) {
+        if (rs.id === targetId) { targetIp = rs.hostIp; break; }
+      }
+      for (const [, lobby] of lobbies) {
+        if (lobby.id === targetId && lobby.host && !lobby.host.destroyed && !lobby.client) {
+          targetIp = "127.0.0.1"; break;
+        }
+      }
+      if (!targetIp) {
+        send(socket, "JOIN_FAILED|Session not found");
+        return;
+      }
+      socket._pipeMode = true;
+      log("CMD", "PROXY_JOIN target=" + targetId + " at " + targetIp);
+      const proxySocket = new net.Socket();
+      let proxyBuffer = "";
+      let proxyJoined = false;
+      function proxyCleanup() {
+        if (heartbeatTimer) clearTimeout(heartbeatTimer);
+        if (!socket.destroyed) socket.destroy();
+        if (!proxySocket.destroyed) proxySocket.destroy();
+      }
+      function enterPipeMode() {
+        socket.removeAllListeners("data");
+        socket.on("data", (c) => {
+          resetHeartbeat();
+          if (!proxySocket.destroyed) proxySocket.write(c);
+        });
+        proxySocket.on("data", (c) => { if (!socket.destroyed) socket.write(c); });
+        socket.on("close", () => { if (!proxySocket.destroyed) proxySocket.destroy(); });
+        proxySocket.on("close", () => { if (!socket.destroyed) socket.destroy(); });
+        socket.on("error", () => {});
+        proxySocket.on("error", () => {});
+      }
+      proxySocket.connect(TCP_PORT, targetIp, () => {
+        proxySocket.write("JOIN|" + targetId + "|" + joinPw + "\n");
+      });
+      proxySocket.on("data", (chunk) => {
+        if (proxyJoined) return;
+        proxyBuffer += chunk.toString();
+        while (true) {
+          const idx = proxyBuffer.indexOf("\n");
+          if (idx === -1) break;
+          const line = proxyBuffer.substring(0, idx);
+          proxyBuffer = proxyBuffer.substring(idx + 1);
+          if (line === "JOINED") {
+            proxyJoined = true;
+            send(socket, "JOINED");
+            enterPipeMode();
+          } else if (line.indexOf("JOIN_FAILED") === 0) {
+            send(socket, line);
+            proxyCleanup();
+          }
+        }
+      });
+      proxySocket.on("close", () => {
+        if (!proxyJoined && !socket.destroyed) send(socket, "JOIN_FAILED|Connection to host failed");
+        proxyCleanup();
+      });
+      proxySocket.on("error", (err) => {
+        if (!proxyJoined && !socket.destroyed) send(socket, "JOIN_FAILED|" + err.message);
+        proxyCleanup();
+      });
+      return;
+    }
+
     if (cmd === "DISCONNECT") {
       log("CMD", "DISCONNECT lobby=" + socket._lobbyId);
       const peer = findPeer(socket);
@@ -261,6 +364,120 @@ const server = net.createServer((socket) => {
     send(socket, "ERROR|Unknown command");
   }
 });
+
+// --- Subnet TCP scan (for ZeroTier / remote LAN discovery) ---
+let _scanInProgress = false;
+const _scanQueue = [];
+
+function scanSubnets(requestingSocket) {
+  if (_scanInProgress) {
+    _scanQueue.push(requestingSocket);
+    return;
+  }
+  _scanInProgress = true;
+
+  const interfaces = os.networkInterfaces();
+  const targets = [];
+
+  for (const name in interfaces) {
+    for (const iface of interfaces[name]) {
+      if (iface.internal || iface.family !== "IPv4") continue;
+      const ipParts = iface.address.split(".").map(Number);
+      const maskParts = iface.netmask.split(".").map(Number);
+      const network = ipParts.map((p, i) => p & maskParts[i]);
+      for (let i = 1; i <= 254; i++) {
+        const ip = network[0] + "." + network[1] + "." + network[2] + "." + i;
+        if (ip !== iface.address) targets.push(ip);
+      }
+    }
+  }
+
+  if (targets.length === 0) {
+    send(requestingSocket, "SESSIONS|0|");
+    _scanInProgress = false;
+    processScanQueue();
+    return;
+  }
+
+  const found = {};
+  let remaining = targets.length;
+  const TIMEOUT = 1500;
+  const BATCH = 60;
+  let idx = 0;
+
+  function processBatch() {
+    const batch = targets.slice(idx, idx + BATCH);
+    idx += BATCH;
+
+    for (const ip of batch) {
+      const s = new net.Socket();
+      let handled = false;
+
+      const finish = (sessionLine) => {
+        if (handled) return;
+        handled = true;
+        if (!s.destroyed) s.destroy();
+
+        if (sessionLine && sessionLine.indexOf("SESSIONS|") === 0) {
+          const parts = sessionLine.split("|");
+          const count = parseInt(parts[1]) || 0;
+          if (count > 0) {
+            for (const entry of parts.slice(2).join("|").split(";")) {
+              const e = entry.split(",");
+              if (e.length >= 5) {
+                const key = ip + ":" + e[0];
+                found[key] = { id: e[0], name: e[1], hasPassword: e[2] === "1", playerCount: parseInt(e[3]) || 1, hostIp: ip, lastSeen: Date.now() };
+              }
+            }
+          }
+        }
+
+        remaining--;
+        if (remaining === 0) finalize();
+      };
+
+      s.setTimeout(TIMEOUT);
+      s.on("timeout", () => finish(null));
+      s.on("error", () => finish(null));
+
+      let buf = "";
+      s.on("data", (chunk) => {
+        buf += chunk.toString();
+        const nl = buf.indexOf("\n");
+        if (nl !== -1) finish(buf.substring(0, nl));
+      });
+      s.on("close", () => finish(null));
+
+      s.connect(TCP_PORT, ip, () => { s.write("LIST\n"); });
+    }
+
+    if (idx < targets.length) {
+      setImmediate(processBatch);
+    }
+  }
+
+  function finalize() {
+    for (const key in found) remoteSessions.set(key, found[key]);
+    const entries = [];
+    for (const [key, rs] of remoteSessions) {
+      if (Date.now() - rs.lastSeen > REMOTE_TIMEOUT) remoteSessions.delete(key);
+      else entries.push(rs.id + "," + rs.name + "," + (rs.hasPassword ? "1" : "0") + "," + rs.playerCount + "," + rs.hostIp);
+    }
+    send(requestingSocket, "SESSIONS|" + entries.length + "|" + entries.join(";"));
+    _scanInProgress = false;
+    if (remaining > 0) remaining = 0;
+    processScanQueue();
+  }
+
+  processBatch();
+}
+
+function processScanQueue() {
+  while (_scanQueue.length > 0 && !_scanInProgress) {
+    const next = _scanQueue.shift();
+    scanSubnets(next);
+  }
+}
 
 server.listen(TCP_PORT, "0.0.0.0", () => {
   log("TCP", "Server listening on port " + TCP_PORT);

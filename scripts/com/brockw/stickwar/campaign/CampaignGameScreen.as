@@ -64,7 +64,7 @@ package com.brockw.stickwar.campaign
       
       public var enemyTeamAi:EnemyTeamAi;
       
-      private var controller:CampaignController;
+       protected var controller:CampaignController;
       
       public var doAiUpdates:Boolean;
       

@@ -620,7 +620,7 @@ package com.brockw.stickwar.engine.units
       
       override public function deflectArrow(projectile:Projectile) : Boolean
       {
-         if(projectile.inflictor != null && this.isBlocking && Math.random() < 0.15)
+          if(projectile.inflictor != null && this.isBlocking && this.team.game.random.nextNumber() < 0.15)
          {
             var dir:int = Util.sgn(projectile.inflictor.px - this.px);
             this.team.game.projectileManager.initDeflectedArrow(this.px,this.py,this.pz,this.team.game,dir * 4,-10);

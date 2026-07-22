@@ -42,13 +42,15 @@ package com.brockw.stickwar
          this.addEventListener(Event.ADDED_TO_STAGE,this.addedToStage);
       }
       
-      private function addedToStage(evt:Event) : void
-      {
-         var paramObj:Object = null;
-         var apiPath:String = null;
-         var request:URLRequest = null;
-         var loader:Loader = null;
-         showScreen("mainMenu");
+       private function addedToStage(evt:Event) : void
+       {
+          var paramObj:Object = null;
+          var apiPath:String = null;
+          var request:URLRequest = null;
+          var loader:Loader = null;
+          stage.scaleMode = StageScaleMode.SHOW_ALL;
+          stage.align = StageAlign.TOP;
+          showScreen("mainMenu");
          tracker = null;
          if(ExternalInterface.available)
          {
