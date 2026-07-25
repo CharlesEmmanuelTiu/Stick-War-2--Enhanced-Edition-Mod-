@@ -1,5 +1,6 @@
 package com.brockw.stickwar.engine.multiplayer
 {
+    import com.brockw.random.Random;
     import com.brockw.simulationSync.EndOfGameMove;
     import com.brockw.simulationSync.EndOfTurnMove;
     import com.brockw.simulationSync.Move;
@@ -43,9 +44,9 @@ package com.brockw.stickwar.engine.multiplayer
         private var _isWaitingForPeer:Boolean;
         private var _tutorialComplete:Boolean;
         private var _waitingOverlay:Sprite;
-        private var _syncedStartFrames:int;
-        private var _syncedStartOverlay:Sprite;
-         private var _cleanedUp:Boolean;
+         private var _syncedStartFrames:int;
+          private var _cleanedUp:Boolean;
+          private var _isRestarting:Boolean;
 
       public function CoopGameScreen(main:BaseMain)
       {
@@ -64,10 +65,10 @@ package com.brockw.stickwar.engine.multiplayer
             this._isWaitingForPeer = false;
             this._tutorialComplete = false;
             this._waitingOverlay = null;
-            this._syncedStartFrames = 0;
-            this._syncedStartOverlay = null;
-             this._cleanedUp = false;
-        }
+             this._syncedStartFrames = 0;
+              this._cleanedUp = false;
+              this._isRestarting = false;
+         }
 
        override public function get isPaused() : Boolean
        {
@@ -96,50 +97,59 @@ package com.brockw.stickwar.engine.multiplayer
         }
 
         override public function enter() : void
-       {
-          _cleanedUp = false;
-          var currentLevel:Level = main.campaign.getCurrentLevel();
-          if(!_tutorialComplete && currentLevel.controller == CampaignTutorial)
-          {
-             _isInTutorialPhase = true;
-          }
-          else
-          {
-             _isInTutorialPhase = false;
-             if(currentLevel.controller == CampaignTutorial)
-             {
-                currentLevel.controller = null;
-             }
-          }
-          if(_tutorialComplete)
-          {
-             main.seed = gameSeed;
-          }
-          super.enter();
-          if(game != null && game.teamA != null)
-          {
-             if(!_tutorialComplete)
-             {
-                game.teamA.spawnUnitGroup([Unit.U_MINER, Unit.U_MINER, Unit.U_MINER, Unit.U_MINER, Unit.U_SWORDWRATH, Unit.U_SWORDWRATH, Unit.U_SWORDWRATH, Unit.U_SWORDWRATH]);
-                game.teamA.gold = 500;
-             }
-          }
-           if(lanSocket != null && lanSocket.connected)
+        {
+           _cleanedUp = false;
+           _isRestarting = false;
+           var currentLevel:Level = main.campaign.getCurrentLevel();
+           if(!_tutorialComplete && currentLevel.controller == CampaignTutorial)
            {
-              this._coopSavedOnMessage = lanSocket.onMessage;
-              this._coopSavedOnClose = lanSocket.onClose;
-              this._coopSavedOnError = lanSocket.onError;
-              lanSocket.onMessage = this.coopOnMessage;
-              lanSocket.onClose = this.coopOnClose;
-              this._coopPingInterval = setInterval(function():void
-              {
-                 if(lanSocket != null && lanSocket.connected)
-                 {
-                    lanSocket.send("PING");
-                 }
-              }, 10000);
+              _isInTutorialPhase = true;
            }
-         }
+           else
+           {
+              _isInTutorialPhase = false;
+              if(currentLevel.controller == CampaignTutorial)
+              {
+                 currentLevel.controller = null;
+              }
+           }
+           if(_tutorialComplete)
+           {
+              main.seed = gameSeed;
+              if(game != null)
+              {
+                 game.random = new Random(gameSeed);
+              }
+           }
+           super.enter();
+           if(game != null && game.teamA != null)
+           {
+              if(!_tutorialComplete)
+              {
+                 game.teamA.spawnUnitGroup([Unit.U_MINER, Unit.U_MINER, Unit.U_MINER, Unit.U_MINER, Unit.U_SWORDWRATH, Unit.U_SWORDWRATH, Unit.U_SWORDWRATH, Unit.U_SWORDWRATH]);
+                 game.teamA.gold = 500;
+              }
+           }
+            if(lanSocket != null && lanSocket.connected)
+            {
+               this._coopSavedOnMessage = lanSocket.onMessage;
+               this._coopSavedOnClose = lanSocket.onClose;
+               this._coopSavedOnError = lanSocket.onError;
+               lanSocket.onMessage = this.coopOnMessage;
+               lanSocket.onClose = this.coopOnClose;
+               this._coopPingInterval = setInterval(function():void
+               {
+                  if(lanSocket != null && lanSocket.connected)
+                  {
+                     lanSocket.send("PING");
+                  }
+               }, 10000);
+            }
+            if(_tutorialComplete)
+            {
+               startSyncedGame();
+            }
+          }
 
       override public function leave() : void
       {
@@ -180,11 +190,10 @@ package com.brockw.stickwar.engine.multiplayer
             if(_syncedStartFrames > 0)
             {
                _syncedStartFrames--;
-               if(_syncedStartFrames == 0 && _isInTutorialPhase)
-               {
-                  removeSyncedStartText();
-                  _isInTutorialPhase = false;
-               }
+                if(_syncedStartFrames == 0 && _isInTutorialPhase)
+                {
+                   _isInTutorialPhase = false;
+                }
             }
         }
 
@@ -300,8 +309,7 @@ package com.brockw.stickwar.engine.multiplayer
               this._coopSavedOnClose = null;
               this._coopSavedOnError = null;
             }
-            removeWaitingOverlay();
-            removeSyncedStartText();
+             removeWaitingOverlay();
          }
 
        private function updateTeammateSelection() : void
@@ -417,6 +425,18 @@ package com.brockw.stickwar.engine.multiplayer
             {
                _peerTutorialDone = true;
             }
+            else if(msg == "COOP_TUTORIAL_RESTART")
+            {
+               if(_isRestarting) return;
+               _isRestarting = true;
+               if(!_tutorialComplete)
+               {
+                  _localTutorialDone = false;
+                  _peerTutorialDone = false;
+                  _isWaitingForPeer = false;
+               }
+               main.showScreen("coopGameScreen", true);
+            }
            else if(msg == "COOP_QUIT")
           {
              if(lanSocket != null)
@@ -490,15 +510,33 @@ package com.brockw.stickwar.engine.multiplayer
            this.doAiUpdates = false;
         }
 
-        private function startSyncedGame():void
+        public function restartLevel():void
+        {
+           if(_isRestarting) return;
+           _isRestarting = true;
+           if(lanSocket != null && lanSocket.connected)
+           {
+              lanSocket.send("DATA|COOP_TUTORIAL_RESTART");
+           }
+           if(!_tutorialComplete)
+           {
+              _localTutorialDone = false;
+              _peerTutorialDone = false;
+              _isWaitingForPeer = false;
+           }
+           main.showScreen("coopGameScreen", true);
+        }
+
+         private function startSyncedGame():void
         {
            removeWaitingOverlay();
            var currentLevel:Level = main.campaign.getCurrentLevel();
            currentLevel.controller = null;
-           cleanUpGameState();
-           main.seed = gameSeed;
-           if(game != null)
-           {
+            cleanUpGameState();
+            main.seed = gameSeed;
+            if(game != null)
+            {
+               game.random = new Random(gameSeed);
               game.teamA.spawnUnitGroup(currentLevel.player.startingUnits);
               game.teamA.gold = currentLevel.player.gold;
               game.teamA.mana = currentLevel.player.mana;
@@ -507,41 +545,11 @@ package com.brockw.stickwar.engine.multiplayer
               game.teamB.mana = currentLevel.oponent.mana;
               game.teamB.currentAttackState = Team.G_ATTACK;
            }
-           this.doAiUpdates = true;
-           this._coopMoveCounter = 0;
-           showSyncedStartText();
-           _syncedStartFrames = 150;
+             this.doAiUpdates = true;
+             this._coopMoveCounter = 0;
+             _syncedStartFrames = 150;
+             _isInTutorialPhase = true;
         }
 
-        private function showSyncedStartText():void
-        {
-           if(_syncedStartOverlay == null)
-           {
-              _syncedStartOverlay = new Sprite();
-              _syncedStartOverlay.graphics.beginFill(0, 0.7);
-              _syncedStartOverlay.graphics.drawRect(0, 0, 2000, 2000);
-              var tf:TextField = new TextField();
-              tf.textColor = 0xFFFFFF;
-              tf.text = "Your objective is to destroy the enemy statue\nbefore they destroy yours. Good luck.";
-               tf.x = 225;
-               tf.y = 300;
-              tf.width = 400;
-              tf.height = 100;
-              _syncedStartOverlay.addChild(tf);
-           }
-           if(!contains(_syncedStartOverlay))
-           {
-              addChild(_syncedStartOverlay);
-           }
-        }
-
-        private function removeSyncedStartText():void
-        {
-           if(_syncedStartOverlay != null && contains(_syncedStartOverlay))
-           {
-              removeChild(_syncedStartOverlay);
-           }
-           _syncedStartOverlay = null;
-        }
-    }
+     }
 }

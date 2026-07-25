@@ -67,10 +67,15 @@ package com.brockw.stickwar.engine
          }
       }
       
-      private function restartButton(evt:Event) : void
-      {
-         gameScreen.main.showScreen(gameScreen.main.currentScreen(),true);
-      }
+       private function restartButton(evt:Event) : void
+       {
+          if(gameScreen is CoopGameScreen)
+          {
+             CoopGameScreen(gameScreen).restartLevel();
+             return;
+          }
+          gameScreen.main.showScreen(gameScreen.main.currentScreen(),true);
+       }
       
       private function backButton(evt:Event) : void
       {

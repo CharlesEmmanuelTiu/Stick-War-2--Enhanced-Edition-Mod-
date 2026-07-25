@@ -356,6 +356,8 @@ package com.brockw.stickwar.engine.multiplayer
             mc.connecting.visible = true;
             mc.connecting.play();
 
+            testDirectConnect(session.hostIp);
+
             if (lanSocket != null) lanSocket.close();
             lanSocket = new LanSocket();
             CoopScreen.lanSocketRef = lanSocket;
@@ -400,6 +402,23 @@ package com.brockw.stickwar.engine.multiplayer
             };
 
             lanSocket.connect("127.0.0.1", 9333);
+        }
+
+        private function testDirectConnect(ip:String):void
+        {
+            setDebug("Test: Socket.connect(" + ip + ", 9333)...");
+            var sock:LanSocket = new LanSocket();
+            sock.onConnect = function():void
+            {
+                setDebug("Result: SUCCESS - Flash CAN connect directly!");
+                sock.close();
+            };
+            sock.onError = function(m:String):void
+            {
+                setDebug("Result: FAILED - " + m);
+                sock.close();
+            };
+            sock.connect(ip, 9333);
         }
 
         private function onMouseDown(evt:Event) : void

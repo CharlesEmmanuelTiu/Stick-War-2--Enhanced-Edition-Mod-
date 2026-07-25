@@ -997,10 +997,13 @@ package com.brockw.stickwar.campaign.controllers
         }
      }
 
-      public function isTutorialComplete():Boolean
-      {
-         return state == S_ALL_DONE || state == S_GOOD_LUCK_2 || (state >= S_PRESS_ATTACK_WAIT && state <= S_LAG);
-      }
+       public function isTutorialComplete():Boolean
+       {
+          if(state == S_ALL_DONE) return true;
+          if(state == S_GOOD_LUCK_2) return this.message != null && this.message.hasFinishedPlayingSound();
+          if(state >= S_PRESS_ATTACK_WAIT && state <= S_LAG) return true;
+          return false;
+       }
   }
 }
 

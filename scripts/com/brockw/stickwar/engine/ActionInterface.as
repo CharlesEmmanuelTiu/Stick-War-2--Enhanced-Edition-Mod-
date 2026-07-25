@@ -9,6 +9,7 @@ package com.brockw.stickwar.engine
    import com.brockw.stickwar.engine.units.Ninja;
    import com.brockw.stickwar.engine.units.Unit;
    import flash.display.*;
+   import flash.geom.Point;
    import flash.ui.Mouse;
    import flash.utils.Dictionary;
    
@@ -36,6 +37,8 @@ package com.brockw.stickwar.engine
       private var actions:Dictionary;
       
       private var actionsToButtonMap:Dictionary;
+      
+      private var _techCancelButtons:Dictionary;
       
       private var _currentMove:UnitCommand;
       
@@ -196,10 +199,11 @@ package com.brockw.stickwar.engine
          var min:Number = Number(NaN);
          var j:int = 0;
          var v:Number = Number(NaN);
-         var action:int = 0;
-         var t:TechItem = null;
-         var c:UnitCommand = null;
-         var candidate:UnitCommand = null;
+          var action:int = 0;
+          var t:TechItem = null;
+          var c:UnitCommand = null;
+          var candidate:UnitCommand = null;
+          var cancelTechBtn:cancelButton = null;
          var stageMouseX:Number = gameScreen.stage.mouseX;
          var stageMouseY:Number = gameScreen.stage.mouseY;
          i = 0;
@@ -371,21 +375,52 @@ package com.brockw.stickwar.engine
                   {
                      gameScreen.game.team.updateButtonOver(gameScreen.game,t.name,t.tip,t.researchTime,t.cost,t.mana,0);
                   }
-                  if(gameScreen.userInterface.keyBoardState.isDownForAction(t.hotKey) || gameScreen.userInterface.mouseState.clicked && this.actionsToButtonMap[this.currentActions[action]].hitTestPoint(stageMouseX,stageMouseY,false))
-                  {
-                     this.actionsToButtonMap[this.currentActions[action]].alpha = 0.2;
-                     c = new TechCommand(gameScreen.game);
-                     c.goalX = this.currentActions[action];
-                     c.goalY = this.team.id;
-                     c.team = this.team;
-                     c.prepareNetworkedMove(gameScreen);
-                  }
-                  else
-                  {
-                     this.actionsToButtonMap[this.currentActions[action]].alpha = 1;
-                  }
-               }
-               else
+                   if(gameScreen.userInterface.keyBoardState.isDownForAction(t.hotKey) || gameScreen.userInterface.mouseState.clicked && this.actionsToButtonMap[this.currentActions[action]].hitTestPoint(stageMouseX,stageMouseY,false))
+                   {
+                      this.actionsToButtonMap[this.currentActions[action]].alpha = 0.2;
+                      c = new TechCommand(gameScreen.game);
+                      c.goalX = this.currentActions[action];
+                      c.goalY = this.team.id;
+                      c.team = this.team;
+                      c.prepareNetworkedMove(gameScreen);
+                   }
+                   else
+                   {
+                      this.actionsToButtonMap[this.currentActions[action]].alpha = 1;
+                   }
+                   cancelTechBtn = this._techCancelButtons[this.currentActions[action]];
+                   if(this.team.tech.isResearching(this.currentActions[action]))
+                   {
+                      if(cancelTechBtn == null)
+                      {
+                         var globalOrigin:Point = this.actionsToButtonMap[this.currentActions[action]].localToGlobal(new Point(0, 0));
+                         var screenOrigin:Point = gameScreen.globalToLocal(globalOrigin);
+                         cancelTechBtn = new cancelButton();
+                         cancelTechBtn.x = screenOrigin.x + BOX_WIDTH / 2 - cancelTechBtn.width - 2;
+                         cancelTechBtn.y = screenOrigin.y - BOX_HEIGHT / 2;
+                         gameScreen.addChild(cancelTechBtn);
+                         this._techCancelButtons[this.currentActions[action]] = cancelTechBtn;
+                      }
+                      cancelTechBtn.visible = true;
+                      if(cancelTechBtn.hitTestPoint(stageMouseX,stageMouseY,true))
+                      {
+                         gameScreen.game.team.updateButtonOver(gameScreen.game,"Cancel Research","Cancel this research and refund resources",0,0,0,0);
+                      }
+                      if(gameScreen.userInterface.mouseState.clicked && cancelTechBtn.hitTestPoint(stageMouseX,stageMouseY,false))
+                      {
+                         var cancelTechCmd:TechCommand = new TechCommand(gameScreen.game);
+                         cancelTechCmd.goalX = -this.currentActions[action];
+                         cancelTechCmd.goalY = this.team.id;
+                         cancelTechCmd.team = this.team;
+                         cancelTechCmd.prepareNetworkedMove(gameScreen);
+                      }
+                   }
+                   else if(cancelTechBtn != null)
+                   {
+                      cancelTechBtn.visible = false;
+                   }
+                }
+                else
                {
                   if(this.actionsToButtonMap[this.currentActions[action]].hitTestPoint(stageMouseX,stageMouseY,false))
                   {
@@ -554,14 +589,23 @@ package com.brockw.stickwar.engine
          }
       }
       
-      public function clear() : void
-      {
-         var key:String = null;
-         var x:int = 0;
-         var s:Sprite = null;
-         var c:DisplayObject = null;
-         var y:int = 0;
-         while(y < COLS)
+       public function clear() : void
+       {
+          var key:String = null;
+          var x:int = 0;
+          var s:Sprite = null;
+          var c:DisplayObject = null;
+          var y:int = 0;
+          var btn:Object = null;
+          for each(btn in this._techCancelButtons)
+          {
+             if(btn is cancelButton && cancelButton(btn).parent != null)
+             {
+                cancelButton(btn).parent.removeChild(cancelButton(btn));
+             }
+          }
+          this._techCancelButtons = new Dictionary();
+          while(y < COLS)
          {
             x = 0;
             while(x < ROWS)
@@ -639,10 +683,11 @@ package com.brockw.stickwar.engine
          this.boxes[y * COLS + x].addChild(s);
       }
       
-      private function setUpActions() : void
-      {
-         this.actionsToButtonMap = new Dictionary();
-         this.currentActions = [];
+       private function setUpActions() : void
+       {
+          this.actionsToButtonMap = new Dictionary();
+          this._techCancelButtons = new Dictionary();
+          this.currentActions = [];
          this.actions = new Dictionary();
          this.actions[new AttackMoveCommand(this._game).type] = new AttackMoveCommand(this._game);
          this.actions[new MoveCommand(this._game).type] = new MoveCommand(this._game);

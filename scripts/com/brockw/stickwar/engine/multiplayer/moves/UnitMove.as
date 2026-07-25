@@ -195,18 +195,22 @@ package com.brockw.stickwar.engine.multiplayer.moves
          var goalY:Number = Number(NaN);
          var unit:String = null;
          var b:StickWar = game;
-         if(this.moveType == UnitCommand.TECH)
-         {
-            t = game.teamA;
-            if(t.id != this.arg1)
-            {
-               t = t.enemyTeam;
-            }
-            if(!t.tech.isResearching(this.arg0))
-            {
-               t.tech.startResearching(this.arg0);
-            }
-         }
+          if(this.moveType == UnitCommand.TECH)
+          {
+             t = game.teamA;
+             if(t.id != this.arg1)
+             {
+                t = t.enemyTeam;
+             }
+             if(this.arg0 > 0)
+             {
+                t.tech.cancelResearch(-this.arg0);
+             }
+             else if(!t.tech.isResearching(this.arg0))
+             {
+                t.tech.startResearching(this.arg0);
+             }
+          }
          else if(this.moveType == UnitCommand.MOVE || this.moveType == UnitCommand.ATTACK_MOVE)
          {
             this.game = game;
