@@ -338,13 +338,18 @@ package com.brockw.stickwar.engine.Team
          this.game.projectileManager.initWallExplosion(w.px,5 * this.game.map.height / 5,this);
       }
       
-      public function garrisonMiner(isLocal:Boolean = false) : void
+      public function garrisonMiner(isLocal:Boolean = false, visibleIds:Array = null) : void
       {
          var unit:String = null;
          var u:UnitMove = new UnitMove();
          u.moveType = UnitCommand.GARRISON;
+         var includeAll:Boolean = visibleIds == null;
          for(unit in this.units)
          {
+            if(!includeAll && !this._containsId(visibleIds,this.units[unit].id))
+            {
+               continue;
+            }
             if(this.units[unit].type == this.getMinerType())
             {
                u.units.push(this.units[unit].id);
@@ -362,12 +367,17 @@ package com.brockw.stickwar.engine.Team
          }
       }
       
-      public function unGarrisonMiner(isLocal:Boolean = false) : void
+      public function unGarrisonMiner(isLocal:Boolean = false, visibleIds:Array = null) : void
       {
          var u:Unit = null;
          var m:UnitMove = null;
+         var includeAll:Boolean = visibleIds == null;
          for each(u in this.units)
          {
+            if(!includeAll && !this._containsId(visibleIds,u.id))
+            {
+               continue;
+            }
             if(u.type == this.getMinerType())
             {
                if(u.ai.targetOre != null)
@@ -409,7 +419,7 @@ package com.brockw.stickwar.engine.Team
          }
       }
       
-      public function garrison(isLocal:Boolean = false, specificUnit:Unit = null) : void
+      public function garrison(isLocal:Boolean = false, specificUnit:Unit = null, visibleIds:Array = null) : void
       {
          var unit:String = null;
          var u:UnitMove = new UnitMove();
@@ -418,7 +428,10 @@ package com.brockw.stickwar.engine.Team
          {
             for(unit in this.units)
             {
-               u.units.push(this.units[unit].id);
+               if(visibleIds == null || this._containsId(visibleIds,this.units[unit].id))
+               {
+                  u.units.push(this.units[unit].id);
+               }
             }
          }
          else
@@ -442,12 +455,25 @@ package com.brockw.stickwar.engine.Team
       {
          return 0;
       }
+       
+       private function _containsId(ids:Array, id:int) : Boolean
+      {
+         for each(var i:int in ids)
+         {
+            if(i == id)
+            {
+               return true;
+            }
+         }
+         return false;
+      }
       
-      public function defend(isLocal:Boolean = false) : void
+      public function defend(isLocal:Boolean = false, visibleIds:Array = null) : void
       {
          var unit:String = null;
          var u:Unit = null;
          var m:UnitMove = null;
+         var includeAll:Boolean = visibleIds == null;
          var attackMoveUnits:* = new UnitMove();
          attackMoveUnits.moveType = UnitCommand.ATTACK_MOVE;
          var moveUnits:* = new UnitMove();
@@ -455,6 +481,10 @@ package com.brockw.stickwar.engine.Team
          for(unit in this.units)
          {
             u = this.units[unit];
+            if(!includeAll && !this._containsId(visibleIds,u.id))
+            {
+               continue;
+            }
             if((u.type == Unit.U_MINER || u.type == Unit.U_CHAOS_MINER) && u.ai.targetOre != null)
             {
                m = new UnitMove();
@@ -501,16 +531,21 @@ package com.brockw.stickwar.engine.Team
          this.currentAttackState = Team.G_DEFEND;
       }
       
-      public function attack(isLocal:Boolean = false, toPosition:Boolean = false, position:Number = 0) : void
+      public function attack(isLocal:Boolean = false, toPosition:Boolean = false, position:Number = 0, visibleIds:Array = null) : void
       {
          var unit:String = null;
          var u:Unit = null;
          var m:UnitMove = null;
+         var includeAll:Boolean = visibleIds == null;
          var attackMoveUnits:* = new UnitMove();
          attackMoveUnits.moveType = UnitCommand.ATTACK_MOVE;
          for(unit in this.units)
          {
             u = this.units[unit];
+            if(!includeAll && !this._containsId(visibleIds,u.id))
+            {
+               continue;
+            }
             if(u.type == Unit.U_MINER || u.type == Unit.U_CHAOS_MINER)
             {
                if(u.ai.targetOre != null)
@@ -595,7 +630,8 @@ package com.brockw.stickwar.engine.Team
          this.population = 0;
          this.castleDefence.cleanUpUnits();
          delete this.tech.isResearchedMap[Tech.CASTLE_ARCHER_1];
-         for each(unit in this._units)
+         var snapshot:Array = this._units.concat();
+         for each(unit in snapshot)
          {
             this.removeUnitCompletely(unit,this.game);
          }

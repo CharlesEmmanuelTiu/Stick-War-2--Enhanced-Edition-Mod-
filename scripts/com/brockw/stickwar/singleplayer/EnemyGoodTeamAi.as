@@ -552,7 +552,7 @@ package com.brockw.stickwar.singleplayer
          move.owner = team.id;
          move.arg0 = buildX;
          move.arg1 = game.map.height / 2;
-         move.execute(game);
+         this._doMove(move);
          this.nextWallBuildFrame = game.frame + DEFENCE_BUILD_COOLDOWN_FRAMES;
          this.pendingWallBuildUntil = game.frame + DEFENCE_BUILD_RESERVE_FRAMES;
          return true;
@@ -610,7 +610,7 @@ package com.brockw.stickwar.singleplayer
          move.owner = this.team.id;
          move.arg0 = targetX;
          move.arg1 = this.team.game.gameScreen.game.map.height / 2;
-         move.execute(this.team.game);
+         this._doMove(move);
       }
       
       private function shadowrathShouldRetreatLure(game:StickWar) : Boolean

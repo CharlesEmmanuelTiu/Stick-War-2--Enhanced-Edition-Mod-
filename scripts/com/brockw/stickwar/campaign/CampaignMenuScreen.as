@@ -58,6 +58,7 @@ import com.brockw.stickwar.engine.multiplayer.LanSocket;
       public static var coopLanSocket:LanSocket = null;
       public static var coopDifficulty:int = 0;
       public static var coopGameSeed:int = 0;
+      public static var coopSolo:Boolean = false;
       
       private var coopMyIntroDone:Boolean;
       private var coopPeerIntroDone:Boolean;
@@ -265,10 +266,10 @@ import com.brockw.stickwar.engine.multiplayer.LanSocket;
          {
             return;
          }
-             if(coopMode && coopMyIntroDone && coopPeerIntroDone)
+             if(coopMode && (coopSolo && coopMyIntroDone || coopMyIntroDone && coopPeerIntroDone))
              {
                 if(this.mc.playerPending != null) this.mc.playerPending.visible = false;
-                clearInterval(coopPingInterval);
+                if(coopPingInterval != 0) clearInterval(coopPingInterval);
              if(coopDebugText != null && contains(coopDebugText))
              {
                 removeChild(coopDebugText);
@@ -278,6 +279,7 @@ import com.brockw.stickwar.engine.multiplayer.LanSocket;
              CoopGameScreen.lanSocket = coopLanSocket;
              CoopGameScreen.gameSeed = coopGameSeed;
              CoopGameScreen.isHost = HostSessionScreen.role == "host";
+             CoopGameScreen.soloMode = coopSolo;
              this.main.showScreen("coopGameScreen", false, true);
              return;
           }
@@ -567,9 +569,16 @@ import com.brockw.stickwar.engine.multiplayer.LanSocket;
           this.stopIntroVideo();
           if(coopMode && coopLanSocket != null)
           {
-             if(this.mc.playerPending != null) this.mc.playerPending.visible = true;
+             if(this.mc.playerPending != null) this.mc.playerPending.visible = false;
              coopMyIntroDone = true;
-             coopLanSocket.send("DATA|COOP_INTRO_DONE");
+             if(coopSolo)
+             {
+                coopPeerIntroDone = true;
+             }
+             else
+             {
+                coopLanSocket.send("DATA|COOP_INTRO_DONE");
+             }
              return;
           }
           this.main.showScreen("campaignMap",false,true);

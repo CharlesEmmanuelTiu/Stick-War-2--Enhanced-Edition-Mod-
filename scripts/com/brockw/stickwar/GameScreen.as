@@ -369,9 +369,18 @@ package com.brockw.stickwar
       {
       }
       
-      public function doMove(move:Move, id:int) : void
-      {
-      }
+public function doMove(move:Move, id:int) : void
+       {
+       }
+       
+       public function isCastleShotManaged() : Boolean
+       {
+          return false;
+       }
+       
+       public function routeCastleShot(move:Move) : void
+       {
+       }
       
       public function cleanUp() : void
       {

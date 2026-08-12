@@ -395,15 +395,20 @@ package com.brockw.stickwar.campaign
          {
             game.soundManager.playSoundInBackground(musicName);
          }
-         else
+else
          {
             game.soundManager.playSoundInBackgroundOnce(musicName);
          }
       }
-      
-      override public function update(evt:Event, timeDiff:Number) : void
+       
+       protected function isEnemyAiDoMoveRoutingEnabled() : Boolean
       {
-         this.handleDebugHotkeys();
+         return false;
+      }
+       
+       override public function update(evt:Event, timeDiff:Number) : void
+      {
+         if(this.allowDebugHotkeys()) this.handleDebugHotkeys();
          this.tryTriggerCampaignReinforcements();
          this.tryWingidonBossSpawn();
          if(this.campaignPrewarmManager != null)
@@ -412,6 +417,10 @@ package com.brockw.stickwar.campaign
          }
          if(this.doAiUpdates)
          {
+            if(this.enemyTeamAi != null)
+            {
+               this.enemyTeamAi.setRouteMovesThroughDoMove(this.isEnemyAiDoMoveRoutingEnabled());
+            }
             this.enemyTeamAi.update(game);
          }
          if(this.debugForceEnemyAttackFrames > 0 && game != null && game.teamB != null)
@@ -2144,6 +2153,11 @@ package com.brockw.stickwar.campaign
          this.showDebugBossAbility("DEBUG: Enemy units killed; training locked");
       }
       
+      protected function allowDebugHotkeys() : Boolean
+      {
+         return true;
+      }
+
       private function handleDebugHotkeys() : void
       {
          if(this.campaignDebugTools != null)

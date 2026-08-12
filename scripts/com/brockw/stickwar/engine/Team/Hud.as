@@ -1,5 +1,6 @@
 package com.brockw.stickwar.engine.Team
 {
+   import com.brockw.stickwar.campaign.Campaign;
    import com.brockw.stickwar.engine.StickWar;
    import com.brockw.stickwar.engine.multiplayer.CoopGameScreen;
    import flash.display.*;
@@ -41,6 +42,16 @@ package com.brockw.stickwar.engine.Team
              for(u in game.units)
              {
                 if(Boolean(game.units[u].onMap(game)))
+                {
+                   game.units[u].drawOnHud(this.hud.map,game);
+                }
+             }
+          }
+          else if(game.gameScreen.main != null && game.gameScreen.main.campaign != null && game.gameScreen.main.campaign.difficultyLevel == Campaign.D_NORMAL)
+          {
+             for(u in game.units)
+             {
+                if(Boolean(game.units[u].onMap(game)) && game.units[u].team == game.team)
                 {
                    game.units[u].drawOnHud(this.hud.map,game);
                 }

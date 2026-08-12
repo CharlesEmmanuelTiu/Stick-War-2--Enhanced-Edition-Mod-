@@ -13,6 +13,7 @@ package com.brockw.stickwar.engine.multiplayer
     public class HostSessionScreen extends Screen
     {
         public static var role:String;
+        public static var lobbyId:String;
         public static var lobbyName:String;
         public static var password:String;
         public static var hostIp:String;
@@ -53,6 +54,16 @@ package com.brockw.stickwar.engine.multiplayer
                 mc.waiting.visible = false;
                 mc.loadingIcon.visible = true;
                 mc.loadingIcon.play();
+                // Host may start the game even before a player 2 joins.
+                mc.newOrContinuePanel.visible = true;
+                if (main.campaign.saveGameExists())
+                {
+                    mc.newOrContinuePanel.continueButton.visible = true;
+                }
+                else
+                {
+                    mc.newOrContinuePanel.continueButton.visible = false;
+                }
             }
             else
             {
@@ -142,18 +153,7 @@ package com.brockw.stickwar.engine.multiplayer
         {
             if (line == "CLIENT_JOINED")
             {
-                mc.waiting.visible = false;
-                mc.loadingIcon.visible = false;
-                mc.player2_icon.visible = true;
-                mc.newOrContinuePanel.visible = true;
-                if (main.campaign.saveGameExists())
-                {
-                    mc.newOrContinuePanel.continueButton.visible = true;
-                }
-                else
-                {
-                    mc.newOrContinuePanel.continueButton.visible = false;
-                }
+                showClientJoined();
                 return;
             }
             if (line == "CLIENT_DISCONNECTED")
@@ -197,10 +197,41 @@ package com.brockw.stickwar.engine.multiplayer
                 main.showScreen("coopScreen", false, true);
                 return;
             }
+            if (line.indexOf("WAIT_FOR_RECONNECT|") == 0)
+            {
+                mc.player2_icon.visible = false;
+                mc.newOrContinuePanel.visible = false;
+                mc.difficultyPanel.visible = false;
+                mc.waiting.visible = true;
+                mc.loadingIcon.visible = true;
+                mc.loadingIcon.play();
+                return;
+            }
+            if (line == "RESUMED")
+            {
+                showClientJoined();
+                return;
+            }
             if (line.indexOf("COOP_") == 0)
             {
                 handleCoopMessage(line);
                 return;
+            }
+        }
+
+        private function showClientJoined():void
+        {
+            mc.waiting.visible = false;
+            mc.loadingIcon.visible = false;
+            mc.player2_icon.visible = true;
+            mc.newOrContinuePanel.visible = true;
+            if (main.campaign.saveGameExists())
+            {
+                mc.newOrContinuePanel.continueButton.visible = true;
+            }
+            else
+            {
+                mc.newOrContinuePanel.continueButton.visible = false;
             }
         }
 
@@ -264,9 +295,14 @@ package com.brockw.stickwar.engine.multiplayer
         private function onContinue(e:*):void
         {
             main.campaign.load();
-            if (role == "host" && lanSocket != null && lanSocket.connected)
+            CampaignMenuScreen.coopSolo = (mc.player2_icon.visible != true);
+            if (role == "host" && mc.player2_icon.visible && lanSocket != null && lanSocket.connected)
             {
                 lanSocket.send("DATA|COOP_CONTINUE");
+            }
+            if (role == "host" && lanSocket != null && lanSocket.connected)
+            {
+                lanSocket.send("HOST_BUSY|1");
             }
             main.showScreen("campaignMap", false, true);
         }
@@ -293,9 +329,14 @@ package com.brockw.stickwar.engine.multiplayer
             CampaignMenuScreen.coopLanSocket = sourceSocket;
             CampaignMenuScreen.coopDifficulty = diff;
             CampaignMenuScreen.coopGameSeed = seed;
-            if (lanSocket != null && lanSocket.connected)
+            CampaignMenuScreen.coopSolo = (mc.player2_icon.visible != true);
+            if (mc.player2_icon.visible && lanSocket != null && lanSocket.connected)
             {
                 lanSocket.send("DATA|COOP_START_GAME|" + diff + "|" + seed);
+            }
+            if (lanSocket != null && lanSocket.connected)
+            {
+                lanSocket.send("HOST_BUSY|1");
             }
             main.showScreen("mainMenu", false, true);
         }

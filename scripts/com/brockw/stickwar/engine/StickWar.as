@@ -298,6 +298,16 @@ package com.brockw.stickwar.engine
          return this._currentId++;
       }
       
+      public function getCurrentId() : int
+      {
+         return this._currentId;
+      }
+      
+      public function setCurrentId(value:int) : void
+      {
+         this._currentId = value;
+      }
+      
       public function initTeams(race1:int, race2:int, health1:int, health2:int, techAllowedA:Dictionary = null, techAllowedB:Dictionary = null, handicap1:Number = 1, handicap2:Number = 1, healthModifierA:Number = 1, healthModifierB:Number = 1, damageModifierA:Number = 1, damageModifierB:Number = 1) : void
       {
          this._teamA = Team.getTeamFromId(race1,this,health1,techAllowedA,handicap1,healthModifierA);

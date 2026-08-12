@@ -191,6 +191,7 @@ package com.brockw.stickwar.engine.multiplayer
         {
             this.addEventListener(Event.ENTER_FRAME, this.update);
             this.addEventListener(MouseEvent.MOUSE_DOWN, this.onMouseDown);
+            this.main.soundManager.playSoundInBackground("loginMusic");
             this.scanForLobbies();
             if (returningFromHost)
             {
@@ -369,11 +370,12 @@ package com.brockw.stickwar.engine.multiplayer
 
             lanSocket.onMessage = function(line:String):void
             {
-                if (line == "JOINED")
+if (line == "JOINED")
                 {
                     mc.connecting.visible = false;
                     mc.connecting.stop();
                     HostSessionScreen.role = "client";
+                    HostSessionScreen.lobbyId = session.id;
                     HostSessionScreen.lobbyName = session.name;
                     HostSessionScreen.password = password;
                     HostSessionScreen.hostIp = session.hostIp;
@@ -383,10 +385,35 @@ package com.brockw.stickwar.engine.multiplayer
                     inJoinPasswordMode = false;
                     main.showScreen("hostSession", false, true);
                 }
+                else if (line == "JOINED_IN_GAME")
+                {
+                    mc.connecting.visible = false;
+                    mc.connecting.stop();
+                    HostSessionScreen.role = "client";
+                    HostSessionScreen.lobbyId = session.id;
+                    HostSessionScreen.lobbyName = session.name;
+                    HostSessionScreen.password = password;
+                    HostSessionScreen.hostIp = session.hostIp;
+                    HostSessionScreen.hostPort = 9333;
+                    HostSessionScreen.sourceSocket = lanSocket;
+                    CoopGameScreen.lanSocket = lanSocket;
+                    CoopGameScreen.isHost = false;
+                    CoopGameScreen.soloMode = false;
+                    CoopGameScreen.joinInGame = true;
+                    lanSocket = null;
+                    inJoinPasswordMode = false;
+                    main.showScreen("coopGameScreen", false, true);
+                }
                 else if (line.indexOf("JOIN_FAILED") == 0)
                 {
                     mc.connecting.visible = false;
                     mc.connecting.stop();
+                    if (line.indexOf("HOST_BUSY") != -1)
+                    {
+                        setDebug("Host is busy starting - try the session again in a moment");
+                        mc.password.text = "";
+                        return;
+                    }
                     mc.password.border = true;
                     mc.password.borderColor = 0xFF0000;
                     mc.password.text = "";
@@ -522,6 +549,7 @@ package com.brockw.stickwar.engine.multiplayer
                     mc.loadingIcon.visible = false;
                     mc.loadingIcon.stop();
                     HostSessionScreen.role = "host";
+                    HostSessionScreen.lobbyId = line.substring("REGISTERED|".length);
                     HostSessionScreen.lobbyName = name;
                     HostSessionScreen.password = pw;
                     HostSessionScreen.hostIp = "127.0.0.1";

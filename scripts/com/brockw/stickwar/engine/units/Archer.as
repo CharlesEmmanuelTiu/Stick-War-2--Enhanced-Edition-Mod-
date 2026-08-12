@@ -8,6 +8,7 @@ package com.brockw.stickwar.engine.units
    import com.brockw.stickwar.engine.Entity;
    import com.brockw.stickwar.engine.StickWar;
    import com.brockw.stickwar.engine.Team.Tech;
+   import com.brockw.stickwar.engine.multiplayer.moves.CastleArcherShotMove;
    import com.brockw.stickwar.market.MarketItem;
    import flash.display.MovieClip;
    import flash.geom.Point;
@@ -434,13 +435,43 @@ package com.brockw.stickwar.engine.units
                fireDamage = Number(game.xml.xml.Order.Units.archer.fire.damage);
             }
             game.soundManager.playSoundRandom("launchArrow",5,px,py);
-            if(mc.scaleX < 0)
+            if(this.isCastleArcher && game.gameScreen != null && game.gameScreen.isCastleShotManaged())
             {
-               game.projectileManager.initArrow(p.x,p.y,180 - bowAngle,v,target.y,angleToTargetW(target,v,angleToTarget(target)),this,damage,poison,this.isFire,this.area,this.areaDamage);
+               var castleShot:CastleArcherShotMove = new CastleArcherShotMove();
+               castleShot.teamId = this.team.id;
+               castleShot.castleIndex = CastleArcherShotMove.castleUnitIndex(this.team,this);
+               castleShot.targetUnitId = target != null ? target.id : -1;
+               castleShot.kind = CastleArcherShotMove.KIND_ARROW;
+               castleShot.x = p.x;
+               castleShot.y = p.y;
+               if(mc.scaleX < 0)
+               {
+                  castleShot.rotation = 180 - bowAngle;
+               }
+               else
+               {
+                  castleShot.rotation = bowAngle;
+               }
+               castleShot.velocity = v;
+               castleShot.targetY = target != null ? target.y : py;
+               castleShot.dy = target != null ? angleToTargetW(target,v,angleToTarget(target)) : 0;
+               castleShot.damage = damage;
+               castleShot.poison = poison;
+               castleShot.isFire = this.isFire;
+               castleShot.area = this.area;
+               castleShot.areaDamage = this.areaDamage;
+               game.gameScreen.routeCastleShot(castleShot);
             }
             else
             {
-               game.projectileManager.initArrow(p.x,p.y,bowAngle,v,target.y,angleToTargetW(target,v,angleToTarget(target)),this,damage,poison,this.isFire,this.area,this.areaDamage);
+               if(mc.scaleX < 0)
+               {
+                  game.projectileManager.initArrow(p.x,p.y,180 - bowAngle,v,target.y,angleToTargetW(target,v,angleToTarget(target)),this,damage,poison,this.isFire,this.area,this.areaDamage);
+               }
+               else
+               {
+                  game.projectileManager.initArrow(p.x,p.y,bowAngle,v,target.y,angleToTargetW(target,v,angleToTarget(target)),this,damage,poison,this.isFire,this.area,this.areaDamage);
+               }
             }
             this.isFire = false;
             _maximumRange = this.normalRange;

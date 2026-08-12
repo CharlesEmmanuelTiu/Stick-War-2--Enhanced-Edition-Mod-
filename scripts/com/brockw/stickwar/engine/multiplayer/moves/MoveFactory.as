@@ -21,9 +21,10 @@ package com.brockw.stickwar.engine.multiplayer.moves
          var forfeitMove:ForfeitMove = null;
          var pauseMove:PauseMove = null;
          var screenPositionUpdateMove:ScreenPositionUpdateMove = null;
-         var globalMove:GlobalMove = null;
-         var chatMove:ChatMove = null;
-         if(o.getInt("type") == Commands.UNIT_CREATE_MOVE)
+var globalMove:GlobalMove = null;
+          var chatMove:ChatMove = null;
+          var castleShotMove:CastleArcherShotMove = null;
+          if(o.getInt("type") == Commands.UNIT_CREATE_MOVE)
          {
             c = new UnitCreateMove();
             c.readFromSFSObject(o);
@@ -71,13 +72,19 @@ package com.brockw.stickwar.engine.multiplayer.moves
             globalMove.readFromSFSObject(o);
             return globalMove;
          }
-         if(o.getInt("type") == Commands.CHAT_MOVE)
-         {
-            chatMove = new ChatMove();
-            chatMove.readFromSFSObject(o);
-            return chatMove;
-         }
-         throw new Error("No type of move!!: " + o.getInt("type"));
+if(o.getInt("type") == Commands.CHAT_MOVE)
+          {
+             chatMove = new ChatMove();
+             chatMove.readFromSFSObject(o);
+             return chatMove;
+          }
+          if(o.getInt("type") == Commands.CASTLE_SHOT_MOVE)
+          {
+             castleShotMove = new CastleArcherShotMove();
+             castleShotMove.readFromSFSObject(o);
+             return castleShotMove;
+          }
+          throw new Error("No type of move!!: " + o.getInt("type"));
       }
       
       public static function createMoveFromString(type:int, data:Array) : Move
@@ -90,9 +97,10 @@ package com.brockw.stickwar.engine.multiplayer.moves
          var pauseMove:PauseMove = null;
          var screenPositionUpdateMove:ScreenPositionUpdateMove = null;
          var globalMove:GlobalMove = null;
-         var chatMove:ChatMove = null;
-         var replayMove:ReplaySyncCheckMove = null;
-         if(type == Commands.UNIT_CREATE_MOVE)
+var chatMove:ChatMove = null;
+          var replayMove:ReplaySyncCheckMove = null;
+          var castleShotMove:CastleArcherShotMove = null;
+          if(type == Commands.UNIT_CREATE_MOVE)
          {
             c = new UnitCreateMove();
             c.fromString(data);
@@ -146,13 +154,19 @@ package com.brockw.stickwar.engine.multiplayer.moves
             chatMove.fromString(data);
             return chatMove;
          }
-         if(type == Commands.REPLAY_SYNC_CHECK)
-         {
-            replayMove = new ReplaySyncCheckMove();
-            replayMove.fromString(data);
-            return replayMove;
-         }
-         throw new Error("No type of move!!: " + type);
+if(type == Commands.REPLAY_SYNC_CHECK)
+          {
+             replayMove = new ReplaySyncCheckMove();
+             replayMove.fromString(data);
+             return replayMove;
+          }
+          if(type == Commands.CASTLE_SHOT_MOVE)
+          {
+             castleShotMove = new CastleArcherShotMove();
+             castleShotMove.fromString(data);
+             return castleShotMove;
+          }
+          throw new Error("No type of move!!: " + type);
       }
    }
 }

@@ -729,7 +729,7 @@ package com.brockw.stickwar.singleplayer
          move.owner = team.id;
          move.arg0 = buildX;
          move.arg1 = game.map.height / 2;
-         move.execute(game);
+         this._doMove(move);
          this.nextTowerBuildFrame = game.frame + DEFENCE_BUILD_COOLDOWN_FRAMES;
          this.pendingTowerBuildUntil = game.frame + DEFENCE_BUILD_RESERVE_FRAMES;
          return true;

@@ -4,6 +4,8 @@ package com.brockw.stickwar.engine.multiplayer.moves
    import com.brockw.simulationSync.Simulation;
    import com.brockw.stickwar.engine.StickWar;
    import com.brockw.stickwar.engine.Team.Team;
+   import com.smartfoxserver.v2.entities.data.ISFSArray;
+   import com.smartfoxserver.v2.entities.data.SFSArray;
    import com.smartfoxserver.v2.entities.data.SFSObject;
    
    public class GlobalMove extends Move
@@ -11,22 +13,38 @@ package com.brockw.stickwar.engine.multiplayer.moves
       
       public var globalMoveType:int = 0;
       
+      public var unitIds:Array;
+      
       public function GlobalMove()
       {
          type = Commands.GLOBAL_MOVE;
+         this.unitIds = new Array();
          super();
       }
       
       override public function toString() : String
       {
          var s:String = super.toString();
-         return s + (String(this.globalMoveType) + " ");
+         s += String(this.globalMoveType) + " ";
+         s += this.unitIds.length + " ";
+         for(var unitId:String in this.unitIds)
+         {
+            s += this.unitIds[unitId] + " ";
+         }
+         return s;
       }
       
       override public function fromString(s:Array) : Boolean
       {
          super.fromString(s);
          this.globalMoveType = int(s.shift());
+         var num:int = int(s.shift());
+         var i:int = 0;
+         while(i < num)
+         {
+            this.unitIds.push(int(s.shift()));
+            i++;
+         }
          return true;
       }
       
@@ -34,12 +52,25 @@ package com.brockw.stickwar.engine.multiplayer.moves
       {
          readBasicsSFSObject(o);
          this.globalMoveType = o.getInt("pos");
+         var s:ISFSArray = o.getSFSArray("u");
+         var unit:int = 0;
+         while(unit < s.size())
+         {
+            this.unitIds.push(s.getElementAt(unit));
+            unit++;
+         }
       }
       
       override public function writeToSFSObject(o:SFSObject) : void
       {
          writeBasicsSFSObject(o);
          o.putInt("pos",this.globalMoveType);
+         var s:SFSArray = new SFSArray();
+         for(var unitId:String in this.unitIds)
+         {
+            s.addInt(this.unitIds[unitId]);
+         }
+         o.putSFSArray("u",s);
       }
       
       override public function execute(game:Simulation) : void
@@ -56,25 +87,24 @@ package com.brockw.stickwar.engine.multiplayer.moves
          }
          if(this.globalMoveType == Team.G_GARRISON)
          {
-            team.garrison(true);
+            team.garrison(true,null,this.unitIds);
          }
          else if(this.globalMoveType == Team.G_DEFEND)
          {
-            team.defend(true);
+            team.defend(true,this.unitIds);
          }
          else if(this.globalMoveType == Team.G_GARRISON_MINER)
          {
-            team.garrisonMiner(true);
+            team.garrisonMiner(true,this.unitIds);
          }
          else if(this.globalMoveType == Team.G_UNGARRISON_MINER)
          {
-            team.unGarrisonMiner(true);
+            team.unGarrisonMiner(true,this.unitIds);
          }
          else
          {
-            team.attack(true);
+            team.attack(true,false,0,this.unitIds);
          }
       }
    }
 }
-

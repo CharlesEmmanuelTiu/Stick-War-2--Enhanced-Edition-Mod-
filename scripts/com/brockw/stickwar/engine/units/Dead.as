@@ -6,6 +6,7 @@ package com.brockw.stickwar.engine.units
    import com.brockw.stickwar.engine.Ai.command.*;
    import com.brockw.stickwar.engine.StickWar;
    import com.brockw.stickwar.engine.Team.*;
+   import com.brockw.stickwar.engine.multiplayer.moves.CastleArcherShotMove;
    import com.brockw.stickwar.market.MarketItem;
    import flash.display.MovieClip;
    import flash.geom.Point;
@@ -204,54 +205,68 @@ package com.brockw.stickwar.engine.units
             }
             else if(_state == S_ATTACK)
             {
-               if(_mc.mc.currentFrame == 31 && !hasHit)
-               {
-                  p = mc.mc.localToGlobal(new Point(0,0));
-                  p = game.battlefield.globalToLocal(p);
-                  v = projectileVelocity;
-                  damage = this.arrowDamage;
-                  if(this.target != null)
-                  {
-                     poisonDamage = 0;
-                     realPoisonToggle = this.isPoisonedToggled;
-                     if(!team.tech.isResearched(Tech.DEAD_POISON))
-                     {
-                        realPoisonToggle = false;
-                     }
-                     if(realPoisonToggle && team.mana > this.poisonMana || this._isCastleArcher)
-                     {
-                        if(!this.target.isPoisoned() && this.target is Unit && !(this.target is Wall) && !(this.target is ChaosTower) && !(this.target is Statue))
-                        {
-                           poisonDamage = this.poisonDamageAmount;
-                           if(!this._isCastleArcher)
-                           {
-                              team.mana -= this.poisonMana;
-                           }
-                        }
-                     }
-                     if(mc.scaleX < 0)
-                     {
-                        game.projectileManager.initGuts(p.x,p.y,180 - bowAngle,v,this.target.y,angleToTargetW(this.target,v,angleToTarget(this.target)),poisonDamage,this);
-                     }
-                     else
-                     {
-                        game.projectileManager.initGuts(p.x,p.y,bowAngle,v,this.target.y,angleToTargetW(this.target,v,angleToTarget(this.target)),poisonDamage,this);
-                     }
-                     hasHit = true;
-                  }
-                  else
-                  {
-                     if(mc.scaleX < 0)
-                     {
-                        game.projectileManager.initGuts(p.x,p.y,180 - bowAngle,v,this.target.y,0,poisonDamage,this);
-                     }
-                     else
-                     {
-                        game.projectileManager.initGuts(p.x,p.y,bowAngle,v,this.target.y,0,poisonDamage,this);
-                     }
-                     hasHit = true;
-                  }
-               }
+if(_mc.mc.currentFrame == 31 && !hasHit)
+                {
+                   p = mc.mc.localToGlobal(new Point(0,0));
+                   p = game.battlefield.globalToLocal(p);
+                   v = projectileVelocity;
+                   damage = this.arrowDamage;
+                   poisonDamage = 0;
+                   if(this.target != null)
+                   {
+                      realPoisonToggle = this.isPoisonedToggled;
+                      if(!team.tech.isResearched(Tech.DEAD_POISON))
+                      {
+                         realPoisonToggle = false;
+                      }
+                      if(realPoisonToggle && team.mana > this.poisonMana || this._isCastleArcher)
+                      {
+                         if(!this.target.isPoisoned() && this.target is Unit && !(this.target is Wall) && !(this.target is ChaosTower) && !(this.target is Statue))
+                         {
+                            poisonDamage = this.poisonDamageAmount;
+                            if(!this._isCastleArcher)
+                            {
+                               team.mana -= this.poisonMana;
+                            }
+                         }
+                      }
+                   }
+                   if(this._isCastleArcher && game.gameScreen != null && game.gameScreen.isCastleShotManaged())
+                   {
+                      var castleShot:CastleArcherShotMove = new CastleArcherShotMove();
+                      castleShot.teamId = this.team.id;
+                      castleShot.castleIndex = CastleArcherShotMove.castleUnitIndex(this.team,this);
+                      castleShot.targetUnitId = this.target != null ? this.target.id : -1;
+                      castleShot.kind = CastleArcherShotMove.KIND_GUTS;
+                      castleShot.x = p.x;
+                      castleShot.y = p.y;
+                      if(mc.scaleX < 0)
+                      {
+                         castleShot.rotation = 180 - bowAngle;
+                      }
+                      else
+                      {
+                         castleShot.rotation = bowAngle;
+                      }
+                      castleShot.velocity = v;
+                      castleShot.targetY = this.target != null ? this.target.y : this.py;
+                      castleShot.dy = this.target != null ? angleToTargetW(this.target,v,angleToTarget(this.target)) : 0;
+                      castleShot.poisonDamage = poisonDamage;
+                      game.gameScreen.routeCastleShot(castleShot);
+                   }
+                   else
+                   {
+                      if(mc.scaleX < 0)
+                      {
+                         game.projectileManager.initGuts(p.x,p.y,180 - bowAngle,v,this.target != null ? this.target.y : this.py,this.target != null ? angleToTargetW(this.target,v,angleToTarget(this.target)) : 0,poisonDamage,this);
+                      }
+                      else
+                      {
+                         game.projectileManager.initGuts(p.x,p.y,bowAngle,v,this.target != null ? this.target.y : this.py,this.target != null ? angleToTargetW(this.target,v,angleToTarget(this.target)) : 0,poisonDamage,this);
+                      }
+                   }
+                   hasHit = true;
+                }
                if(_mc.mc.totalFrames == _mc.mc.currentFrame)
                {
                   _state = S_RUN;

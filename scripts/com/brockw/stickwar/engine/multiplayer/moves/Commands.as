@@ -21,9 +21,11 @@ package com.brockw.stickwar.engine.multiplayer.moves
       
       public static const CHAT_MOVE:int = 8;
       
-      public static const REPLAY_SYNC_CHECK:int = 9;
-      
-      public function Commands()
+public static const REPLAY_SYNC_CHECK:int = 9;
+       
+       public static const CASTLE_SHOT_MOVE:int = 10;
+       
+       public function Commands()
       {
          super();
       }

@@ -46,9 +46,11 @@ package com.brockw.stickwar.singleplayer
       
       private var lastOwnArmyChangeVersion:int;
       
-      private var lastEnemyArmyChangeVersion:int;
-      
-      public function EnemyTeamAi(team:Team, main:BaseMain, game:StickWar, isCreatingUnits:* = true)
+private var lastEnemyArmyChangeVersion:int;
+       
+       private var routeMovesThroughDoMove:Boolean = false;
+       
+       public function EnemyTeamAi(team:Team, main:BaseMain, game:StickWar, isCreatingUnits:* = true)
       {
          super();
          this.team = team;
@@ -58,11 +60,28 @@ package com.brockw.stickwar.singleplayer
          this.lastOwnAliveCount = -1;
          this.lastEnemyAliveCount = -1;
          this.lastEnemyAggressionBand = -1;
-         this.lastOwnArmyChangeVersion = -1;
+this.lastOwnArmyChangeVersion = -1;
          this.lastEnemyArmyChangeVersion = -1;
       }
-      
-      public function update(game:StickWar) : void
+       
+       public function setRouteMovesThroughDoMove(value:Boolean) : void
+      {
+         this.routeMovesThroughDoMove = value;
+      }
+       
+       protected function _doMove(m:UnitMove) : void
+      {
+         if(this.routeMovesThroughDoMove && this.team != null && this.team.game != null && this.team.game.gameScreen != null)
+         {
+            this.team.game.gameScreen.doMove(m,this.team.id);
+         }
+         else
+         {
+            m.execute(this.team.game);
+         }
+      }
+       
+       public function update(game:StickWar) : void
       {
          this.updateTeamStatistics(game);
          this.updateMiners(game);
@@ -142,7 +161,7 @@ package com.brockw.stickwar.singleplayer
                m.owner = this.team.id;
                m.arg0 = target.px;
                m.arg1 = target.py;
-               m.execute(this.team.game);
+               this._doMove(m);
             }
             else
             {
@@ -224,7 +243,7 @@ package com.brockw.stickwar.singleplayer
                m.arg4 = u.ai.targetOre.id;
                m.arg0 = u.ai.targetOre.x;
                m.arg1 = u.ai.targetOre.y;
-               m.execute(this.team.game);
+               this._doMove(m);
             }
             else if(u.isRejoiningFormation && this.team.direction * x <= this.team.direction * u.px)
             {
@@ -246,11 +265,11 @@ package com.brockw.stickwar.singleplayer
          attackMoveUnits.owner = this.team.id;
          attackMoveUnits.arg0 = x;
          attackMoveUnits.arg1 = this.team.game.gameScreen.game.map.height / 2;
-         attackMoveUnits.execute(this.team.game);
+         this._doMove(attackMoveUnits);
          moveUnits.owner = this.team.id;
          moveUnits.arg0 = x;
          moveUnits.arg1 = this.team.game.gameScreen.game.map.height / 2;
-         moveUnits.execute(this.team.game);
+         this._doMove(moveUnits);
       }
       
       protected function garrisonGroup() : void
@@ -266,7 +285,7 @@ package com.brockw.stickwar.singleplayer
          u.owner = this.team.id;
          u.arg0 = 0;
          u.arg1 = this.team.game.map.height / 2;
-         u.execute(this.team.game);
+         this._doMove(u);
       }
       
       protected function getDefendPosition() : Number
@@ -298,7 +317,7 @@ package com.brockw.stickwar.singleplayer
                m.arg0 = u.ai.targetOre.x;
                m.arg1 = u.ai.targetOre.y;
                m.arg4 = u.ai.targetOre.id;
-               m.execute(this.team.game);
+               this._doMove(m);
             }
             else if(!u.isHome)
             {
@@ -315,8 +334,8 @@ package com.brockw.stickwar.singleplayer
          attackMoveUnits.owner = this.team.id;
          attackMoveUnits.arg0 = defendPos;
          attackMoveUnits.arg1 = this.team.game.gameScreen.game.map.height / 2;
-         attackMoveUnits.execute(this.team.game);
-         moveUnits.execute(this.team.game);
+         this._doMove(attackMoveUnits);
+         this._doMove(moveUnits);
       }
       
       protected function updateGlobalStrategy(game:StickWar) : void

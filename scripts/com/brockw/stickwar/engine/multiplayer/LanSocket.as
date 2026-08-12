@@ -6,11 +6,17 @@ package com.brockw.stickwar.engine.multiplayer
     import flash.events.ProgressEvent;
     import flash.events.SecurityErrorEvent;
     import flash.utils.ByteArray;
+    import flash.utils.setInterval;
+    import flash.utils.clearInterval;
 
     public class LanSocket
     {
         private var socket:Socket;
         private var buffer:String;
+        private var outBuffer:String;
+        private var flushInterval:int;
+        private static const FLUSH_INTERVAL_MS:int = 33;
+        private static const MAX_OUT_BUFFER:int = 262144;
 
         public var onMessage:Function;
         public var onError:Function;
@@ -20,11 +26,20 @@ package com.brockw.stickwar.engine.multiplayer
         public function LanSocket()
         {
             buffer = "";
+            outBuffer = "";
+            flushInterval = 0;
         }
 
         public function connect(host:String, port:int):void
         {
             socket = new Socket();
+            if (flushInterval == 0)
+            {
+                flushInterval = setInterval(function():void
+                {
+                    flushNow();
+                }, FLUSH_INTERVAL_MS);
+            }
             socket.addEventListener(Event.CONNECT, function(e:Event):void
             {
                 if (onConnect != null) onConnect();
@@ -66,8 +81,19 @@ package com.brockw.stickwar.engine.multiplayer
         public function send(line:String):void
         {
             if (socket == null) return;
+            outBuffer += line + "\n";
+            if (outBuffer.length > MAX_OUT_BUFFER)
+            {
+                flushNow();
+            }
+        }
+
+        public function flushNow():void
+        {
+            if (socket == null || !socket.connected || outBuffer == "") return;
             var bytes:ByteArray = new ByteArray();
-            bytes.writeUTFBytes(line + "\n");
+            bytes.writeUTFBytes(outBuffer);
+            outBuffer = "";
             try
             {
                 socket.writeBytes(bytes, 0, bytes.length);
@@ -81,12 +107,19 @@ package com.brockw.stickwar.engine.multiplayer
 
         public function close():void
         {
+            flushNow();
+            if (flushInterval != 0)
+            {
+                clearInterval(flushInterval);
+                flushInterval = 0;
+            }
             if (socket != null)
             {
                 try { socket.close(); } catch (e:Error) {}
                 socket = null;
             }
             buffer = "";
+            outBuffer = "";
         }
 
         public function get connected():Boolean

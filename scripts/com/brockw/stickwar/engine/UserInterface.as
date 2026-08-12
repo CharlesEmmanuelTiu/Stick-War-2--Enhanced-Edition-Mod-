@@ -321,7 +321,23 @@ package com.brockw.stickwar.engine
       {
       }
       
-      public function garrisonMinerButton(evt:MouseEvent) : void
+      private function collectGlobalsUnitIds() : Array
+      {
+         var ids:Array = [];
+         var key:String = null;
+         var u:Unit = null;
+         for(key in this.team.units)
+         {
+            u = this.team.units[key];
+            if(u != null && u.onScreen(this.gameScreen.game))
+            {
+               ids.push(u.id);
+            }
+         }
+         return ids;
+      }
+       
+       public function garrisonMinerButton(evt:MouseEvent) : void
       {
          if(!this.isGlobalsEnabled)
          {
@@ -329,6 +345,7 @@ package com.brockw.stickwar.engine
          }
          var m:GlobalMove = new GlobalMove();
          m.globalMoveType = Team.G_GARRISON_MINER;
+         m.unitIds = this.collectGlobalsUnitIds();
          this.gameScreen.doMove(m,this.team.id);
          if(this.team.type == Team.T_GOOD)
          {
@@ -348,6 +365,7 @@ package com.brockw.stickwar.engine
          }
          var m:GlobalMove = new GlobalMove();
          m.globalMoveType = Team.G_UNGARRISON_MINER;
+         m.unitIds = this.collectGlobalsUnitIds();
          this.gameScreen.doMove(m,this.team.id);
          if(this.team.type == Team.T_GOOD)
          {
@@ -367,6 +385,7 @@ package com.brockw.stickwar.engine
          }
          var m:GlobalMove = new GlobalMove();
          m.globalMoveType = Team.G_GARRISON;
+         m.unitIds = this.collectGlobalsUnitIds();
          this.gameScreen.doMove(m,this.team.id);
          if(this.team.type == Team.T_GOOD)
          {
@@ -386,6 +405,7 @@ package com.brockw.stickwar.engine
          }
          var m:GlobalMove = new GlobalMove();
          m.globalMoveType = Team.G_DEFEND;
+         m.unitIds = this.collectGlobalsUnitIds();
          this.gameScreen.doMove(m,this.team.id);
          if(this.team.type == Team.T_GOOD)
          {
@@ -405,6 +425,7 @@ package com.brockw.stickwar.engine
          }
          var m:GlobalMove = new GlobalMove();
          m.globalMoveType = Team.G_ATTACK;
+         m.unitIds = this.collectGlobalsUnitIds();
          this.gameScreen.doMove(m,this.team.id);
          if(this.team.type == Team.T_GOOD)
          {

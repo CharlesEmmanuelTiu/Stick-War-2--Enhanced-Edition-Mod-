@@ -5,6 +5,7 @@ const os = require("os");
 const TCP_PORT = 9333;
 const UDP_PORT = 9334;
 const REMOTE_TIMEOUT = 30000;
+const RECONNECT_GRACE_MS = 15000;
 
 let nextSequential = 1;
 const lobbies = new Map();
@@ -129,30 +130,101 @@ const server = net.createServer((socket) => {
     }
   });
 
+  function teardownLobby(lobby) {
+    const msg = lobby.pendingSide === "host" ? "HOST_DISCONNECTED" : "CLIENT_DISCONNECTED";
+    const peer = lobby.host ? lobby.host : lobby.client;
+    if (lobby.graceTimer) { clearTimeout(lobby.graceTimer); lobby.graceTimer = null; }
+    if (lobby.helloInterval) { clearInterval(lobby.helloInterval); lobby.helloInterval = null; }
+    if (peer && !peer.destroyed) {
+      send(peer, msg);
+      peer._state = "fresh";
+      peer._lobbyId = null;
+    }
+    if (lobby.host && lobby.host.remoteCleanup) lobby.host.remoteCleanup();
+    if (lobby.client && lobby.client.remoteCleanup) lobby.client.remoteCleanup();
+    lobbies.delete(lobby.id);
+  }
+
   function lobbyCleanup(id) {
     const lobby = lobbies.get(id);
     if (!lobby) return;
     if (lobby.helloInterval) clearInterval(lobby.helloInterval);
+    if (lobby.graceTimer) { clearTimeout(lobby.graceTimer); lobby.graceTimer = null; }
     if (lobby.host && lobby.host.remoteCleanup) lobby.host.remoteCleanup();
+    if (lobby.client && lobby.client.remoteCleanup) lobby.client.remoteCleanup();
     lobbies.delete(id);
   }
 
   socket.on("close", () => {
     if (heartbeatTimer) clearTimeout(heartbeatTimer);
-    if (socket._lobbyId && lobbies.has(socket._lobbyId)) {
-      const lobby = lobbies.get(socket._lobbyId);
-      const peer = lobby.host === socket ? lobby.client : lobby.host;
-      const role = socket._state;
-      log("TCP", "Disconnected (role=" + role + ", lobby=" + socket._lobbyId + ")");
-      if (peer && !peer.destroyed) {
-        send(peer, lobby.host === socket ? "HOST_DISCONNECTED" : "CLIENT_DISCONNECTED");
-        peer._state = "fresh";
-        peer._lobbyId = null;
-      }
-      lobbyCleanup(socket._lobbyId);
-    } else {
+    if (!socket._lobbyId || !lobbies.has(socket._lobbyId)) {
       log("TCP", "Disconnected (unregistered)");
+      return;
     }
+    const lobby = lobbies.get(socket._lobbyId);
+    const role = socket._state;
+    log("TCP", "Disconnected (role=" + role + ", lobby=" + socket._lobbyId + ")");
+    const side = lobby.host === socket ? "host" : (lobby.client === socket ? "client" : null);
+    if (!side) {
+      log("TCP", "Disconnected (unregistered in lobby)");
+      return;
+    }
+
+    if (lobby.pendingSide) {
+      // A reconnect grace was already active for this lobby. If the survivor leaves too
+      // (or a stale socket closes), tear the whole session down.
+      log("TCP", "Full teardown while grace active (lobby=" + lobby.id + ")");
+      teardownLobby(lobby);
+      return;
+    }
+
+    const peer = side === "host" ? lobby.client : lobby.host;
+    if (!peer || peer.destroyed) {
+      // No partner to wait for (e.g. host left before a client joined).
+      log("TCP", "Teardown, no peer to wait for (lobby=" + lobby.id + ")");
+      teardownLobby(lobby);
+      return;
+    }
+
+    // Enter the reconnect grace window: keep the lobby registered, free the slot,
+    // and give the dropped side up to RECONNECT_GRACE_MS to come back.
+    lobby.pendingSide = side;
+    lobby.pendingSince = Date.now();
+    if (side === "host") lobby.host = null; else lobby.client = null;
+    log("TCP", "Grace started for lobby=" + lobby.id + " (waiting for '" + side + "' to reconnect)");
+    send(peer, "WAIT_FOR_RECONNECT|" + side);
+    if (lobby.graceTimer) clearTimeout(lobby.graceTimer);
+    lobby.graceTimer = setTimeout(() => {
+      if (!lobbies.has(lobby.id)) return;
+      const cur = lobbies.get(lobby.id);
+      if (!cur.pendingSide) return;
+      if (cur.pendingSide === "client") {
+        // The client is gone for good. The host persists and keeps playing solo.
+        // Keep the lobby alive (slot free) so a client can join later.
+        log("TCP", "Client grace timeout for lobby=" + lobby.id + " -> host continues solo");
+        cur.pendingSide = null;
+        cur.pendingSince = null;
+        cur.inGame = true;
+        if (cur.graceTimer) { clearTimeout(cur.graceTimer); cur.graceTimer = null; }
+        if (!cur.helloInterval && cur.host && !cur.host.destroyed) {
+          cur.helloInterval = setInterval(() => {
+            const msg = "HELLO|" + cur.id + "|" + cur.name + "|" + (cur.password ? "1" : "0") + "|1";
+            try { udp.send(msg, 0, msg.length, UDP_PORT, "255.255.255.255"); } catch (e) {}
+            for (const addr of getBroadcastAddresses()) {
+              if (addr === "255.255.255.255") continue;
+              try { udp.send(msg, 0, msg.length, UDP_PORT, addr); } catch (e) {}
+            }
+          }, 2000);
+        }
+        if (cur.host && !cur.host.destroyed) {
+          send(cur.host, "CLIENT_LEFT");
+        }
+      } else {
+        // The host left for good; the client has no host to continue against.
+        log("TCP", "Host grace timeout for lobby=" + lobby.id + " -> teardown");
+        teardownLobby(cur);
+      }
+    }, RECONNECT_GRACE_MS);
   });
 
   socket.on("error", (err) => {
@@ -182,7 +254,7 @@ const server = net.createServer((socket) => {
       const name = parts[1];
       const password = parts[2] || "";
       const id = makeId();
-      const lobby = { id, host: socket, client: null, name, password };
+      const lobby = { id, host: socket, client: null, name, password, inGame: false, busy: false };
       lobby.helloInterval = setInterval(() => {
         const msg = "HELLO|" + id + "|" + name + "|" + (password ? "1" : "0") + "|1";
         try { udp.send(msg, 0, msg.length, UDP_PORT, "255.255.255.255"); } catch (e) {}
@@ -229,9 +301,19 @@ const server = net.createServer((socket) => {
         send(socket, "JOIN_FAILED|Lobby not found");
         return;
       }
+      if (lobby.pendingSide) {
+        log("CMD", "JOIN target=" + targetId + " FAILED (slot pending reconnect)");
+        send(socket, "JOIN_FAILED|Session busy");
+        return;
+      }
       if (lobby.client) {
         log("CMD", "JOIN target=" + targetId + " FAILED (full)");
         send(socket, "JOIN_FAILED|Lobby full");
+        return;
+      }
+      if (!lobby.inGame && lobby.busy) {
+        log("CMD", "JOIN target=" + targetId + " FAILED (host busy)");
+        send(socket, "JOIN_FAILED|HOST_BUSY");
         return;
       }
       if (lobby.password !== "" && joinPw !== lobby.password) {
@@ -252,9 +334,56 @@ const server = net.createServer((socket) => {
         clearInterval(lobby.helloInterval);
         lobby.helloInterval = null;
       }
-      log("CMD", "JOIN target=" + targetId + " OK (paired host<->client)");
-      send(lobby.host, "CLIENT_JOINED");
-      send(socket, "JOINED");
+      const joinedInGame = !!lobby.inGame;
+      log("CMD", "JOIN target=" + targetId + " OK (paired host<->client" + (joinedInGame ? ", in-game" : "") + ")");
+      send(lobby.host, joinedInGame ? "CLIENT_JOINED_IN_GAME" : "CLIENT_JOINED");
+      send(socket, joinedInGame ? "JOINED_IN_GAME" : "JOINED");
+      return;
+    }
+
+    if (cmd === "RECONNECT") {
+      if (socket._state !== "fresh") {
+        send(socket, "ERROR|Already registered or joined");
+        return;
+      }
+      if (parts.length < 4) {
+        send(socket, "JOIN_FAILED|Missing lobby ID");
+        return;
+      }
+      const targetId = parts[1];
+      const role = parts[2];
+      const pw = parts[3] || "";
+      const lobby = lobbies.get(targetId);
+      if (!lobby || !lobby.pendingSide) {
+        log("CMD", "RECONNECT target=" + targetId + " FAILED (no pending slot)");
+        send(socket, "JOIN_FAILED|Lobby not found");
+        return;
+      }
+      if (role !== lobby.pendingSide) {
+        log("CMD", "RECONNECT target=" + targetId + " FAILED (wrong slot '" + role + "')");
+        send(socket, "JOIN_FAILED|Slot not available");
+        return;
+      }
+      if (lobby.password !== "" && pw !== lobby.password) {
+        log("CMD", "RECONNECT target=" + targetId + " FAILED (wrong password)");
+        send(socket, "JOIN_FAILED|Wrong password");
+        return;
+      }
+      const peer = role === "host" ? lobby.client : lobby.host;
+      if (!peer || peer.destroyed) {
+        log("CMD", "RECONNECT target=" + targetId + " FAILED (peer gone)");
+        teardownLobby(lobby);
+        send(socket, "JOIN_FAILED|Peer disconnected");
+        return;
+      }
+      if (role === "host") lobby.host = socket; else lobby.client = socket;
+      socket._state = role;
+      socket._lobbyId = targetId;
+      lobby.pendingSide = null;
+      if (lobby.graceTimer) { clearTimeout(lobby.graceTimer); lobby.graceTimer = null; }
+      log("CMD", "RECONNECT target=" + targetId + " OK (re-paired '" + role + "')");
+      send(socket, "RESUMED");
+      send(peer, "RESUMED");
       return;
     }
 
@@ -313,9 +442,9 @@ const server = net.createServer((socket) => {
           if (idx === -1) break;
           const line = proxyBuffer.substring(0, idx);
           proxyBuffer = proxyBuffer.substring(idx + 1);
-          if (line === "JOINED") {
+          if (line === "JOINED" || line === "JOINED_IN_GAME") {
             proxyJoined = true;
-            send(socket, "JOINED");
+            send(socket, line);
             enterPipeMode();
           } else if (line.indexOf("JOIN_FAILED") === 0) {
             proxyJoined = true;
@@ -348,6 +477,40 @@ const server = net.createServer((socket) => {
       return;
     }
 
+    if (cmd === "CLIENT_LEAVE") {
+      if (!socket._lobbyId) {
+        log("CMD", "CLIENT_LEAVE ignored (no lobby)");
+        return;
+      }
+      const lobby = lobbies.get(socket._lobbyId);
+      if (!lobby || lobby.client !== socket) {
+        log("CMD", "CLIENT_LEAVE ignored (not the client)");
+        return;
+      }
+      log("CMD", "CLIENT_LEAVE lobby=" + socket._lobbyId + " -> host continues solo");
+      if (lobby.graceTimer) { clearTimeout(lobby.graceTimer); lobby.graceTimer = null; }
+      lobby.pendingSide = null;
+      lobby.pendingSince = null;
+      lobby.client = null;
+      lobby.inGame = true;
+      if (lobby.host && !lobby.host.destroyed) {
+        if (!lobby.helloInterval) {
+          lobby.helloInterval = setInterval(() => {
+            const msg = "HELLO|" + lobby.id + "|" + lobby.name + "|" + (lobby.password ? "1" : "0") + "|1";
+            try { udp.send(msg, 0, msg.length, UDP_PORT, "255.255.255.255"); } catch (e) {}
+            for (const addr of getBroadcastAddresses()) {
+              if (addr === "255.255.255.255") continue;
+              try { udp.send(msg, 0, msg.length, UDP_PORT, addr); } catch (e) {}
+            }
+          }, 2000);
+        }
+        send(lobby.host, "CLIENT_LEFT");
+      }
+      socket._state = "fresh";
+      socket._lobbyId = null;
+      return;
+    }
+
     if (cmd === "DATA") {
       const peer = findPeer(socket);
       if (peer && !peer.destroyed) {
@@ -356,6 +519,21 @@ const server = net.createServer((socket) => {
         send(peer, parts.slice(1).join("|"));
       } else {
         log("CMD", "DATA dropped (no peer)");
+      }
+      return;
+    }
+
+    if (cmd === "HOST_IN_GAME" || cmd === "HOST_LEAVE_GAME" || cmd === "HOST_BUSY") {
+      const lb = lobbies.get(socket._lobbyId);
+      if (lb && lb.host === socket) {
+        if (cmd === "HOST_BUSY") {
+          lb.busy = (parts[1] === "1");
+          log("CMD", cmd + " lobby=" + socket._lobbyId + " busy=" + lb.busy);
+        } else {
+          lb.inGame = (cmd === "HOST_IN_GAME");
+          if (cmd === "HOST_IN_GAME") lb.busy = false;
+          log("CMD", cmd + " lobby=" + socket._lobbyId + " inGame=" + lb.inGame);
+        }
       }
       return;
     }
