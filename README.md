@@ -384,7 +384,7 @@ Campaign levels use a mix of:
 - `battleOfTheShadowElves`
 - `enteringTheStronghold`
 - `chaosInGame`
-- `fieldOfMemories`(Only used in boss fight)
+- `fieldOfMemories`
 
 The final Medusa level starts with `battleOfTheShadowElves` and later switches to `fieldOfMemories` during the true boss fight.
 
