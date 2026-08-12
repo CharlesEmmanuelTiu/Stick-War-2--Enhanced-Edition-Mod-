@@ -226,41 +226,25 @@ Rain and lightning obscure the battlefield. Enemy units are only visible during 
 
 ## Playable Bosses
 
-After unlocking a boss through the upgrade tree, toggle **Boss Mode** to produce boss units instead of regular units. Bosses are powerful single units with unique abilities.
-
-| Boss | Unit | Abilities |
-|------|------|-----------|
-| Spearos | Spearton | Shield Bash, commands nearby Speartons |
-| Archis | Archidon | Fire Arrows, Arrow Storm, Triple Shot, Explosive Arrow |
-| Shade | Shadowrath | Cloak 3, Clone, targets support units |
-| Vitalis | Meric | Revives fallen allies |
-| Magis | Magikill | Meteor Chain, Lightning Stun, Summons |
+Unlock boss units through the upgrade tree and toggle **Boss Mode** to produce them instead of regular units. See the Boss Roster and Boss Abilities sections for full ability details.
 
 ### Boss Mode Rules
-- Toggle Boss Mode on/off during gameplay
+- Toggle Boss Mode on/off during gameplay (`,` key or click the toggle button)
 - Only boss units can be produced while active
 - Maximum of 3 bosses alive at once
 - Only 1 boss of each type at a time
 - Bosses have different gold/mana costs than regular units
 
-### Boss Unlock Upgrades
+### Boss Upgrade Tree
 
-- **Spearos** — Spearton Boss
-- **Archis** — Archidon Boss (requires Spearos or Triple Shot)
-- **Shade** — Shadowrath Boss (requires Archis)
-- **Vitalis** — Meric Boss (requires Arrow Storm)
-- **Magis** — Magikill Boss (requires Vitalis)
+**Unlock path:**
+- **Spearos**
+- **Archis**
+- **Shade**
+- **Vitalis**
+- **Magis**
 
-### Boss Ability Upgrades
-
-- **Triple Shot** — Archidon Boss fires 3 arrows in a spread
-- **Poison Execute** — Archidon Boss poison on kill
-- **Arrow Storm** — Archidon Boss slowing blue arrow
-- **Explosive Arrow** — Archidon Boss area damage arrow
-- **Shinobi III** — Shadowrath Boss enhanced cloak
-- **Lightning Stun** — Magikill Boss stun spell
-- **Meteor II** — Magikill Boss chained meteors
-- **Summon II** — Magikill Boss summons Speartons, Swordwraths, and Archidons
+**Ability upgrades** branch off from each boss unlock (Triple Shot, Arrow Storm, Explosive Arrow, Shinobi III, Lightning Stun, Meteor II, Summon II, etc.).
 
 ## Unit Toggles
 
