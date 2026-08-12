@@ -187,6 +187,44 @@ In levels like Rebels United(Westwind) where you fight all bosses at once, only 
 
 Boss selection uses fair weighted randomness. On the first wave, all living bosses have an equal chance to be selected. After a boss is selected, its chance is lowered for the next queue, while bosses that were not selected become more likely to rotate in later. This keeps ability usage varied without letting every boss spam abilities at once.
 
+## Playable Bosses
+
+After unlocking a boss through the upgrade tree, toggle **Boss Mode** to produce boss units instead of regular units. Bosses are powerful single units with unique abilities.
+
+| Boss | Unit | Abilities |
+|------|------|-----------|
+| Spearos | Spearton | Shield Bash, commands nearby Speartons |
+| Archis | Archidon | Fire Arrows, Arrow Storm, Triple Shot, Explosive Arrow |
+| Shade | Shadowrath | Cloak 3, Clone, targets support units |
+| Vitalis | Meric | Revives fallen allies |
+| Magis | Magikill | Meteor Chain, Lightning Stun, Summons |
+
+### Boss Mode Rules
+- Toggle Boss Mode on/off during gameplay
+- Only boss units can be produced while active
+- Maximum of 3 bosses alive at once
+- Only 1 boss of each type at a time
+- Bosses have different gold/mana costs than regular units
+
+### Boss Unlock Upgrades
+
+- **Spearos** — Spearton Boss
+- **Archis** — Archidon Boss
+- **Shade** — Shadowrath Boss 
+- **Vitalis** — Meric Boss
+- **Magis** — Magikill Boss
+
+### Boss Ability Upgrades
+
+- **Triple Shot** — Archidon Boss fires 3 arrows in a spread
+- **Poison Execute** — Archidon Boss poison on kill
+- **Arrow Storm** — Archidon Boss slowing blue arrow
+- **Explosive Arrow** — Archidon Boss area damage arrow
+- **Shinobi III** — Shadowrath Boss enhanced cloak
+- **Lightning Stun** — Magikill Boss stun spell
+- **Meteor II** — Magikill Boss chained meteors
+- **Summon II** — Magikill Boss summons Speartons, Swordwraths, and Archidons
+
 ## Unit Toggles
 
 ![MagiKill Cast](gifs/magikill.gif)
