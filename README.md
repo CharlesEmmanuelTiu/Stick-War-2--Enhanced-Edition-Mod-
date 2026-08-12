@@ -28,6 +28,7 @@ Modern browsers usually cannot run Flash content directly, so the standalone pro
 - Reworked Medusa final boss encounter with stronger phases and summons.
 - Bug fixes for crashes, spell edge cases, health bars, unit control, and campaign screens.
 - Performance cleanup for debug overlays, campaign map updates, AI scans, and repeated logic.
+- Added soundtracks used from Stick War 1.
 
 ## Boss Roster
 
@@ -43,11 +44,12 @@ Modern browsers usually cannot run Flash content directly, so the standalone pro
 - `Shadowrath Boss`
   - Uses special boss cloak behavior.
   - Can chain cloak after successful attacks.
-  - Flanks and targets supporting units when using special boss cloak
+  - Flanks and targets supporting units when using special boss cloak.
+  - Uses Clone to overwhelm the target
 - `Magikill Boss`
   - Spell Changes.
   - Summons Swordwraths, Speartons, and Archidons.
-  - Protects the enemy statue with a temporary ward.
+  - Protects the enemy statue with a temporary ward until death.
 - `Meric Boss`
   - Can revive fallen allies.
   - Prioritizes MagiKill Boss when reviving.
@@ -68,7 +70,7 @@ Modern browsers usually cannot run Flash content directly, so the standalone pro
   - Has poison immunity and poison deathburst behavior.
 - `Medusa Boss`
   - Final boss version has stronger health, attacks, summons, and phase pressure.
-  - `Look At Me` warns the player when units are turned to stone.
+  - `Look At Me` turns all units that faces her into stone.
 
 ## Boss Abilities
 
@@ -97,15 +99,13 @@ Modern browsers usually cannot run Flash content directly, so the standalone pro
   - Cloaks that last 12 seconds and same damage as Cloak 1.
   - Each successful hit can immediately cloaks again but this time same damage as Cloak 2 but lasts 1.5 seconds.
   - Flanks and targets supporting units (Archers, Merics, Magikills, Enslaved Giants)
+  - When Cloak 3 fails, retreats back behind the front line and attacks again to avoid being crowded and easily killed by player unit army
 - Note: was thinking of adding clone ability but this Cloak 3 is already powerful enough i think
-- `Cautious Phase`
-  - Enters phase when below 50% HP
-  - Goes to Meric for healing, if none, garissons for healing.
-  - Enters Last Stand Phase when statue is attacked while healing
-  - Leaves Cautious phase when healed to full health
-- `Last Stand Phase`
-  - Resets his special cloak cooldown
-  - Can no longer go back to Cautious Phase
+- `Clone`
+  - Spawns 2 Clones to overwhelmed the target
+  - Clones will try to target the Shadowrath Boss's target.
+  - Has 2 seconds spawn protection
+  - Vanishes when hit once after spawn protection.
 
 ### Shadowrath Level
 
@@ -154,13 +154,24 @@ Modern browsers usually cannot run Flash content directly, so the standalone pro
 
 - `Look at Me`
   - All units facing at her in her turns into stone.
-  - Can be avoided by looking away.
+  - Can be avoided by looking away(Reaction time you have to look away is based on what difficulty you play in).
+
+### New Unit: Undead
+- Same as Deads but they are Melee unit type and Same HP as Archidon
+- Has Multiple Variants: 
+    - Undead Spearton - More HP but slightly slower
+    - Undead Shadowrath - Slightly faster
+    - Undead Magikill - Each hit has a chance of adding Infection Spray that infect units in an area
+    - Undead Archer - Just for Design :)
+- Each melee hit has a chance to inflict Infection effect that can only be cured by garrison.
+- When a unit is killed by Infection or Undead's Melee attack, will turn into an Undead as well based on what unit(for example: Spearton killed by infection, turns into Undead Spearton)
 
 ## Campaign Changes
 
 - Bosses appear in their own campaign levels.
 - Chaos bosses also appear through reinforcements in `Medusa's Gates`.
 - Several boss levels reward extra campaign points.
+- Ambush levels added.
 - `Rebels United` is built as a major multi-boss rebel encounter.
 - `Medusa's Gates` now includes heavier Chaos Empire pressure.
 - The final Medusa battle has improved pacing, music transitions, summons, and boss mechanics.
@@ -187,43 +198,53 @@ In levels like Rebels United(Westwind) where you fight all bosses at once, only 
 
 Boss selection uses fair weighted randomness. On the first wave, all living bosses have an equal chance to be selected. After a boss is selected, its chance is lowered for the next queue, while bosses that were not selected become more likely to rotate in later. This keeps ability usage varied without letting every boss spam abilities at once.
 
+## Ambush Levels
+
+Ambush levels are survival-based encounters where you defend against timed enemy waves until reinforcements arrive. You cannot push past the barrier, and fog of war hides the enemy base.
+
+### Ambush: Native Tribes
+Scattered native tribes attack from the hills with Speartons and Swordwraths wielding tribal weapons. They have reduced health but come in large numbers across 5 waves. After 150 seconds, reinforcements arrive to help you finish the fight.
+
+### Ambush: Shadowrath Stalkers
+Assassins emerge from the dark under a night overlay. Shadowraths stalk your position and unlock cloak ability after 90 seconds, becoming invisible as they approach the barrier. 5 waves of increasing pressure.
+
+### Ambush: Rebels Last Stand
+The rebels gather everything they have for one final push. An opening cutscene reveals their full army before a single massive wave attacks. After defeating them, an ending cutscene shows rebels being intercepted by chaos forces.
+
+### Ambush: Undead Horde
+The undead pour across the battlefield in a poisoned swarm. An opening cutscene shows a Marrowkai raising the dead. 4 waves of Undead variants (Spearton, Archer, Ninja, Magikill) followed by a 400 HP Marrowkai boss. Units can be infected — only garrison cures infection.
+
+### Ambush: The Storm
+Rain and lightning obscure the battlefield. Enemy units are only visible during thunder flashes. Stoned unit decorations litter the map. 6 waves with breathing periods between them, featuring Cats, Knights, Dead, Undead, Skelators, Wingidons, and Giants.
+
+**Common mechanics:**
+- Fog of war locks forward vision to a barrier line
+- Player units cannot cross the barrier
+- Reinforcements spawn after surviving ~150 seconds
+- Win by surviving all waves and eliminating enemy combat units
+- Wave sizes scale with difficulty (Normal / Hard / Insane)
+
 ## Playable Bosses
 
-After unlocking a boss through the upgrade tree, toggle **Boss Mode** to produce boss units instead of regular units. Bosses are powerful single units with unique abilities.
-
-| Boss | Unit | Abilities |
-|------|------|-----------|
-| Spearos | Spearton | Shield Bash, commands nearby Speartons |
-| Archis | Archidon | Fire Arrows, Arrow Storm, Triple Shot, Explosive Arrow |
-| Shade | Shadowrath | Cloak 3, Clone, targets support units |
-| Vitalis | Meric | Revives fallen allies |
-| Magis | Magikill | Meteor Chain, Lightning Stun, Summons |
+Unlock boss units through the upgrade tree and toggle **Boss Mode** to produce them instead of regular units. See the Boss Roster and Boss Abilities sections for full ability details.
 
 ### Boss Mode Rules
-- Toggle Boss Mode on/off during gameplay
+- Toggle Boss Mode on/off during gameplay (`,` key or click the toggle button)
 - Only boss units can be produced while active
 - Maximum of 3 bosses alive at once
 - Only 1 boss of each type at a time
 - Bosses have different gold/mana costs than regular units
 
-### Boss Unlock Upgrades
+### Boss Upgrade Tree
 
-- **Spearos** — Spearton Boss
-- **Archis** — Archidon Boss
-- **Shade** — Shadowrath Boss 
-- **Vitalis** — Meric Boss
-- **Magis** — Magikill Boss
+**Unlock path:**
+- **Spearos**
+- **Archis**
+- **Shade**
+- **Vitalis**
+- **Magis**
 
-### Boss Ability Upgrades
-
-- **Triple Shot** — Archidon Boss fires 3 arrows in a spread
-- **Poison Execute** — Archidon Boss poison on kill
-- **Arrow Storm** — Archidon Boss slowing blue arrow
-- **Explosive Arrow** — Archidon Boss area damage arrow
-- **Shinobi III** — Shadowrath Boss enhanced cloak
-- **Lightning Stun** — Magikill Boss stun spell
-- **Meteor II** — Magikill Boss chained meteors
-- **Summon II** — Magikill Boss summons Speartons, Swordwraths, and Archidons
+**Ability upgrades** branch off from each boss unlock (Triple Shot, Arrow Storm, Explosive Arrow, Shinobi III, Lightning Stun, Meteor II, Summon II, etc.).
 
 ## Unit Toggles
 
@@ -363,7 +384,7 @@ Campaign levels use a mix of:
 - `battleOfTheShadowElves`
 - `enteringTheStronghold`
 - `chaosInGame`
-- `fieldOfMemories`(Only used in boss fight)
+- `fieldOfMemories`
 
 The final Medusa level starts with `battleOfTheShadowElves` and later switches to `fieldOfMemories` during the true boss fight.
 
