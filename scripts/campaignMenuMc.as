@@ -32,9 +32,13 @@ package
       
       public var introBrokenMc:MovieClip;
       
-      public var newOrContinuePanel:MovieClip;
-      
-      public var fade:MovieClip;
+       public var newOrContinuePanel:MovieClip;
+       
+       public var OST_Style:MovieClip;
+       
+       public var OST_Text:TextField;
+       
+       public var fade:MovieClip;
       
       public function campaignMenuMc()
       {

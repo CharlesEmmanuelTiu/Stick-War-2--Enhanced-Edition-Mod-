@@ -390,8 +390,8 @@ package com.brockw.stickwar.campaign
          this.rebelsBossQueueRecentWaves = {};
          this.rebelsBossQueueWaveUntilFrame = 0;
          this.rebelsBossQueueDebugText = "";
-         var musicName:String = this.campaignMusicManager.getBackgroundMusic(level);
-         if(this.campaignMusicManager.shouldMusicLoop(level))
+          var musicName:String = this.campaignMusicManager.getBackgroundMusic(level, game.soundManager.useLegacyOst);
+          if(this.campaignMusicManager.shouldMusicLoop(level, game.soundManager.useLegacyOst))
          {
             game.soundManager.playSoundInBackground(musicName);
          }

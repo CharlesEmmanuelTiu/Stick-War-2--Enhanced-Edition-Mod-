@@ -82,6 +82,8 @@ import com.brockw.stickwar.engine.multiplayer.LanSocket;
       
       private var buttonsHit:Dictionary;
       
+      private var ostInitedButtons:Dictionary;
+      
       private var main:BaseMain;
       
       private var youtubeLoader:YoutubeLoader;
@@ -123,6 +125,7 @@ import com.brockw.stickwar.engine.multiplayer.LanSocket;
          addChild(this.mc);
          this.buttons = [];
          this.buttonsHit = new Dictionary();
+         this.ostInitedButtons = new Dictionary();
          Security.allowDomain("stickempires.com");
          this.youtubeLoader = null;
          this.hasInitStickpageLink = false;
@@ -312,6 +315,32 @@ import com.brockw.stickwar.engine.multiplayer.LanSocket;
          else
          {
             this.mc.musicToggle.gotoAndStop(2);
+         }
+         if(this.mc.OST_Style != null && !(this.mc.OST_Style in this.ostInitedButtons))
+         {
+            this.ostInitedButtons[this.mc.OST_Style] = true;
+            this.mc.OST_Style.buttonMode = true;
+         }
+         if(this.mc.OST_Style != null)
+         {
+            if(this.main.soundManager.useLegacyOst)
+            {
+               this.mc.OST_Style.gotoAndStop(1);
+            }
+            else
+            {
+               this.mc.OST_Style.gotoAndStop(3);
+            }
+            this.mc.OST_Style.visible = this.state != S_FADE_IN && this.state != S_INTRO;
+            if(this.mc.OST_Style.hitTestPoint(stage.mouseX,stage.mouseY) && this.mouseState.mouseDown)
+            {
+               this.main.soundManager.useLegacyOst = !this.main.soundManager.useLegacyOst;
+               this.mouseState.mouseDown = false;
+            }
+         }
+         if(this.mc.OST_Text != null)
+         {
+            this.mc.OST_Text.visible = this.state != S_FADE_IN && this.state != S_INTRO;
          }
          this.mouseState.update();
          this.mc.backButton.visible = true;
@@ -719,6 +748,7 @@ import com.brockw.stickwar.engine.multiplayer.LanSocket;
             coopLanSocket.onError = null;
          }
          this.mc.musicToggle.removeEventListener(MouseEvent.CLICK,this.toggleMusic);
+         this.ostInitedButtons = new Dictionary();
          removeEventListener(Event.ENTER_FRAME,this.update);
          this.mc.backButton.removeEventListener(MouseEvent.CLICK,this.backButton);
          this.mc.creditsButton.removeEventListener(MouseEvent.CLICK,this.creditsButton);

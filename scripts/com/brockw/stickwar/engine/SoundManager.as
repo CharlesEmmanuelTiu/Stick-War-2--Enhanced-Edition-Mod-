@@ -3,6 +3,7 @@ package com.brockw.stickwar.engine
    import com.brockw.stickwar.BaseMain;
    import flash.events.Event;
    import flash.events.TimerEvent;
+   import flash.net.SharedObject;
    import flash.media.Sound;
    import flash.media.SoundChannel;
    import flash.media.SoundTransform;
@@ -32,6 +33,8 @@ package com.brockw.stickwar.engine
       private var _isMusic:Boolean;
       
       private var _isSound:Boolean;
+      
+      private var _useLegacyOst:Boolean;
       
       private var backgroundLoop:SoundChannel;
       
@@ -73,6 +76,16 @@ package com.brockw.stickwar.engine
          this.isSound = true;
          this.currentBackgroundName = "";
          this.targetBackgroundVolume = 0.2;
+         this._useLegacyOst = false;
+         try
+         {
+            var settings:SharedObject = SharedObject.getLocal("stickwarSettings");
+            this._useLegacyOst = settings.data.useLegacyOst == true;
+         }
+         catch(e:Error)
+         {
+            this._useLegacyOst = false;
+         }
       }
       
       public function cleanUp() : void
@@ -325,15 +338,34 @@ package com.brockw.stickwar.engine
          this._isMusic = value;
       }
       
-      public function get isSound() : Boolean
-      {
-         return this._isSound;
-      }
-      
-      public function set isSound(value:Boolean) : void
-      {
-         this._isSound = value;
-      }
-   }
+       public function get isSound() : Boolean
+       {
+          return this._isSound;
+       }
+       
+       public function set isSound(value:Boolean) : void
+       {
+          this._isSound = value;
+       }
+       
+       public function get useLegacyOst() : Boolean
+       {
+          return this._useLegacyOst;
+       }
+       
+       public function set useLegacyOst(value:Boolean) : void
+       {
+          this._useLegacyOst = value;
+          try
+          {
+             var settings:SharedObject = SharedObject.getLocal("stickwarSettings");
+             settings.data.useLegacyOst = value;
+             settings.flush();
+          }
+          catch(e:Error)
+          {
+          }
+       }
+    }
 }
 

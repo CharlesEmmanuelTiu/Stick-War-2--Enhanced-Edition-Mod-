@@ -197,14 +197,21 @@ package com.brockw.stickwar.engine
          ++this.main.loadingFraction;
          this.gameScreen.team.initTeamButtons(this.gameScreen);
          ++this.main.loadingFraction;
-         if(team.type == Team.T_GOOD)
-         {
-            this.gameScreen.game.soundManager.playSoundInBackground("orderInGame");
-         }
-         else
-         {
-            this.gameScreen.game.soundManager.playSoundInBackground("chaosInGame");
-         }
+          if(team.type == Team.T_GOOD)
+          {
+             if(this.gameScreen.game.soundManager.useLegacyOst)
+             {
+                this.gameScreen.game.soundManager.playSoundInBackground("orderMainLoop");
+             }
+             else
+             {
+                this.gameScreen.game.soundManager.playSoundInBackground("orderInGame");
+             }
+          }
+          else
+          {
+             this.gameScreen.game.soundManager.playSoundInBackground("chaosInGame");
+          }
          this.addChild(this.gameScreen.game.cursorSprite);
          this.hud.hud.lowButton.addEventListener(MouseEvent.CLICK,this.lowButton);
          this.hud.hud.medButton.addEventListener(MouseEvent.CLICK,this.medButton);

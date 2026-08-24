@@ -197,6 +197,7 @@ package com.brockw.stickwar.engine
          soundManager.addSound("enteringTheStronghold",Entering_The_Stronghold,1,1.5);
          soundManager.addSound("fieldOfMemories",Field_Of_Memories,1,1.5);
          soundManager.addSound("orderInGame",Battle_Of_The_Shadow_Elves,1,2);
+         soundManager.addSound("orderMainLoop",OrderMainLoop,1,3);
          soundManager.addSound("ironHit1",Iron_Hit1,10,0.6);
          soundManager.addSound("ironHit2",Iron_Hit2,10,0.6);
          soundManager.addSound("ironHit3",Iron_Hit3,10,0.6);

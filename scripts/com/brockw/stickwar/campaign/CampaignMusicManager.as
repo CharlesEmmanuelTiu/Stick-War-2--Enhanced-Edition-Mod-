@@ -10,21 +10,30 @@ package com.brockw.stickwar.campaign
          super();
       }
       
-      public function getBackgroundMusic(level:Level) : String
-      {
-         var title:String = null;
-         if(level == null)
-         {
-            return "chaosInGame";
-         }
-         title = level.title;
-         if(title == "Ambush: The Storm")
-         {
-            return "";
-         }
+       public function getBackgroundMusic(level:Level, useLegacyOst:Boolean = false) : String
+       {
+          var title:String = null;
+          if(level == null)
+          {
+             return "chaosInGame";
+          }
+          title = level.title;
+          if(useLegacyOst)
+          {
+             if(Team.getIdFromRaceName(level.oponent.race) == Team.T_GOOD)
+             {
+                return "orderMainLoop";
+             }
+             return "chaosInGame";
+          }
+          if(title == "Ambush: The Storm")
+          {
+             return "";
+          }
          switch(title)
          {
             case "Tutorial":
+               return "orderMainLoop";
             case "Silent Assassins: Ninjas Declare War":
             case "Rebels United":
             case "Shadow of the moon: Eclipsors Attack.":
@@ -57,18 +66,22 @@ package com.brockw.stickwar.campaign
          }
       }
       
-      public function shouldMusicLoop(level:Level) : Boolean
-      {
-         if(level == null || level.title == null)
-         {
-            return true;
-         }
-         if(level.title == "Ambush: Rebels Last Stand" || level.title == "Ambush: The Storm")
-         {
-            return false;
-         }
-         return true;
-      }
+       public function shouldMusicLoop(level:Level, useLegacyOst:Boolean = false) : Boolean
+       {
+          if(useLegacyOst)
+          {
+             return true;
+          }
+          if(level == null || level.title == null)
+          {
+             return true;
+          }
+          if(level.title == "Ambush: Rebels Last Stand" || level.title == "Ambush: The Storm")
+          {
+             return false;
+          }
+          return true;
+       }
    }
 }
 

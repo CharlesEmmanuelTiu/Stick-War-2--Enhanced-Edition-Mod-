@@ -37,6 +37,7 @@ Modern browsers usually cannot run Flash content directly, so the standalone pro
 - `Spearton Boss`
   - Uses `Shield Wall` and `Shield Bash`.
   - Commands nearby Speartons to brace with him.
+  - Shield Wall deflects 15% of incoming arrows while blocking.
 - `Archidon Boss`
   - Uses `Fire Arrows`,`Arrow Storm`, `Triple Shot` and `Explosive Arrow`
   - Commands nearby Archidons to use `Fire Arrows` and `Arrow Storm`.
@@ -59,10 +60,11 @@ Modern browsers usually cannot run Flash content directly, so the standalone pro
 - `JuggerKnight Boss`
   - Uses boss-style charge pressure and enhanced durability.
   - Commands nearby JuggerKnights to charge with him.
+  - Charge deflects 100% of incoming arrows while active.
 - `Wingidon Boss`
   - Uses `Eclipse Mark`, `Demon Burst Fire`, and `Sky Commander Aura`.
   - Can direct nearby Wingidons toward marked targets.
-  - Has anti-arrow pressure behavior to avoid instant archer deletion.
+  - Sky Commander Aura deflects 100% of incoming arrows while active.
 - `Skelator / Marrowkai Boss`
   - Uses `Dead Rising`, `Poison Fists`, and `Reaper Control`.
   - Summons limited Deads during low-health distancing phase.
@@ -79,6 +81,7 @@ Modern browsers usually cannot run Flash content directly, so the standalone pro
 - `Shield and Bash`
   - Uses Shield Wall and Shield bash that stuns enemies that got hit.
   - Can command nearby Speartons to Shield and Bash with him
+  - Shield Wall deflects 15% of arrows while blocking.
 
 ### Archidon Boss
 
@@ -135,6 +138,7 @@ Modern browsers usually cannot run Flash content directly, so the standalone pro
   - Hit units are stunned briefly.
 - `Sky Commander Aura`
   - Temporarily empowers nearby enemy Wingidons.
+  - Deflects all incoming arrows while active.
   - Boss glows while the aura is active.
 
 ### Skelator / Marrowkai Boss

@@ -176,14 +176,17 @@ package com.brockw.stickwar.campaign.controllers
                u1.x = u1.px;
                m = new StandCommand(gameScreen.game);
                u1.ai.setCommand(gameScreen.game,m);
-               if(!gameScreen.game.soundManager.isBackgroundAtOrPast("battleOfTheShadowElves",MEDUSA_REVEAL_MUSIC_START_MS))
-               {
-                  gameScreen.game.soundManager.playSoundInBackground("battleOfTheShadowElves",MEDUSA_REVEAL_MUSIC_START_MS);
-               }
-               else
-               {
-                  gameScreen.game.soundManager.playCurrentBackgroundOnceFromCurrentPosition("battleOfTheShadowElves");
-               }
+                if(!gameScreen.game.soundManager.isBackgroundAtOrPast("battleOfTheShadowElves",MEDUSA_REVEAL_MUSIC_START_MS))
+                {
+                   if(!gameScreen.game.soundManager.useLegacyOst)
+                   {
+                      gameScreen.game.soundManager.playSoundInBackground("battleOfTheShadowElves",MEDUSA_REVEAL_MUSIC_START_MS);
+                   }
+                }
+                else
+                {
+                   gameScreen.game.soundManager.playCurrentBackgroundOnceFromCurrentPosition("battleOfTheShadowElves");
+                }
                this.medusa.stone(null);
                this.state = S_ENTER_MEDUSA;
                this.counter = 0;
@@ -249,9 +252,12 @@ package com.brockw.stickwar.campaign.controllers
                this.nextEngagementCheckFrame = gameScreen.game.frame;
                this.medusaDistantRetreatUntilFrame = 0;
                spawn = this.getPlayerReinforcementWave(gameScreen);
-               gameScreen.team.spawnUnitGroup(spawn);
-               gameScreen.game.soundManager.playSoundInBackground("fieldOfMemories");
-               gameScreen.game.soundManager.playSoundFullVolumeRandom("Rage",3);
+                gameScreen.team.spawnUnitGroup(spawn);
+                if(!gameScreen.game.soundManager.useLegacyOst)
+                {
+                   gameScreen.game.soundManager.playSoundInBackground("fieldOfMemories");
+                }
+                gameScreen.game.soundManager.playSoundFullVolumeRandom("Rage",3);
                gameScreen.game.soundManager.playSoundFullVolumeRandom("Rage",3);
                gameScreen.game.soundManager.playSoundFullVolumeRandom("Rage",3);
                gameScreen.game.soundManager.playSoundFullVolumeRandom("Rage",3);
