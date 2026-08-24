@@ -64,7 +64,6 @@ Modern browsers usually cannot run Flash content directly, so the standalone pro
 - `Wingidon Boss`
   - Uses `Eclipse Mark`, `Demon Burst Fire`, and `Sky Commander Aura`.
   - Can direct nearby Wingidons toward marked targets.
-  - Sky Commander Aura deflects 100% of incoming arrows while active.
 - `Skelator / Marrowkai Boss`
   - Uses `Dead Rising`, `Poison Fists`, and `Reaper Control`.
   - Summons limited Deads during low-health distancing phase.
@@ -140,6 +139,7 @@ Modern browsers usually cannot run Flash content directly, so the standalone pro
   - Temporarily empowers nearby enemy Wingidons.
   - Deflects all incoming arrows while active.
   - Boss glows while the aura is active.
+  - Sky Commander Aura deflects 100% of incoming arrows while active
 
 ### Skelator / Marrowkai Boss
 
